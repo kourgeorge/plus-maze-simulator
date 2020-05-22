@@ -33,14 +33,14 @@ class BrainDQN(AbstractBrain):
             distribution[action] = 1
             return distribution
 
-    def train(self, experience):
+    def train(self, memory):
 
-        minibatch_size = min(BrainDQN.BATCH_SIZE, len(experience))
+        minibatch_size = min(BrainDQN.BATCH_SIZE, len(memory))
         if minibatch_size == 0:
             return
         self.num_optimizations += 1
 
-        minibatch = random.sample(experience, minibatch_size)
+        minibatch = memory.sample(minibatch_size)
         state_batch = torch.from_numpy(np.stack([np.stack(data[0]) for data in minibatch])).float()
         action_batch = torch.FloatTensor([data[1] for data in minibatch])
         reward_batch = torch.FloatTensor([data[2] for data in minibatch])
@@ -58,7 +58,7 @@ class BrainDQN(AbstractBrain):
                 expected_state_action_values.append(reward_batch[i] + self.reward_discount * torch.max(qvalue_batch[i]))
 
         # Compute Huber loss
-        loss = F.smooth_l1_loss(state_action_values, torch.stack(expected_state_action_values).detach())
+        loss = F.mse_loss(state_action_values, torch.stack(expected_state_action_values).detach())
 
         # Optimize the model
         self.optimizer.zero_grad()
@@ -68,11 +68,13 @@ class BrainDQN(AbstractBrain):
             param.grad.data.clamp_(-1, 1)
         self.optimizer.step()
 
-        if self.num_optimizations % 10 == 0:
-            self.target_net.load_state_dict(self.policy_net.state_dict())
-            for name, param in self.policy_net.state_dict().items():
-                if name == 'lin1.weight':
-                    print(param)
+        # if self.num_optimizations % 10 == 0:
+        #     self.target_net.load_state_dict(self.policy_net.state_dict())
+        #     for name, param in self.policy_net.state_dict().items():
+        #         if name == 'lin1.weight':
+        #             print(param)
+
+        return {'loss': loss.item()}
 
     def save_model(self, path):
         torch.save(self.policy_net.state_dict(), path)
