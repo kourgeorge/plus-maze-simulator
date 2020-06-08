@@ -1,4 +1,4 @@
-from braindqntorch import BrainDQN
+
 from environment import PlusMaze
 from collections import deque
 import config
@@ -6,13 +6,9 @@ import utils
 
 
 class Agent:
-    def __init__(self, observation_size=PlusMaze.state_shape(), num_actions=PlusMaze.num_actions(),
-                 motivation=config.RewardType.WATER, motivated_reward_value=1, non_motivated_reward_value=0):
-        self._brain = BrainDQN(observation_size=observation_size,
-                               num_actions=num_actions,
-                               reward_discount=0,
-                               learning_rate=config.BASE_LEARNING_RATE)
+    def __init__(self, brain, motivation=config.RewardType.WATER, motivated_reward_value=1, non_motivated_reward_value=0.3):
 
+        self._brain = brain
         self._memory_size = 1024
         self._memory = utils.NStepsReplayMemory(self._memory_size, 1, 0.99)
         self._motivation = motivation

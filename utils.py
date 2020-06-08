@@ -25,6 +25,8 @@ def softmax(x, temprature=1):
         raise Exception('Inf in softmax')
     return ex_x / ex_x.sum(0)
 
+def dot_lists(V1, V2):
+    return sum([x * y for x, y in zip(V1, V2)])
 
 class ReplayMemory:
 
@@ -47,13 +49,16 @@ class ReplayMemory:
         with open(file_name, 'w') as file:
             file.write(data)
 
+    def last(self, batch_size):
+        return self.memory[:batch_size]
+
     def __len__(self):
         return len(self.memory)
 
 
 def sample_to_str(transition):
     s, a, r, s_, d = transition
-    data = [list(s), list(a), r, list(s_), 1-int(d)]
+    data = [list(s), list(a), r, list(s_), 1 - int(d)]
     return ' ; '.join(map(str, data)) + '\n'
 
 
@@ -68,9 +73,9 @@ class NStepsReplayMemory(ReplayMemory):
     def _process_n_step_memory(self):
         s_mem, a_mem, R, si_, done = self.nstep_memory.popleft()
         if not done:
-            for i in range(self.n_step-1):
+            for i in range(self.n_step - 1):
                 si, ai, ri, si_, done = self.nstep_memory[i]
-                R += ri * self.gamma ** (i+1)
+                R += ri * self.gamma ** (i + 1)
                 if done:
                     break
 
@@ -81,3 +86,30 @@ class NStepsReplayMemory(ReplayMemory):
         while len(self.nstep_memory) >= self.n_step or (self.nstep_memory and self.nstep_memory[-1][4]):
             nstep_transition = self._process_n_step_memory()
             super().push(*nstep_transition)
+
+
+def episode_rollout(env, agent):
+    total_reward = 0
+
+    # num_actions = env.action_space.n
+    num_actions = env.num_actions()
+
+    act_dist = np.zeros(num_actions)
+
+    state = env.reset()
+    terminated = False
+    steps = 0
+    while not terminated:
+        steps += 1
+        # env.render()
+        action = agent.decide(state)
+        dec_1hot = np.zeros(num_actions)
+        dec_1hot[action] = 1
+        act_dist += dec_1hot
+        new_state, reward, terminated, info = env.step(action)
+        reward = agent.evaluate_reward(reward)
+        total_reward += reward
+        agent.add_experience(state, dec_1hot, reward, new_state, terminated)
+        state = new_state
+
+    return steps, total_reward, act_dist

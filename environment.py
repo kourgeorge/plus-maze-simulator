@@ -27,6 +27,13 @@ class PlusMaze:
             return self._state, outcome, 1, None
         return self._state, config.RewardType.NONE, 1, None
 
+    # def step(self, action):
+    #     # returns reward, new state, done
+    #     self._state = np.asarray([-1, -1, -1, -1, -1, -1, -1, -1])
+    #
+    #     reward = 1 if action == 0 else 0
+    #     return self._state, reward, True, None
+
     def state(self):
         # Odor Arm 1, Light Arm 1,Odor Arm 2, Light Arm 2,Odor Arm 3, Light Arm 3,Odor Arm 4, Light Arm 4
         return self._state
@@ -45,10 +52,11 @@ class PlusMaze:
 
     @staticmethod
     def random_state():
-        arm1O = random.choice([-1, 1])
-        arm1L = random.choice([-1, 1])
+        arm1O = random.choice([1, 2])
+        arm1L = random.choice([1, 2])
 
-        arm3O = random.choice([-1, 1])
-        arm3L = random.choice([-1, 1])
+        # use the same combination for arms 3 and arms 4. select rnadomly.
+        arm3O = random.choice([1, 2])
+        arm3L = random.choice([1, 2])
 
-        return np.asarray([arm1O, arm1L, -arm1O, -arm1L, arm3O, arm3L, -arm3O, -arm3L])
+        return np.asarray([arm1O, arm1L, 3-arm1O, 3-arm1L, arm3O, arm3L, 3-arm3O, 3-arm3L])
