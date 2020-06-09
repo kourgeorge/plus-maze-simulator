@@ -1,6 +1,3 @@
-
-from environment import PlusMaze
-from collections import deque
 import config
 import utils
 

@@ -26,12 +26,13 @@ class SimpleBrain():
         self.num_optimizations += 1
 
         minibatch = memory.sample(minibatch_size)
-        #minibatch = memory.last(minibatch_size)
+        # minibatch = memory.last(minibatch_size)
 
         # states_q_value = [self._qvalue[state.tostring()] for state in state_batch]
         # state_action_values =[utils.dot_lists(states_q_value[i], action_batch[i]) for i in range(minibatch_size)]
         # Compute V(s_{t+1}) for all next states.
 
+        loss = 0
         for i in range(minibatch_size):
             state = minibatch[i][0]
             action = np.argmax(minibatch[i][1])
@@ -46,3 +47,6 @@ class SimpleBrain():
 
             self._qvalue[state.tostring()][action] = (1 - self._learning_rate) * current_action_value + \
                                                      self._learning_rate * reward
+            loss += (current_action_value - reward) ** 2
+
+        return loss/minibatch_size
