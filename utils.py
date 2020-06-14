@@ -1,6 +1,11 @@
 import numpy as np
 import random
 from collections import deque
+import config
+
+
+class Object(object):
+    pass
 
 
 def epsilon_greedy(eps, dist):
@@ -50,7 +55,7 @@ class ReplayMemory:
             file.write(data)
 
     def last(self, batch_size):
-        return self.memory[:batch_size]
+        return self.memory[-batch_size:]
 
     def __len__(self):
         return len(self.memory)
@@ -71,15 +76,15 @@ class NStepsReplayMemory(ReplayMemory):
         self.nstep_memory = deque()
 
     def _process_n_step_memory(self):
-        s_mem, a_mem, R, si_, done = self.nstep_memory.popleft()
+        s_mem, a_mem, R, si_, done, info = self.nstep_memory.popleft()
         if not done:
             for i in range(self.n_step - 1):
-                si, ai, ri, si_, done = self.nstep_memory[i]
+                si, ai, ri, si_, done, info = self.nstep_memory[i]
                 R += ri * self.gamma ** (i + 1)
                 if done:
                     break
 
-        return [s_mem, a_mem, R, si_, done]
+        return [s_mem, a_mem, R, si_, done, info]
 
     def push(self, *transition):
         self.nstep_memory.append(transition)
@@ -109,7 +114,24 @@ def episode_rollout(env, agent):
         new_state, reward, terminated, info = env.step(action)
         reward = agent.evaluate_reward(reward)
         total_reward += reward
-        agent.add_experience(state, dec_1hot, reward, new_state, terminated)
+        agent.add_experience(state, dec_1hot, reward, new_state, terminated, info)
         state = new_state
 
     return steps, total_reward, act_dist
+
+
+def create_report(experience: ReplayMemory, last):
+    if last == -1:
+        pass
+    last_exp = experience.last(last)
+    actions = [data[1] for data in last_exp]
+    rewards = [data[2] for data in last_exp]
+    infos = [data[5] for data in last_exp]
+
+    report_dict = Object()
+    report_dict.action_1hot = actions
+    report_dict.action = np.argmax(actions, axis=1)
+    report_dict.reward = rewards
+    report_dict.arm_type_water = [1 if action < 2 else 0 for action in report_dict.action]
+    report_dict.correct = [1 if info.outcome != config.RewardType.NONE else 0 for info in infos]
+    return report_dict

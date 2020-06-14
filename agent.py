@@ -6,8 +6,8 @@ class Agent:
     def __init__(self, brain, motivation=config.RewardType.WATER, motivated_reward_value=1, non_motivated_reward_value=0.3):
 
         self._brain = brain
-        self._memory_size = 1024
-        self._memory = utils.NStepsReplayMemory(self._memory_size, 1, 0.99)
+        self._memory_size = 10240
+        self._memory = utils.ReplayMemory(self._memory_size)
         self._motivation = motivation
         self._motivated_reward_value = motivated_reward_value
         self._non_motivated_reward_value = non_motivated_reward_value
@@ -35,3 +35,6 @@ class Agent:
 
     def set_motivation(self, motivation):
         self._motivation = motivation
+
+    def get_memory(self):
+        return self._memory
