@@ -2,7 +2,7 @@ import numpy as np
 import utils
 
 
-class SimpleBrain():
+class TableDQNBrain():
     BATCH_SIZE = 10
 
     def __init__(self, num_actions, reward_discount=0, learning_rate=0.01):
@@ -20,7 +20,7 @@ class SimpleBrain():
         return utils.softmax(state_actions_value)
 
     def train(self, memory):
-        minibatch_size = min(SimpleBrain.BATCH_SIZE, len(memory))
+        minibatch_size = min(TableDQNBrain.BATCH_SIZE, len(memory))
         if minibatch_size == 0:
             return
         self.num_optimizations += 1

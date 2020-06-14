@@ -4,7 +4,7 @@ import gym
 import numpy as np
 import config
 from braindqntorch import BrainDQN
-from simple_brain import SimpleBrain
+from table_dqn_brain import TableDQNBrain
 from brainddpg import DDPBrain
 import utils
 
@@ -25,9 +25,9 @@ if __name__ == '__main__':
 
     # brain = BrainDQN(observation_size=observation_size, num_actions=num_actions, reward_discount=0, learning_rate=1e-4)
 
-    brain = SimpleBrain(num_actions=num_actions, reward_discount=0, learning_rate=config.BASE_LEARNING_RATE)
+    #brain = SimpleBrain(num_actions=num_actions, reward_discount=0, learning_rate=config.BASE_LEARNING_RATE)
 
-    # brain = DDPBrain(observation_size,num_actions)
+    brain = DDPBrain(observation_size,num_actions)
     agent = Agent(brain, motivation=config.RewardType.WATER, motivated_reward_value=1, non_motivated_reward_value=0.3)
 
     stage = 1
