@@ -58,9 +58,9 @@ class BrainPG(AbstractBrain):
         # Optimize the model
         self.optimizer.zero_grad()
         loss.backward()
-        assert not has_err(self.policy.l2.weight.grad)
-        assert not has_err(self.policy.l1.weight.grad)
-        #torch.nn.utils.clip_grad_norm_(self.policy.parameters(), max_norm=1)
+        #assert not has_err(self.policy.l2.weight.grad)
+        #assert not has_err(self.policy.l1.weight.grad)
+        torch.nn.utils.clip_grad_norm_(self.policy.parameters(), max_norm=1)
         # for param in self.policy_net.parameters():
         #     param.grad.data.clamp_(-1, 1)
         self.optimizer.step()
@@ -85,12 +85,10 @@ class Policy(nn.Module):
         self.model = torch.nn.Sequential(
             self.l1,
             nn.Dropout(p=0.6),
-            nn.ReLU(),
+            nn.Sigmoid(),
             self.l2,
             nn.Softmax(dim=-1)
         )
-
-        self
 
     def forward(self, x):
         return self.model(x)

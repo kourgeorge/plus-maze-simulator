@@ -11,9 +11,9 @@ class PlusMaze:
 
         self._state = None
         self._relevant_cue = relevant_cue
-        self._correct_cue_value = -10
-        self._odor_options = [-10, 10]
-        self._light_options = [-10, 10]
+        self._correct_cue_value = -1
+        self._odor_options = [-1, 1]
+        self._light_options = [-1, 1]
         self.stage = 1
 
     def reset(self):

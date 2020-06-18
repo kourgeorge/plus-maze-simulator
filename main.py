@@ -25,8 +25,8 @@ if __name__ == '__main__':
     num_actions = env.num_actions()
     observation_size = env.state_shape()
 
-    env.set_odor_options([-3, 3])
-    env.set_correct_cue_value(-3)
+    env.set_odor_options([-1, 1])
+    env.set_correct_cue_value(-1)
 
     # brain = BrainDQN(observation_size=observation_size, num_actions=num_actions, reward_discount=0, learning_rate=1e-4)
     # brain = TableDQNBrain(num_actions=num_actions, reward_discount=0, learning_rate=config.BASE_LEARNING_RATE)
@@ -38,6 +38,7 @@ if __name__ == '__main__':
     trial = 0
     act_dist = np.zeros(num_actions)
     loss_acc = 0
+    print("Stage 1: Baseline - Water Motivated, odor relevant. (Odors: {}, Correct: {})".format(env._odor_options, env._correct_cue_value))
     while True:
         trial += 1
         steps, total_reward, act_dist_episode = utils.episode_rollout(env, agent)
@@ -48,13 +49,10 @@ if __name__ == '__main__':
             report = utils.create_report(agent.get_memory(), reporting_interval)
             print(
                 'Trial: {}, Action Dist:{}, Corr.:{}, Avg. Rew.:{}, loss={};'.format(trial,
-                                                                                     np.mean(report.action_1hot,
-                                                                                             axis=0),
-                                                                                     np.mean(report.correct),
-                                                                                     round(np.mean(report.reward), 2),
-                                                                                     round(
-                                                                                         loss_acc / reporting_interval,
-                                                                                         2)), end='\t')
+                                np.mean(report.action_1hot, axis=0),
+                                np.mean(report.correct),
+                                round(np.mean(report.reward), 2),
+                                round(loss_acc / reporting_interval, 2)), end='\t')
 
             water_preference = round(np.sum(report.arm_type_water) / len(report.arm_type_water), 2)
             water_correct_percent = round(
@@ -68,7 +66,7 @@ if __name__ == '__main__':
                                                food_correct_percent))
             # print('Trial: {}, Reward:{}'.format(trial, avg_reward))
 
-            current_criterion = np.mean(report.reward)
+            current_criterion = np.mean(report.correct)
             if env.stage == 1 and current_criterion > success_criterion:
                 env.set_odor_options([-2, 2])
                 env.set_correct_cue_value(2)
@@ -84,7 +82,7 @@ if __name__ == '__main__':
                 print("Stage 4: Extra-dimensional Shift (Light)")
                 agent.set_motivation(config.RewardType.WATER)
                 env.set_relevant_cue(config.CueType.LIGHT)
-                env.set_correct_cue_value(10)
+                env.set_correct_cue_value(1)
                 env.stage += 1
             elif env.stage == 4 and current_criterion > success_criterion:
                 break
