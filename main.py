@@ -10,9 +10,10 @@ from brainpg import BrainPG
 import utils
 
 reporting_interval = 100
+#np.seterr(all='raise')
 
 if __name__ == '__main__':
-    success_criterion = 0.9
+    success_criterion = 0.8
     ############ GYM env %%%%%%%%%%%%%%%%%%%%%%%%
     # env = gym.make('MountainCar-v0')
     # num_actions = env.action_space.n
@@ -28,13 +29,12 @@ if __name__ == '__main__':
     env.set_correct_cue_value(-3)
 
     # brain = BrainDQN(observation_size=observation_size, num_actions=num_actions, reward_discount=0, learning_rate=1e-4)
-    #brain = TableDQNBrain(num_actions=num_actions, reward_discount=0, learning_rate=config.BASE_LEARNING_RATE)
+    # brain = TableDQNBrain(num_actions=num_actions, reward_discount=0, learning_rate=config.BASE_LEARNING_RATE)
 
     brain = BrainPG(observation_size, num_actions, reward_discount=0, learning_rate=config.BASE_LEARNING_RATE)
     # brain = DDPBrain(observation_size, num_actions)
-    agent = Agent(brain, motivation=config.RewardType.WATER, motivated_reward_value=1, non_motivated_reward_value=0.3)
+    agent = Agent(brain, motivation=config.RewardType.WATER, motivated_reward_value=1, non_motivated_reward_value=0.1)
 
-    stage = 1
     trial = 0
     act_dist = np.zeros(num_actions)
     loss_acc = 0
@@ -47,22 +47,25 @@ if __name__ == '__main__':
         if trial % reporting_interval == 0:
             report = utils.create_report(agent.get_memory(), reporting_interval)
             print(
-                'Trial: {}, Action Dist:{}, Correct:{}, Reward:{}, loss={}'.format(trial,
-                                                                                   np.mean(report.action_1hot, axis=0),
-                                                                                   np.mean(report.correct),
-                                                                                   round(np.mean(report.reward), 2),
-                                                                                   round(loss_acc / reporting_interval,
+                'Trial: {}, Action Dist:{}, Corr.:{}, Avg. Rew.:{}, loss={};'.format(trial,
+                                                                                     np.mean(report.action_1hot,
+                                                                                             axis=0),
+                                                                                     np.mean(report.correct),
+                                                                                     round(np.mean(report.reward), 2),
+                                                                                     round(
+                                                                                         loss_acc / reporting_interval,
                                                                                          2)), end='\t')
 
-            water_preference = np.sum(report.arm_type_water) / len(report.arm_type_water)
-            water_correct_percent = np.sum(np.logical_and(report.arm_type_water, report.correct)) / np.sum(
-                report.arm_type_water)
-            food_correct_percent = np.sum(
-                np.logical_and(np.logical_not(report.arm_type_water), report.correct)) / np.sum(
-                np.logical_not(report.arm_type_water))
+            water_preference = round(np.sum(report.arm_type_water) / len(report.arm_type_water), 2)
+            water_correct_percent = round(
+                np.sum(np.logical_and(report.arm_type_water, report.correct)) /
+                np.sum(report.arm_type_water), 2)
+            food_correct_percent = round(
+                np.sum(np.logical_and(np.logical_not(report.arm_type_water), report.correct)) /
+                np.sum(np.logical_not(report.arm_type_water)), 2)
             print(
-                'Water preference:{} Water Correct: {}. Food Correct:{}'.format(water_preference, water_correct_percent,
-                                                                                food_correct_percent))
+                'WPI:{}, WC: {}, FC:{}'.format(water_preference, water_correct_percent,
+                                               food_correct_percent))
             # print('Trial: {}, Reward:{}'.format(trial, avg_reward))
 
             current_criterion = np.mean(report.reward)
@@ -71,7 +74,7 @@ if __name__ == '__main__':
                 env.set_correct_cue_value(2)
                 env.stage += 1
 
-                print("Stage {}: Inter-dimensional shift (Odors: {}. Correct {})".format(stage, env._odor_options,
+                print("Stage {}: Inter-dimensional shift (Odors: {}. Correct {})".format(env.stage, env._odor_options,
                                                                                          env._correct_cue_value))
             elif env.stage == 2 and current_criterion > success_criterion:
                 print("Stage 3: Transitioning to food Motivation")
@@ -79,8 +82,9 @@ if __name__ == '__main__':
                 env.stage += 1
             elif env.stage == 3 and current_criterion > success_criterion:
                 print("Stage 4: Extra-dimensional Shift (Light)")
+                agent.set_motivation(config.RewardType.WATER)
                 env.set_relevant_cue(config.CueType.LIGHT)
-                env.set_correct_cue_value(0)
+                env.set_correct_cue_value(10)
                 env.stage += 1
             elif env.stage == 4 and current_criterion > success_criterion:
                 break

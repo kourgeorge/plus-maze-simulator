@@ -2,6 +2,7 @@ import numpy as np
 import random
 from collections import deque
 import config
+import torch
 
 
 class Object(object):
@@ -14,8 +15,19 @@ def epsilon_greedy(eps, dist):
         selection = np.random.randint(low=0, high=len(dist))
     else:
         selection = np.argmax(dist)
-
     return selection
+
+
+def dist_selection(dist):
+    # dist = softmax(dist)
+    # select_prob = np.random.choice(dist, p=dist)
+    # selection = np.argmax(dist == select_prob)
+    if sum(dist) != 1:
+        dist[0] = dist[0] + (1 - sum(dist))
+    action = np.argmax(np.random.multinomial(1, dist))
+
+    return action
+
 
 def softmax(x, temprature=1):
     """
@@ -30,8 +42,10 @@ def softmax(x, temprature=1):
         raise Exception('Inf in softmax')
     return ex_x / ex_x.sum(0)
 
+
 def dot_lists(V1, V2):
     return sum([x * y for x, y in zip(V1, V2)])
+
 
 class ReplayMemory:
 
