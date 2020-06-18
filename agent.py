@@ -13,14 +13,10 @@ class Agent:
         self._non_motivated_reward_value = non_motivated_reward_value
 
     def decide(self, state):
-        eps = config.BASE_EPSILON
-        brain_actions_prob = self._brain.think(state)
-        # action_prob = utils.softmax(brain_actions_prob)
-        decision = utils.epsilon_greedy(eps, brain_actions_prob)
-
+        decision = self._brain.think(state)
         # action_prob = utils.normalize_dist((1-eps)*self.fitrah() + eps*brain_actions_prob)
-        # decision = utils.epsilon_greedy(0, action_prob)
-        return decision
+        action = utils.epsilon_greedy(config.BASE_EPSILON, decision)
+        return action
 
     def evaluate_reward(self, reward_type):
         if reward_type == config.RewardType.NONE:

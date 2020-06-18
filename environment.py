@@ -5,15 +5,15 @@ import utils
 
 
 class PlusMaze:
-    def __init__(self, relevant_cue: config.CueType, correct_value):
+    def __init__(self, relevant_cue: config.CueType):
         # relevant_cue: 0 is odor, 1 is light
         # correct_value: 1/-1 the identity of the correct cue
 
         self._state = None
         self._relevant_cue = relevant_cue
-        self._correct_cue_value = correct_value
-        self._odor_options = [0, 1]
-        self._light_options = [0, 1]
+        self._correct_cue_value = -1
+        self._odor_options = [-1, 1]
+        self._light_options = [-1, 1]
         self.stage = 1
 
     def reset(self):
