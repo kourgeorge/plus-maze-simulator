@@ -10,7 +10,7 @@ from brainpg import BrainPG
 import utils
 from Dashboard import Dashboard
 from Animation import Animation
-
+from Stats import Stats
 
 reporting_interval = 100
 if __name__ == '__main__':
@@ -27,9 +27,6 @@ if __name__ == '__main__':
     num_actions = env.num_actions()
     observation_size = env.state_shape()
 
-    # env.set_odor_options([-1, 1])
-    # env.set_correct_cue_value(-1)
-
     # brain = BrainDQN(observation_size=observation_size, num_actions=num_actions, reward_discount=0, learning_rate=1e-4)
     # brain = TableDQNBrain(num_actions=num_actions, reward_discount=0, learning_rate=config.BASE_LEARNING_RATE)
 
@@ -37,8 +34,10 @@ if __name__ == '__main__':
     # brain = DDPBrain(observation_size, num_actions)
     agent = Agent(brain, motivation=config.RewardType.WATER, motivated_reward_value=1, non_motivated_reward_value=0.3)
 
+    stats = Stats()
     dash = Dashboard(brain)
     anim = Animation(dash.get_fig(), "result")
+
     trial = 0
     act_dist = np.zeros(num_actions)
     loss_acc = 0
@@ -52,30 +51,21 @@ if __name__ == '__main__':
         loss_acc += loss
 
         if trial % reporting_interval == 0:
-            report = utils.create_report(agent.get_memory(), reporting_interval)
-            print(
-                'Trial: {}, Action Dist:{}, Corr.:{}, Avg. Rew.:{}, loss={};'.format(trial,
-                                                                                     np.mean(report.action_1hot,
-                                                                                             axis=0),
-                                                                                     np.mean(report.correct),
-                                                                                     round(np.mean(report.reward), 2),
-                                                                                     round(
-                                                                                         loss_acc / reporting_interval,
-                                                                                         2)), end='\t')
 
-            water_preference = round(np.sum(report.arm_type_water) / len(report.arm_type_water), 2)
-            water_correct_percent = round(
-                np.sum(np.logical_and(report.arm_type_water, report.correct)) /
-                np.sum(report.arm_type_water), 2)
-            food_correct_percent = round(
-                np.sum(np.logical_and(np.logical_not(report.arm_type_water), report.correct)) /
-                np.sum(np.logical_not(report.arm_type_water)), 2)
+            report = utils.create_report(agent.get_memory(), reporting_interval)
+            epoch_stats_df = stats.update(trial, report)
             print(
-                'WPI:{}, WC: {}, FC:{}'.format(water_preference, water_correct_percent,
-                                               food_correct_percent))
+                'Trial: {}, Action Dist:{}, Corr.:{}, Avg. Rew.:{}, loss={};'.format(trial, epoch_stats_df['Trial'].to_numpy()[-1], epoch_stats_df['Correct'].to_numpy()[-1]
+                                                                                     , epoch_stats_df['Reward'].to_numpy()[-1], round(
+                        loss_acc / reporting_interval,
+                        2)), end='\t')
+
+            print(
+                'WPI:{}, WC: {}, FC:{}'.format(epoch_stats_df['WaterPreference'].to_numpy()[-1], epoch_stats_df['WaterCorrect'].to_numpy()[-1],
+                                               epoch_stats_df['FoodCorrect'].to_numpy()[-1]))
 
             # visualize
-            dash.update(trial, report, env, brain)
+            dash.update(epoch_stats_df, env, brain)
             anim.add_frame()
 
             current_criterion = np.mean(report.reward)
@@ -106,7 +96,3 @@ if __name__ == '__main__':
                 break
 
             loss_acc = 0
-
-
-
-

@@ -148,4 +148,5 @@ def create_report(experience: ReplayMemory, last):
     report_dict.reward = rewards
     report_dict.arm_type_water = [1 if action < 2 else 0 for action in report_dict.action]
     report_dict.correct = [1 if info.outcome != config.RewardType.NONE else 0 for info in infos]
+    report_dict.stage = [info.stage for info in infos]
     return report_dict

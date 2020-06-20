@@ -10,6 +10,3 @@ class Animation:
 
     def add_frame(self):
         self.writer.grab_frame()
-
-    def save(self):
-        self.writer.save('im.mp4')
