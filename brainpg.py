@@ -19,7 +19,7 @@ def has_err(x):
 
 
 class BrainPG(AbstractBrain):
-    BATCH_SIZE = 10
+    BATCH_SIZE = 20
 
     def __init__(self, observation_size, num_actions, reward_discount, learning_rate=0.01):
         super(BrainPG, self).__init__(observation_size, num_actions)
@@ -60,6 +60,7 @@ class BrainPG(AbstractBrain):
         loss.backward()
         #assert not has_err(self.policy.l2.weight.grad)
         #assert not has_err(self.policy.l1.weight.grad)
+
         torch.nn.utils.clip_grad_norm_(self.policy.parameters(), max_norm=1)
         # for param in self.policy_net.parameters():
         #     param.grad.data.clamp_(-1, 1)
@@ -80,8 +81,8 @@ class BrainPG(AbstractBrain):
 class Policy(nn.Module):
     def __init__(self, num_channels, num_actions):
         super(Policy, self).__init__()
-        self.l1 = nn.Linear(num_channels, 32, bias=False)
-        self.l2 = nn.Linear(32, num_actions, bias=False)
+        self.l1 = nn.Linear(num_channels, 16, bias=False)
+        self.l2 = nn.Linear(16, num_actions, bias=False)
         self.model = torch.nn.Sequential(
             self.l1,
             nn.Dropout(p=0.6),

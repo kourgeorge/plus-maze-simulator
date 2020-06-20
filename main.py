@@ -37,7 +37,7 @@ if __name__ == '__main__':
 
     brain = BrainPG(observation_size, num_actions, reward_discount=0, learning_rate=config.BASE_LEARNING_RATE)
     # brain = DDPBrain(observation_size, num_actions)
-    agent = Agent(brain, motivation=config.RewardType.WATER, motivated_reward_value=1, non_motivated_reward_value=0.1)
+    agent = Agent(brain, motivation=config.RewardType.WATER, motivated_reward_value=1, non_motivated_reward_value=0.3)
 
     trial = 0
     act_dist = np.zeros(num_actions)
@@ -101,23 +101,27 @@ if __name__ == '__main__':
 
                 current_criterion = np.mean(report.reward)
                 if env.stage == 1 and current_criterion > success_criterion:
-                    env.set_odor_options([-2, 2])
-                    env.set_correct_cue_value(2)
+                    #env.set_odor_options([[-2],[2]])
+                    env.set_odor_options([[0, 0], [0, 1]])
+                    #env.set_correct_cue_value([2])
+                    env.set_correct_cue_value([0,1])
                     env.stage += 1
                     print("Stage {}: Inter-dimensional shift (Odors: {}. Correct {})".format(env.stage, env._odor_options,
                                                                                              env._correct_cue_value))
 
-
+                    brain.policy.l1.reset_parameters()
 
                 elif env.stage == 2 and current_criterion > success_criterion:
                     print("Stage 3: Transitioning to food Motivation")
                     agent.set_motivation(config.RewardType.FOOD)
                     env.stage += 1
+                    brain.policy.l2.reset_parameters()
                 elif env.stage == 3 and current_criterion > success_criterion:
                     print("Stage 4: Extra-dimensional Shift (Light)")
                     agent.set_motivation(config.RewardType.WATER)
                     env.set_relevant_cue(config.CueType.LIGHT)
-                    env.set_correct_cue_value(1)
+                    #env.set_correct_cue_value([-1])
+                    env.set_correct_cue_value([1, 0])
                     env.stage += 1
                 elif env.stage == 4 and current_criterion > success_criterion:
                     break
