@@ -7,6 +7,7 @@ from braindqntorch import BrainDQN
 from table_dqn_brain import TableDQNBrain
 from brainddpg import DDPBrain
 from brainpg import BrainPG
+from brainac import BrainAC
 import utils
 from Dashboard import Dashboard
 from Animation import Animation
@@ -14,7 +15,6 @@ from Stats import Stats
 
 reporting_interval = 100
 if __name__ == '__main__':
-    success_criterion = 0.8
 
     ############ GYM env %%%%%%%%%%%%%%%%%%%%%%%%
     # env = gym.make('MountainCar-v0')
@@ -55,8 +55,11 @@ if __name__ == '__main__':
             report = utils.create_report(agent.get_memory(), reporting_interval)
             epoch_stats_df = stats.update(trial, report)
             print(
-                'Trial: {}, Action Dist:{}, Corr.:{}, Avg. Rew.:{}, loss={};'.format(trial, epoch_stats_df['Trial'].to_numpy()[-1], epoch_stats_df['Correct'].to_numpy()[-1]
-                                                                                     , epoch_stats_df['Reward'].to_numpy()[-1], round(
+                'Trial: {}, Action Dist:{}, Corr.:{}, Rew.:{}, loss={};'.format(epoch_stats_df['Trial'].to_numpy()[-1],
+                                                                                     epoch_stats_df['ActionDist'].to_numpy()[-1],
+                                                                                     epoch_stats_df['Correct'].to_numpy()[-1],
+                                                                                     epoch_stats_df['Reward'].to_numpy()[-1],
+                                                                                     round(
                         loss_acc / reporting_interval,
                         2)), end='\t')
 
@@ -69,30 +72,30 @@ if __name__ == '__main__':
             anim.add_frame()
 
             current_criterion = np.mean(report.reward)
-            if env.stage == 1 and current_criterion > success_criterion:
-                # env.set_odor_options([[-2],[2]])
-                env.set_odor_options([[0, 0], [0, 1]])
-                # env.set_correct_cue_value([2])
-                env.set_correct_cue_value([0, 1])
+            if env.stage == 1 and current_criterion > config.SUCCESS_CRITERION_THRESHOLD:
+                env.set_odor_options([[-2],[2]])
+                #env.set_odor_options([[0, 0], [0, 1]])
+                env.set_correct_cue_value([2])
+                #env.set_correct_cue_value([0, 1])
                 env.stage += 1
                 print("Stage {}: Inter-dimensional shift (Odors: {}. Correct {})".format(env.stage, env._odor_options,
                                                                                          env._correct_cue_value))
 
-                brain.policy.l1.reset_parameters()
+                #brain.policy.l2.reset_parameters()
 
-            elif env.stage == 2 and current_criterion > success_criterion:
+            elif env.stage == 2 and current_criterion > config.SUCCESS_CRITERION_THRESHOLD:
                 print("Stage 3: Transitioning to food Motivation")
                 agent.set_motivation(config.RewardType.FOOD)
                 env.stage += 1
-                brain.policy.l2.reset_parameters()
-            elif env.stage == 3 and current_criterion > success_criterion:
+           #     brain.policy.l2.reset_parameters()
+            elif env.stage == 3 and current_criterion > config.SUCCESS_CRITERION_THRESHOLD:
                 print("Stage 4: Extra-dimensional Shift (Light)")
                 agent.set_motivation(config.RewardType.WATER)
                 env.set_relevant_cue(config.CueType.LIGHT)
-                # env.set_correct_cue_value([-1])
-                env.set_correct_cue_value([1, 0])
+                #env.set_odor_options([[3], [-3]])
+                env.set_correct_cue_value([-1])
                 env.stage += 1
-            elif env.stage == 4 and current_criterion > success_criterion:
+            elif env.stage == 4 and current_criterion > config.SUCCESS_CRITERION_THRESHOLD:
                 break
 
             loss_acc = 0

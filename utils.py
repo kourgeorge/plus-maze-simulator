@@ -14,6 +14,7 @@ def epsilon_greedy(eps, dist):
     if p < eps:
         selection = np.random.randint(low=0, high=len(dist))
     else:
+        #selection = dist_selection(dist)
         selection = np.argmax(dist)
     return selection
 

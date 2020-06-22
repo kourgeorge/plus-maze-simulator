@@ -3,6 +3,7 @@ import numpy as np
 import config
 import utils
 
+#np.random.seed(seed=1234)
 
 class PlusMaze:
     def __init__(self, relevant_cue: config.CueType):
@@ -11,9 +12,9 @@ class PlusMaze:
 
         self._state = None
         self._relevant_cue = relevant_cue
-        self._correct_cue_value = [1, 0]
-        self._odor_options = [[1, 0], [1, 1]]
-        self._light_options = [[0, 1], [1, 0]]
+        self._correct_cue_value = [-1] #[1, 0]
+        self._odor_options = [[-1],[1]] #[[1, 0], [1, 1]]
+        self._light_options = [[-1], [1]]#[[0, 1], [1, 0]]
         self.stage = 1
 
     def reset(self):

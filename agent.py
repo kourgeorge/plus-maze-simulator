@@ -16,7 +16,7 @@ class Agent:
         decision = self._brain.think(state)
         # action_prob = utils.normalize_dist((1-eps)*self.fitrah() + eps*brain_actions_prob)
         #action = utils.dist_selection(decision)
-        action = utils.epsilon_greedy(config.BASE_EPSILON, decision)
+        action = utils.epsilon_greedy(config.EXPLORATION_EPSILON, decision)
         return action
 
     def evaluate_reward(self, reward_type):
