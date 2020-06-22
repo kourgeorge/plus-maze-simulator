@@ -9,7 +9,7 @@ import torch.nn.functional as F
 from abstractbrain import AbstractBrain
 import os.path
 
-torch.manual_seed(0)
+#torch.manual_seed(0)
 
 device = "cpu"
 
@@ -58,8 +58,8 @@ class BrainPG(AbstractBrain):
         # Optimize the model
         self.optimizer.zero_grad()
         loss.backward()
-        #assert not has_err(self.policy.l2.weight.grad)
-        #assert not has_err(self.policy.l1.weight.grad)
+        #assert not has_err(self.policy.affine.weight.grad)
+        #assert not has_err(self.policy.controller.weight.grad)
 
         torch.nn.utils.clip_grad_norm_(self.policy.parameters(), max_norm=1)
         # for param in self.policy_net.parameters():
@@ -81,13 +81,13 @@ class BrainPG(AbstractBrain):
 class Policy(nn.Module):
     def __init__(self, num_channels, num_actions):
         super(Policy, self).__init__()
-        self.l1 = nn.Linear(num_channels, 16, bias=False)
-        self.l2 = nn.Linear(16, num_actions, bias=False)
+        self.affine = nn.Linear(num_channels, 16, bias=False)
+        self.controller = nn.Linear(16, num_actions, bias=False)
         self.model = torch.nn.Sequential(
-            self.l1,
+            self.affine,
             nn.Dropout(p=0.6),
             nn.Sigmoid(),
-            self.l2,
+            self.controller,
             nn.Softmax(dim=-1)
         )
 

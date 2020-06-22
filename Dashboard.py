@@ -9,10 +9,10 @@ class Dashboard:
         self.stage = 1
         self.fig = plt.figure(figsize=(9, 5), dpi=120, facecolor='w')
         self.textstr = "Stage:{}, Trial {}: Odors:{}, Lights:{}. CorrectCue: {}. Accuracy:{}, Reward: {}."
-        axis_l1 = self.fig.add_subplot(221)
-        axis_l2 = self.fig.add_subplot(222)
-        self.im1_obj = axis_l1.imshow(np.transpose(brain.policy.l1.weight.data.numpy()), cmap='RdBu', vmin=-2, vmax=2)
-        self.im2_obj = axis_l2.imshow(brain.policy.l2.weight.data.numpy(), cmap='RdBu', vmin=-2, vmax=2)
+        axis_l1 = self.fig.add_subplot(222)
+        axis_l2 = self.fig.add_subplot(221)
+        self.im1_obj = axis_l1.imshow(np.transpose(brain.policy.affine.weight.data.numpy()), cmap='RdBu', vmin=-2, vmax=2)
+        self.im2_obj = axis_l2.imshow(brain.policy.controller.weight.data.numpy(), cmap='RdBu', vmin=-2, vmax=2)
         props = dict(boxstyle='round', facecolor='wheat')
         self.figtxt = plt.figtext(0.1, 0.95, 'Start', fontsize=8, verticalalignment='top', bbox=props)
         self.fig.colorbar(self.im1_obj, ax=axis_l1)
@@ -20,16 +20,20 @@ class Dashboard:
 
         self._axes_graph = self.fig.add_subplot(212)
         self._axes_graph.set_ylabel('Percent')
-        self._line_correct, = self._axes_graph.plot([], [], 'o-', label='Correct')
-        self._line_reward, = self._axes_graph.plot([], [], 'o-', label='Reward', alpha=0.2)
-        self._line_water_correct, = self._axes_graph.plot([], [], 'o-', label='Water Correct')
-        self._line_food_correct, = self._axes_graph.plot([], [], 'o-', label='Food Reward')
+        self._line_correct, = self._axes_graph.plot([], [], 'g+-', label='Correct', alpha=0.2)
+        self._line_reward, = self._axes_graph.plot([], [], 'y-', label='Reward', alpha=0.2)
+        self._line_water_preference, = self._axes_graph.plot([], [], '^-', label='Water PI', alpha=0.2)
+        self._line_water_correct, = self._axes_graph.plot([], [], 'bo-', label='Water Correct')
+        self._line_food_correct, = self._axes_graph.plot([], [], 'ro-', label='Food Correct')
+
+
+
         self._axes_graph.set_ylim(0, 1)
 
         self._axes_graph.legend(
-            [self._line_correct, self._line_reward, self._line_water_correct, self._line_food_correct],
+            [self._line_correct, self._line_reward, self._line_water_correct, self._line_food_correct, self._line_water_preference],
             [self._line_correct.get_label(), self._line_reward.get_label(), self._line_water_correct.get_label(),
-             self._line_food_correct.get_label()], loc=0)
+             self._line_food_correct.get_label(),  self._line_water_preference.get_label()], loc=0)
 
  #       plt.show()
 
@@ -44,8 +48,8 @@ class Dashboard:
         # self.fig.canvas.flush_events()
 
         self.figtxt.set_text(textstr)
-        self.im1_obj.set_data(np.transpose(brain.policy.l1.weight.data.numpy()))
-        self.im2_obj.set_data(brain.policy.l2.weight.data.numpy())
+        self.im1_obj.set_data(np.transpose(brain.policy.affine.weight.data.numpy()))
+        self.im2_obj.set_data(brain.policy.controller.weight.data.numpy())
 
         self._line_correct.set_xdata(stats_df['Trial'])
         self._line_correct.set_ydata(stats_df['Correct'])
@@ -58,6 +62,10 @@ class Dashboard:
 
         self._line_food_correct.set_xdata(stats_df['Trial'])
         self._line_food_correct.set_ydata(stats_df['FoodCorrect'])
+
+        self._line_water_preference.set_xdata(stats_df['Trial'])
+        self._line_water_preference.set_ydata(stats_df['WaterPreference'])
+
 
         if self.stage < env.stage:
             self.stage = env.stage
