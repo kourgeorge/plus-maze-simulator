@@ -30,9 +30,8 @@ if __name__ == '__main__':
     # brain = BrainDQN(observation_size=observation_size, num_actions=num_actions, reward_discount=0, learning_rate=1e-4)
     # brain = TableDQNBrain(num_actions=num_actions, reward_discount=0, learning_rate=config.BASE_LEARNING_RATE)
 
-    brain = BrainPG(observation_size, num_actions, reward_discount=0, learning_rate=config.BASE_LEARNING_RATE)
-    # brain = DDPBrain(observation_size, num_actions)
-    agent = Agent(brain, motivation=config.RewardType.WATER, motivated_reward_value=1, non_motivated_reward_value=0.3)
+    brain = BrainAC(observation_size, num_actions, reward_discount=0, learning_rate=config.BASE_LEARNING_RATE)
+    agent = Agent(brain, motivation=config.RewardType.WATER, motivated_reward_value=config.MOTIVATED_REWARD, non_motivated_reward_value=config.NON_MOTIVATED_REWARD)
 
     stats = Stats()
     dash = Dashboard(brain)

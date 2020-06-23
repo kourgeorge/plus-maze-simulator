@@ -1,6 +1,5 @@
 __author__ = 'gkour'
 
-import random
 import numpy as np
 import torch
 import torch.nn as nn
@@ -8,6 +7,7 @@ import torch.optim as optim
 import torch.nn.functional as F
 from abstractbrain import AbstractBrain
 import os.path
+from torch.autograd import Variable
 
 #torch.manual_seed(0)
 
@@ -19,15 +19,16 @@ def has_err(x):
 
 
 class BrainAC(AbstractBrain):
-    BATCH_SIZE = 1
+    BATCH_SIZE = 20
 
     def __init__(self, observation_size, num_actions, reward_discount, learning_rate=0.01):
         super(BrainAC, self).__init__(observation_size, num_actions)
         self.policy = Policy(observation_size, num_actions).to(device)
-        self.optimizer = optim.Adam(self.policy.parameters(), lr=learning_rate)
+        self.optimizer_actor = optim.Adam(self.policy.actor.parameters(), lr=1e-4)
+        self.optimizer_critic = optim.Adam(self.policy.actor.parameters(), lr=5e-3)
         self.reward_discount = reward_discount
         self.num_optimizations = 0
-        print("Pytorch PG. Num parameters: " + str(self.num_trainable_parameters()))
+        print("Pytorch Acror Critic. Num parameters: " + str(self.num_trainable_parameters()))
 
     def think(self, obs):
         with torch.no_grad():
@@ -36,8 +37,8 @@ class BrainAC(AbstractBrain):
 
     def train(self, memory):
         minibatch_size = min(BrainAC.BATCH_SIZE, len(memory))
-        if minibatch_size == 0:
-            return
+        if minibatch_size < BrainAC.BATCH_SIZE:
+            return 0
         self.num_optimizations += 1
 
         minibatch = memory.last(minibatch_size)
@@ -47,23 +48,25 @@ class BrainAC(AbstractBrain):
         nextstate_batch = torch.from_numpy(np.stack([data[3] for data in minibatch])).float()
 
         # Scale rewards
-        # reward_std = 1 if torch.isnan(reward_batch.std()) else reward_batch.std()
-        # rewards = (reward_batch - reward_batch.mean()) / (reward_std  + np.finfo(np.float32).eps)
+        #reward_std = 1 if torch.isnan(reward_batch.std()) else reward_batch.std()
+        #rewards = (reward_batch - reward_batch.mean()) / (reward_std  + np.finfo(np.float32).eps)
 
         action_probs, state_value = self.policy(state_batch)
         log_prob_actions = torch.log(torch.max(action_probs.mul(action_batch), dim=1)[0])
 
         # Calculate critic loss
-        advantage = reward_batch - state_value.squeeze(1)
-        value_loss = F.smooth_l1_loss(state_value, reward_batch, reduction='mean')
+        advantage = reward_batch - Variable(state_value.squeeze(1))
+        critic_loss = nn.MSELoss()(state_value, reward_batch)
 
         # Calculate actor loss
-        loss = (torch.mean(torch.mul(log_prob_actions, reward_batch).mul(-1), -1))
+        actor_loss = (torch.mean(torch.mul(log_prob_actions, advantage).mul(-1), -1))
 
-        #loss += value_loss
+
+        loss = actor_loss + critic_loss
 
         # Optimize the model
-        self.optimizer.zero_grad()
+        self.optimizer_actor.zero_grad()
+        self.optimizer_critic.zero_grad()
         loss.backward()
         #assert not has_err(self.policy.l2.weight.grad)
         #assert not has_err(self.policy.l1.weight.grad)
@@ -71,7 +74,9 @@ class BrainAC(AbstractBrain):
         torch.nn.utils.clip_grad_norm_(self.policy.parameters(), max_norm=1)
         # for param in self.policy_net.parameters():
         #     param.grad.data.clamp_(-1, 1)
-        self.optimizer.step()
+        self.optimizer_actor.step()
+        self.optimizer_critic.step()
+
         return loss.item()
 
     def save_model(self, path):
@@ -90,7 +95,7 @@ class Policy(nn.Module):
         super(Policy, self).__init__()
         self.affine = nn.Linear(num_channels, 16, bias=False)
 
-        self.affine2 = nn.Linear(num_channels, 16, bias=False)
+        #self.affine2 = nn.Linear(num_channels, 16, bias=False)
         self.controller = nn.Linear(16, num_actions, bias=False)
         self.state_value = nn.Linear(16, 1, bias=False)
 
@@ -103,7 +108,7 @@ class Policy(nn.Module):
         )
 
         self.critic = torch.nn.Sequential(
-            self.affine2,
+            self.affine,
             nn.Dropout(p=0.6),
             nn.Sigmoid(),
             self.state_value
