@@ -9,14 +9,20 @@ class Dashboard:
         self.stage = 1
         self.fig = plt.figure(figsize=(9, 5), dpi=120, facecolor='w')
         self.textstr = "Stage:{}, Trial {}: Odors:{}, Lights:{}. CorrectCue: {}. Accuracy:{}, Reward: {}."
-        axis_l1 = self.fig.add_subplot(222)
-        axis_l2 = self.fig.add_subplot(221)
-        self.im1_obj = axis_l1.imshow(np.transpose(brain.policy.affine.weight.data.numpy()), cmap='RdBu', vmin=-2, vmax=2)
-        self.im2_obj = axis_l2.imshow(brain.policy.controller.weight.data.numpy(), cmap='RdBu', vmin=-2, vmax=2)
+        axis_affine = self.fig.add_subplot(222)
+        axis_actor = self.fig.add_subplot(421)
+        axis_critic = self.fig.add_subplot(423)
+        axis_affine.title.set_text('Features')
+        axis_actor.title.set_text('Actor')
+        axis_critic.title.set_text('Critic')
+        self.im1_obj = axis_affine.imshow(np.transpose(brain.policy.affine.weight.data.numpy()), cmap='RdBu', vmin=-2, vmax=2)
+        self.im2_obj = axis_actor.imshow(brain.policy.controller.weight.data.numpy(), cmap='RdBu', vmin=-2, vmax=2)
+        self.im3_obj = axis_critic.imshow(brain.policy.state_value.weight.data.numpy(), cmap='RdBu', vmin=-2, vmax=2)
+        axis_critic.get_yaxis().set_visible(False)
+
         props = dict(boxstyle='round', facecolor='wheat')
-        self.figtxt = plt.figtext(0.1, 0.95, 'Start', fontsize=8, verticalalignment='top', bbox=props)
-        self.fig.colorbar(self.im1_obj, ax=axis_l1)
-        self.fig.colorbar(self.im2_obj, ax=axis_l2)
+        self.figtxt = plt.figtext(0.2, 0.97, 'Start', fontsize=8, verticalalignment='top', bbox=props)
+        self.fig.colorbar(self.im1_obj, ax=axis_affine)
 
         self._axes_graph = self.fig.add_subplot(212)
         self._axes_graph.set_ylabel('Percent')
@@ -26,16 +32,13 @@ class Dashboard:
         self._line_water_correct, = self._axes_graph.plot([], [], 'bo-', label='Water Correct')
         self._line_food_correct, = self._axes_graph.plot([], [], 'ro-', label='Food Correct')
 
-
-
         self._axes_graph.set_ylim(0, 1)
 
         self._axes_graph.legend(
-            [self._line_correct, self._line_reward, self._line_water_correct, self._line_food_correct, self._line_water_preference],
+            [self._line_correct, self._line_reward, self._line_water_correct, self._line_food_correct,
+             self._line_water_preference],
             [self._line_correct.get_label(), self._line_reward.get_label(), self._line_water_correct.get_label(),
-             self._line_food_correct.get_label(),  self._line_water_preference.get_label()], loc=0)
-
- #       plt.show()
+             self._line_food_correct.get_label(), self._line_water_preference.get_label()], loc=0)
 
     def update(self, stats_df, env, brain):
         textstr = self.textstr.format(
@@ -44,12 +47,11 @@ class Dashboard:
             stats_df['Reward'].to_numpy()[-1]
         )
 
-        # self.fig.canvas.draw()
-        # self.fig.canvas.flush_events()
-
         self.figtxt.set_text(textstr)
         self.im1_obj.set_data(np.transpose(brain.policy.affine.weight.data.numpy()))
         self.im2_obj.set_data(brain.policy.controller.weight.data.numpy())
+        #self.im2_obj.set_data(np.vstack([brain.policy.controller.weight.data.numpy(), np.zeros([2,16]), brain.policy.state_value.weight.data.numpy()]))
+        self.im3_obj.set_data(brain.policy.state_value.weight.data.numpy())
 
         self._line_correct.set_xdata(stats_df['Trial'])
         self._line_correct.set_ydata(stats_df['Correct'])
@@ -66,10 +68,9 @@ class Dashboard:
         self._line_water_preference.set_xdata(stats_df['Trial'])
         self._line_water_preference.set_ydata(stats_df['WaterPreference'])
 
-
         if self.stage < env.stage:
             self.stage = env.stage
-            self._axes_graph.axvline(x=stats_df['Trial'].to_numpy()[-1]-50, alpha=0.5, dashes=(5, 2, 1, 2), lw=2)
+            self._axes_graph.axvline(x=stats_df['Trial'].to_numpy()[-1] - 50, alpha=0.5, dashes=(5, 2, 1, 2), lw=2)
 
         self._axes_graph.relim()
         self._axes_graph.autoscale_view()

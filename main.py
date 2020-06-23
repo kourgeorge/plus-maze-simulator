@@ -1,11 +1,9 @@
 from agent import Agent
 from environment import PlusMaze
-import gym
+
 import numpy as np
 import config
-from braindqntorch import BrainDQN
 from table_dqn_brain import TableDQNBrain
-from brainddpg import DDPBrain
 from brainpg import BrainPG
 from brainac import BrainAC
 import utils
@@ -17,6 +15,7 @@ reporting_interval = 100
 if __name__ == '__main__':
 
     ############ GYM env %%%%%%%%%%%%%%%%%%%%%%%%
+    # import gym
     # env = gym.make('MountainCar-v0')
     # num_actions = env.action_space.n
     # observation_size = env.observation_space.shape[0]
@@ -27,10 +26,13 @@ if __name__ == '__main__':
     num_actions = env.num_actions()
     observation_size = env.state_shape()
 
-    # brain = BrainDQN(observation_size=observation_size, num_actions=num_actions, reward_discount=0, learning_rate=1e-4)
+
+    #env.set_odor_options([[-2], [2]])
+    #env.set_correct_cue_value([2])
+
     # brain = TableDQNBrain(num_actions=num_actions, reward_discount=0, learning_rate=config.BASE_LEARNING_RATE)
 
-    brain = BrainAC(observation_size, num_actions, reward_discount=0, learning_rate=config.BASE_LEARNING_RATE)
+    brain = BrainAC(observation_size, num_actions, reward_discount=0, learning_rate=config.LEARNING_RATE)
     agent = Agent(brain, motivation=config.RewardType.WATER, motivated_reward_value=config.MOTIVATED_REWARD, non_motivated_reward_value=config.NON_MOTIVATED_REWARD)
 
     stats = Stats()
@@ -80,7 +82,7 @@ if __name__ == '__main__':
                 print("Stage {}: Inter-dimensional shift (Odors: {}. Correct {})".format(env.stage, env._odor_options,
                                                                                          env._correct_cue_value))
 
-                #brain.policy.l2.reset_parameters()
+                #brain.policy.controller.reset_parameters()
 
             elif env.stage == 2 and current_criterion > config.SUCCESS_CRITERION_THRESHOLD:
                 print("Stage 3: Transitioning to food Motivation")

@@ -24,8 +24,8 @@ class BrainAC(AbstractBrain):
     def __init__(self, observation_size, num_actions, reward_discount, learning_rate=0.01):
         super(BrainAC, self).__init__(observation_size, num_actions)
         self.policy = Policy(observation_size, num_actions).to(device)
-        self.optimizer_actor = optim.Adam(self.policy.actor.parameters(), lr=1e-4)
-        self.optimizer_critic = optim.Adam(self.policy.actor.parameters(), lr=5e-3)
+        self.optimizer_actor = optim.Adam(self.policy.actor.parameters(), lr=learning_rate)
+        self.optimizer_critic = optim.Adam(self.policy.critic.parameters(), lr=learning_rate/1000)
         self.reward_discount = reward_discount
         self.num_optimizations = 0
         print("Pytorch Acror Critic. Num parameters: " + str(self.num_trainable_parameters()))
@@ -55,14 +55,14 @@ class BrainAC(AbstractBrain):
         log_prob_actions = torch.log(torch.max(action_probs.mul(action_batch), dim=1)[0])
 
         # Calculate critic loss
-        advantage = reward_batch - Variable(state_value.squeeze(1))
-        critic_loss = nn.MSELoss()(state_value, reward_batch)
+        advantage = reward_batch - state_value.squeeze(1)
+        #critic_loss = nn.MSELoss()(state_value, advantage)
+        critic_loss = F.smooth_l1_loss(state_value, reward_batch, reduction='mean')
 
         # Calculate actor loss
         actor_loss = (torch.mean(torch.mul(log_prob_actions, advantage).mul(-1), -1))
 
-
-        loss = actor_loss + critic_loss
+        loss = torch.add(actor_loss, critic_loss)
 
         # Optimize the model
         self.optimizer_actor.zero_grad()
