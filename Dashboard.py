@@ -12,12 +12,12 @@ class Dashboard:
         axis_affine = self.fig.add_subplot(222)
         axis_actor = self.fig.add_subplot(421)
         axis_critic = self.fig.add_subplot(423)
-        axis_affine.title.set_text('Features')
+        axis_affine.title.set_text('Attention')
         axis_actor.title.set_text('Actor')
         axis_critic.title.set_text('Critic')
         self.im1_obj = axis_affine.imshow(np.transpose(brain.policy.affine.weight.data.numpy()), cmap='RdBu', vmin=-2, vmax=2)
         self.im2_obj = axis_actor.imshow(brain.policy.controller.weight.data.numpy(), cmap='RdBu', vmin=-2, vmax=2)
-        self.im3_obj = axis_critic.imshow(brain.policy.state_value.weight.data.numpy(), cmap='RdBu', vmin=-2, vmax=2)
+        #self.im3_obj = axis_critic.imshow(brain.policy.state_value.weight.data.numpy(), cmap='RdBu', vmin=-2, vmax=2)
         axis_critic.get_yaxis().set_visible(False)
 
         props = dict(boxstyle='round', facecolor='wheat')
@@ -51,7 +51,7 @@ class Dashboard:
         self.im1_obj.set_data(np.transpose(brain.policy.affine.weight.data.numpy()))
         self.im2_obj.set_data(brain.policy.controller.weight.data.numpy())
         #self.im2_obj.set_data(np.vstack([brain.policy.controller.weight.data.numpy(), np.zeros([2,16]), brain.policy.state_value.weight.data.numpy()]))
-        self.im3_obj.set_data(brain.policy.state_value.weight.data.numpy())
+        #self.im3_obj.set_data(brain.policy.state_value.weight.data.numpy())
 
         self._line_correct.set_xdata(stats_df['Trial'])
         self._line_correct.set_ydata(stats_df['Correct'])

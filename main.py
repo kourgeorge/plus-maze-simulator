@@ -32,7 +32,7 @@ if __name__ == '__main__':
 
     # brain = TableDQNBrain(num_actions=num_actions, reward_discount=0, learning_rate=config.BASE_LEARNING_RATE)
 
-    brain = BrainAC(observation_size, num_actions, reward_discount=0, learning_rate=config.LEARNING_RATE)
+    brain = BrainPG(observation_size, num_actions, reward_discount=0, learning_rate=config.LEARNING_RATE)
     agent = Agent(brain, motivation=config.RewardType.WATER, motivated_reward_value=config.MOTIVATED_REWARD, non_motivated_reward_value=config.NON_MOTIVATED_REWARD)
 
     stats = Stats()
@@ -74,15 +74,16 @@ if __name__ == '__main__':
 
             current_criterion = np.mean(report.reward)
             if env.stage == 1 and current_criterion > config.SUCCESS_CRITERION_THRESHOLD:
-                env.set_odor_options([[-2],[2]])
-                #env.set_odor_options([[0, 0], [0, 1]])
-                env.set_correct_cue_value([2])
-                #env.set_correct_cue_value([0, 1])
+                #env.set_odor_options([[-2],[2]])
+                env.set_odor_options([[0.6, 0.5], [0.1, 0.7]])
+                #env.set_correct_cue_value([2])
+                env.set_correct_cue_value([0.1, 0.7])
                 env.stage += 1
                 print("Stage {}: Inter-dimensional shift (Odors: {}. Correct {})".format(env.stage, env._odor_options,
                                                                                          env._correct_cue_value))
 
-                #brain.policy.controller.reset_parameters()
+                brain.policy.controller.reset_parameters()
+                brain.policy.affine.reset_parameters()
 
             elif env.stage == 2 and current_criterion > config.SUCCESS_CRITERION_THRESHOLD:
                 print("Stage 3: Transitioning to food Motivation")
@@ -94,7 +95,7 @@ if __name__ == '__main__':
                 agent.set_motivation(config.RewardType.WATER)
                 env.set_relevant_cue(config.CueType.LIGHT)
                 #env.set_odor_options([[3], [-3]])
-                env.set_correct_cue_value([-1])
+                env.set_correct_cue_value([0.4, 0.2])
                 env.stage += 1
             elif env.stage == 4 and current_criterion > config.SUCCESS_CRITERION_THRESHOLD:
                 break
