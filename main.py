@@ -7,16 +7,9 @@ from table_dqn_brain import TableDQNBrain
 from brainpg import BrainPG
 from brainac import BrainAC
 from braindqn import BrainDQN
-import utils
-from Dashboard import Dashboard
-from Stats import Stats
-import os
-import time
 from collections import Counter
 from PlusMazeExperiment import PlusMazeExperiment
-
-reporting_interval = 100
-
+import matplotlib.pyplot as plt
 
 if __name__ == '__main__':
     env = PlusMaze(relevant_cue=config.CueType.ODOR)
@@ -38,5 +31,11 @@ if __name__ == '__main__':
         days_per_stage.append([c[i] for i in range(1,5)])
 
     days_per_stage = np.stack(days_per_stage)
-    print(np.mean(days_per_stage, axis=0))
-    print(np.std(days_per_stage, axis=0))
+
+    stages = range(1, 6)
+    width = 0.25
+    fig, ax = plt.subplots(figsize=(20, 12))
+    ax.bar(stages, np.mean(days_per_stage, axis=0), yerr=np.std(days_per_stage, axis=0), color='b', width=width, label='Empirical', capsize=2)
+    plt.title("Days Per stage in brain {}: #param={}. #reps={}".format(str(brain),brain.num_trainable_parameters(), repetitions))
+
+    plt.show()

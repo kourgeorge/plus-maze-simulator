@@ -6,9 +6,8 @@ from Dashboard import Dashboard
 from Stats import Stats
 import os
 import time
-from collections import Counter
-reporting_interval = 100
 
+reporting_interval = 100
 
 def PlusMazeExperiment(agent, dashboard=False):
 
