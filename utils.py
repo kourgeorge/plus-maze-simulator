@@ -136,7 +136,7 @@ def episode_rollout(env, agent):
     return steps, total_reward, act_dist
 
 
-def create_report(experience: ReplayMemory, last):
+def create_report_from_memory(experience: ReplayMemory, last):
     if last == -1:
         pass
     last_exp = experience.last(last)
