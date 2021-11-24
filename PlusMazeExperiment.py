@@ -14,9 +14,11 @@ def PlusMazeExperiment(agent, dashboard=False):
     env = PlusMaze(relevant_cue=config.CueType.ODOR)
     stats = Stats()
 
+    if dashboard:
+        dash = Dashboard(agent.get_brain())
+
     def pre_stage_transition_update():
         if dashboard:
-            dash = Dashboard(agent.brain)
             dash.update(epoch_stats_df, env, agent.get_brain())
             dash.save_fig(results_path, env.stage)
 
@@ -50,8 +52,7 @@ def PlusMazeExperiment(agent, dashboard=False):
 
             current_criterion = np.mean(report.correct)
             if env.stage == 1 and current_criterion > config.SUCCESS_CRITERION_THRESHOLD:
-
-
+                pre_stage_transition_update()
                 #env.set_odor_options([[-2],[2]])
                 env.set_odor_options([[0.5, 0.2], [0.9, 0.7]])
                 #env.set_correct_cue_value([2])
