@@ -46,10 +46,6 @@ class BrainPG(AbstractBrain):
         reward_batch = torch.FloatTensor([data[2] for data in minibatch])
         nextstate_batch = torch.from_numpy(np.stack([data[3] for data in minibatch])).float()
 
-        # Scale rewards
-        # reward_std = 1 if torch.isnan(reward_batch.std()) else reward_batch.std()
-        # rewards = (reward_batch - reward_batch.mean()) / (reward_std  + np.finfo(np.float32).eps)
-
         log_prob_actions = torch.log(torch.max(self.policy(state_batch).mul(action_batch), dim=1)[0])
 
         # Calculate loss
@@ -58,12 +54,9 @@ class BrainPG(AbstractBrain):
         # Optimize the model
         self.optimizer.zero_grad()
         loss.backward()
-        #assert not has_err(self.policy.affine.weight.grad)
-        #assert not has_err(self.policy.controller.weight.grad)
 
         torch.nn.utils.clip_grad_norm_(self.policy.parameters(), max_norm=1)
-        # for param in self.policy_net.parameters():
-        #     param.grad.data.clamp_(-1, 1)
+
         self.optimizer.step()
         return loss.item()
 

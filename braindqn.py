@@ -14,7 +14,7 @@ device = "cpu"
 
 
 class BrainDQN(AbstractBrain):
-    BATCH_SIZE = 512
+    BATCH_SIZE = 20
 
     def __init__(self, observation_size, num_actions, reward_discount, learning_rate=0.01):
         super(BrainDQN, self).__init__(observation_size, num_actions)
@@ -64,18 +64,8 @@ class BrainDQN(AbstractBrain):
         # Optimize the model
         self.optimizer.zero_grad()
         loss.backward()
-        #torch.nn.utils.clip_grad_norm_(self.policy_net.parameters(), max_norm=1)
-        # for param in self.policy_net.parameters():
-        #     param.grad.data.clamp_(-1, 1)
+
         self.optimizer.step()
-
-
-        # if self.num_optimizations % 10 == 0:
-        #     self.target_net.load_state_dict(self.policy_net.state_dict())
-        #     for name, param in self.policy_net.state_dict().items():
-        #         if name == 'lin1.weight':
-        #             print(param)
-
         self.target_net.load_state_dict(self.policy_net.state_dict())
 
         return loss.item()
@@ -95,11 +85,15 @@ class BrainDQN(AbstractBrain):
 class DQN(nn.Module):
     def __init__(self, num_channels, num_actions):
         super(DQN, self).__init__()
-        self.lin1 = nn.Linear(num_channels, num_actions)
-        self.lin2 = nn.Linear(num_actions, num_actions)
-        self.head = nn.Linear(num_actions, num_actions)
+        self.affine = nn.Linear(num_channels, 16, bias=False)
+        self.controller = nn.Linear(16, num_actions, bias=False)
+        self.model = torch.nn.Sequential(
+            self.affine,
+            nn.Dropout(p=0.6),
+            nn.Sigmoid(),
+            self.controller,
+            nn.Softmax(dim=-1)
+        )
 
     def forward(self, x):
-        x = F.relu(self.lin1(x))
-        x = F.relu(self.lin2(x))
-        return self.head(x.view(x.size(0), -1))
+        return self.model(x)
