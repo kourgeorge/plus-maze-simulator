@@ -1,7 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import os
-import time
 from pathlib import Path
 #plt.ion()
 
@@ -74,8 +73,6 @@ class Dashboard:
     def get_fig(self):
         return self.fig
 
-
-    def save_fig(self, path,stage):
-        figures_folder = Path(os.path.join(path, time.strftime("%Y%m%d-%H")))
-        figures_folder.mkdir(parents=True, exist_ok=True)
-        self.fig.savefig(os.path.join(figures_folder, "Stage: {}".format(stage)))
+    def save_fig(self, path, stage):
+        Path(path).mkdir(parents=True, exist_ok=True)
+        self.fig.savefig(os.path.join(path, "Stage: {}".format(stage)))
