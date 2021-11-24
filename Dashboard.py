@@ -73,6 +73,9 @@ class Dashboard:
     def get_fig(self):
         return self.fig
 
+    def close(self):
+        self.fig.close()
+
     def save_fig(self, path, stage):
         Path(path).mkdir(parents=True, exist_ok=True)
         self.fig.savefig(os.path.join(path, "Stage: {}".format(stage)))
