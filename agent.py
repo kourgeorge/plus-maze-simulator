@@ -12,6 +12,9 @@ class Agent:
         self._motivated_reward_value = motivated_reward_value
         self._non_motivated_reward_value = non_motivated_reward_value
 
+    def get_brain(self):
+        return self._brain
+
     def decide(self, state):
         decision = self._brain.think(state)
         # action_prob = utils.normalize_dist((1-eps)*self.fitrah() + eps*brain_actions_prob)
