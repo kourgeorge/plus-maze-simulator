@@ -10,6 +10,8 @@ from braindqn import BrainDQN
 import utils
 from Dashboard import Dashboard
 from Stats import Stats
+import os
+import time
 
 reporting_interval = 100
 if __name__ == '__main__':
@@ -31,15 +33,15 @@ if __name__ == '__main__':
 
     #brain = TableDQNBrain(num_actions=num_actions, reward_discount=0, learning_rate=config.LEARNING_RATE)
 
-    #brain = BrainPG(observation_size+1, num_actions, reward_discount=0, learning_rate=config.LEARNING_RATE)
-    brain = BrainDQN (observation_size+1, num_actions, reward_discount=0, learning_rate=config.LEARNING_RATE)
+    brain = BrainPG(observation_size+1, num_actions, reward_discount=0, learning_rate=config.LEARNING_RATE)
+    #brain = BrainDQN (observation_size+1, num_actions, reward_discount=0, learning_rate=config.LEARNING_RATE)
     agent = Agent(brain, motivation=config.RewardType.WATER, motivated_reward_value=config.MOTIVATED_REWARD, non_motivated_reward_value=config.NON_MOTIVATED_REWARD)
 
     stats = Stats()
     dash = Dashboard(brain)
-    #anim = Animation(dash.get_fig(), "result")
 
-    results_path = '/Users/gkour/repositories/plusmaze'
+
+    results_path = os.path.join('/Users/gkour/repositories/plusmaze/Results', '{}-{}'.format(brain,time.strftime("%Y%m%d-%H%M")))
 
     trial = 0
     act_dist = np.zeros(num_actions)
@@ -75,9 +77,9 @@ if __name__ == '__main__':
             if env.stage == 1 and current_criterion > config.SUCCESS_CRITERION_THRESHOLD:
                 dash.save_fig(results_path, env.stage)
                 #env.set_odor_options([[-2],[2]])
-                env.set_odor_options([[0.6, 0.5], [0.1, 0.7]])
+                env.set_odor_options([[0.5, 0.2], [0.9, 0.7]])
                 #env.set_correct_cue_value([2])
-                env.set_correct_cue_value([0.1, 0.7])
+                env.set_correct_cue_value([0.9, 0.7])
                 env.stage += 1
                 print("Stage {}: Inter-dimensional shift (Odors: {}. Correct {})".format(env.stage, env._odor_options,
                                                                                          env._correct_cue_value))
@@ -92,12 +94,12 @@ if __name__ == '__main__':
            #     brain.policy.l2.reset_parameters()
             elif env.stage == 3 and current_criterion > config.SUCCESS_CRITERION_THRESHOLD:
                 dash.save_fig(results_path, env.stage)
-                print("Stage 4: Back to Water to Motivation + IDS")
+                print("Stage 4: Back to Water to Motivation")
                 agent.set_motivation(config.RewardType.WATER)
                 env.stage += 1
-                env.set_odor_options([[0.5, 0.1], [0.8, 0.3]])
+                #env.set_odor_options([[0.5, 0.1], [0.8, 0.3]])
                 #env.set_odor_options([[3], [-3]])
-                env.set_correct_cue_value([0.5, 0.1])
+                #env.set_correct_cue_value([0.5, 0.1])
 
                 #brain.policy.controller.reset_parameters()
 
