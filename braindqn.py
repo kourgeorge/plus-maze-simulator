@@ -19,10 +19,7 @@ class BrainDQN(AbstractBrain):
     def __init__(self, observation_size, num_actions, reward_discount, learning_rate=0.01):
         super(BrainDQN, self).__init__(observation_size, num_actions)
         self.policy = DQN(observation_size, num_actions).to(device)
-        self.target_net = DQN(observation_size, num_actions).to(device)
         self.optimizer = optim.Adam(self.policy.parameters(), lr=learning_rate)
-        self.target_net.load_state_dict(self.policy.state_dict())
-        self.target_net.eval()
         self.reward_discount = reward_discount
         self.num_optimizations = 0
         print("Pytorch DQN. Num parameters: " + str(self.num_trainable_parameters()))
@@ -48,15 +45,10 @@ class BrainDQN(AbstractBrain):
         nextstate_batch = torch.from_numpy(np.stack([data[3] for data in minibatch])).float()
 
         state_action_values, _ = torch.max(self.policy(state_batch) * action_batch, dim=1)
-        # Compute V(s_{t+1}) for all next states.
-        #qvalue_batch = self.target_net(nextstate_batch)
+
         expected_state_action_values = []
         for i in range(0, minibatch_size):
-            terminal = minibatch[i][4]
-            if terminal:
-                expected_state_action_values.append(reward_batch[i])
-            else:
-                expected_state_action_values.append(reward_batch[i] + self.reward_discount * torch.max(qvalue_batch[i]))
+            expected_state_action_values.append(reward_batch[i])
 
         # Compute Huber loss
         loss = F.mse_loss(state_action_values, torch.stack(expected_state_action_values).detach())
@@ -66,7 +58,6 @@ class BrainDQN(AbstractBrain):
         loss.backward()
 
         self.optimizer.step()
-        self.target_net.load_state_dict(self.policy.state_dict())
 
         return loss.item()
 
