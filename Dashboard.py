@@ -24,11 +24,11 @@ class Dashboard:
 
         self._axes_graph = self.fig.add_subplot(212)
         self._axes_graph.set_ylabel('Percent')
-        self._line_correct, = self._axes_graph.plot([], [], 'g+-', label='Correct', alpha=0.2)
+        self._line_correct, = self._axes_graph.plot([], [], 'g+-', label='Correct', alpha=0.3)
         self._line_reward, = self._axes_graph.plot([], [], 'y-', label='Reward', alpha=0.2)
-        self._line_water_preference, = self._axes_graph.plot([], [], '^-', label='Water PI', alpha=0.2)
-        self._line_water_correct, = self._axes_graph.plot([], [], 'bo-', label='Water Correct')
-        self._line_food_correct, = self._axes_graph.plot([], [], 'ro-', label='Food Correct')
+        self._line_water_preference, = self._axes_graph.plot([], [], '^-', label='Water PI', markersize=3, alpha=0.4)
+        self._line_water_correct, = self._axes_graph.plot([], [], 'bo-', label='Water Correct', markersize=3)
+        self._line_food_correct, = self._axes_graph.plot([], [], 'ro-', label='Food Correct', markersize=3)
 
         self._axes_graph.set_ylim(0, 1)
 
