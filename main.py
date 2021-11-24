@@ -4,9 +4,9 @@ from environment import PlusMaze
 import numpy as np
 import config
 from table_dqn_brain import TableDQNBrain
-#from brainduelpg import BrainPG
 from brainpg import BrainPG
 from brainac import BrainAC
+from braindqn import BrainDQN
 import utils
 from Dashboard import Dashboard
 from Stats import Stats
@@ -26,13 +26,13 @@ if __name__ == '__main__':
     num_actions = env.num_actions()
     observation_size = env.state_shape()
 
-
     #env.set_odor_options([[-2], [2]])
     #env.set_correct_cue_value([2])
 
     #brain = TableDQNBrain(num_actions=num_actions, reward_discount=0, learning_rate=config.LEARNING_RATE)
 
-    brain = BrainPG(observation_size+1, num_actions, reward_discount=0, learning_rate=config.LEARNING_RATE)
+    #brain = BrainPG(observation_size+1, num_actions, reward_discount=0, learning_rate=config.LEARNING_RATE)
+    brain = BrainDQN (observation_size+1, num_actions, reward_discount=0, learning_rate=config.LEARNING_RATE)
     agent = Agent(brain, motivation=config.RewardType.WATER, motivated_reward_value=config.MOTIVATED_REWARD, non_motivated_reward_value=config.NON_MOTIVATED_REWARD)
 
     stats = Stats()

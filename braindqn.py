@@ -18,10 +18,10 @@ class BrainDQN(AbstractBrain):
 
     def __init__(self, observation_size, num_actions, reward_discount, learning_rate=0.01):
         super(BrainDQN, self).__init__(observation_size, num_actions)
-        self.policy_net = DQN(observation_size, num_actions).to(device)
+        self.policy = DQN(observation_size, num_actions).to(device)
         self.target_net = DQN(observation_size, num_actions).to(device)
-        self.optimizer = optim.Adam(self.policy_net.parameters(), lr=learning_rate)
-        self.target_net.load_state_dict(self.policy_net.state_dict())
+        self.optimizer = optim.Adam(self.policy.parameters(), lr=learning_rate)
+        self.target_net.load_state_dict(self.policy.state_dict())
         self.target_net.eval()
         self.reward_discount = reward_discount
         self.num_optimizations = 0
@@ -29,7 +29,7 @@ class BrainDQN(AbstractBrain):
 
     def think(self, obs):
         with torch.no_grad():
-            action = self.policy_net(torch.from_numpy(obs).float().unsqueeze_(0)).argmax().item()
+            action = self.policy(torch.from_numpy(obs).float().unsqueeze_(0)).argmax().item()
             distribution = np.zeros(self.num_actions())
             distribution[action] = 1
             return distribution
@@ -47,7 +47,7 @@ class BrainDQN(AbstractBrain):
         reward_batch = torch.FloatTensor([data[2] for data in minibatch])
         nextstate_batch = torch.from_numpy(np.stack([data[3] for data in minibatch])).float()
 
-        state_action_values, _ = torch.max(self.policy_net(state_batch) * action_batch, dim=1)
+        state_action_values, _ = torch.max(self.policy(state_batch) * action_batch, dim=1)
         # Compute V(s_{t+1}) for all next states.
         #qvalue_batch = self.target_net(nextstate_batch)
         expected_state_action_values = []
@@ -66,12 +66,12 @@ class BrainDQN(AbstractBrain):
         loss.backward()
 
         self.optimizer.step()
-        self.target_net.load_state_dict(self.policy_net.state_dict())
+        self.target_net.load_state_dict(self.policy.state_dict())
 
         return loss.item()
 
     def save_model(self, path):
-        torch.save(self.policy_net.state_dict(), path)
+        torch.save(self.policy.state_dict(), path)
 
     # def load_model(self, path):
     #     if os.path.exists(path):
@@ -79,7 +79,7 @@ class BrainDQN(AbstractBrain):
     #         self.target_net.load_state_dict(torch.load(path))
 
     def num_trainable_parameters(self):
-        return sum(p.numel() for p in self.policy_net.parameters())
+        return sum(p.numel() for p in self.policy.parameters())
 
 
 class DQN(nn.Module):
