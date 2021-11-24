@@ -4,11 +4,11 @@ from environment import PlusMaze
 import numpy as np
 import config
 from table_dqn_brain import TableDQNBrain
+#from brainduelpg import BrainPG
 from brainpg import BrainPG
 from brainac import BrainAC
 import utils
 from Dashboard import Dashboard
-from Animation import Animation
 from Stats import Stats
 
 reporting_interval = 100
@@ -30,21 +30,22 @@ if __name__ == '__main__':
     #env.set_odor_options([[-2], [2]])
     #env.set_correct_cue_value([2])
 
-    # brain = TableDQNBrain(num_actions=num_actions, reward_discount=0, learning_rate=config.BASE_LEARNING_RATE)
+    #brain = TableDQNBrain(num_actions=num_actions, reward_discount=0, learning_rate=config.LEARNING_RATE)
 
-    brain = BrainPG(observation_size, num_actions, reward_discount=0, learning_rate=config.LEARNING_RATE)
+    brain = BrainPG(observation_size+1, num_actions, reward_discount=0, learning_rate=config.LEARNING_RATE)
     agent = Agent(brain, motivation=config.RewardType.WATER, motivated_reward_value=config.MOTIVATED_REWARD, non_motivated_reward_value=config.NON_MOTIVATED_REWARD)
 
     stats = Stats()
     dash = Dashboard(brain)
-    anim = Animation(dash.get_fig(), "result")
+    #anim = Animation(dash.get_fig(), "result")
+
+    results_path = '/Users/gkour/repositories/plusmaze'
 
     trial = 0
     act_dist = np.zeros(num_actions)
     loss_acc = 0
     print("Stage 1: Baseline - Water Motivated, odor relevant. (Odors: {}, Correct: {})".format(env._odor_options,
                                                                                                 env._correct_cue_value))
-
     while True:
         trial += 1
         steps, total_reward, act_dist_episode = utils.episode_rollout(env, agent)
@@ -60,9 +61,7 @@ if __name__ == '__main__':
                                                                                      epoch_stats_df['ActionDist'].to_numpy()[-1],
                                                                                      epoch_stats_df['Correct'].to_numpy()[-1],
                                                                                      epoch_stats_df['Reward'].to_numpy()[-1],
-                                                                                     round(
-                        loss_acc / reporting_interval,
-                        2)), end='\t')
+                                                                                     round(loss_acc / reporting_interval,2)))
 
             print(
                 'WPI:{}, WC: {}, FC:{}'.format(epoch_stats_df['WaterPreference'].to_numpy()[-1], epoch_stats_df['WaterCorrect'].to_numpy()[-1],
@@ -70,10 +69,11 @@ if __name__ == '__main__':
 
             # visualize
             dash.update(epoch_stats_df, env, brain)
-            anim.add_frame()
+            #anim.add_frame()
 
-            current_criterion = np.mean(report.reward)
+            current_criterion = np.mean(report.correct)
             if env.stage == 1 and current_criterion > config.SUCCESS_CRITERION_THRESHOLD:
+                dash.save_fig(results_path, env.stage)
                 #env.set_odor_options([[-2],[2]])
                 env.set_odor_options([[0.6, 0.5], [0.1, 0.7]])
                 #env.set_correct_cue_value([2])
@@ -82,22 +82,40 @@ if __name__ == '__main__':
                 print("Stage {}: Inter-dimensional shift (Odors: {}. Correct {})".format(env.stage, env._odor_options,
                                                                                          env._correct_cue_value))
 
-                brain.policy.controller.reset_parameters()
-                brain.policy.affine.reset_parameters()
+                #brain.policy.controller.reset_parameters()
 
             elif env.stage == 2 and current_criterion > config.SUCCESS_CRITERION_THRESHOLD:
+                dash.save_fig(results_path, env.stage)
                 print("Stage 3: Transitioning to food Motivation")
                 agent.set_motivation(config.RewardType.FOOD)
                 env.stage += 1
            #     brain.policy.l2.reset_parameters()
             elif env.stage == 3 and current_criterion > config.SUCCESS_CRITERION_THRESHOLD:
-                print("Stage 4: Extra-dimensional Shift (Light)")
+                dash.save_fig(results_path, env.stage)
+                print("Stage 4: Back to Water to Motivation + IDS")
+                agent.set_motivation(config.RewardType.WATER)
+                env.stage += 1
+                env.set_odor_options([[0.5, 0.1], [0.8, 0.3]])
+                #env.set_odor_options([[3], [-3]])
+                env.set_correct_cue_value([0.5, 0.1])
+
+                #brain.policy.controller.reset_parameters()
+
+            elif env.stage == 4 and current_criterion > config.SUCCESS_CRITERION_THRESHOLD:
+                dash.save_fig(results_path, env.stage)
+                print("Stage 5: Extra-dimensional Shift (Light)")
                 agent.set_motivation(config.RewardType.WATER)
                 env.set_relevant_cue(config.CueType.LIGHT)
+                env.set_odor_options([[0.02, 0.4], [0.8, 0.8]])
                 #env.set_odor_options([[3], [-3]])
                 env.set_correct_cue_value([0.4, 0.2])
                 env.stage += 1
-            elif env.stage == 4 and current_criterion > config.SUCCESS_CRITERION_THRESHOLD:
+
+                #brain.policy.controller.reset_parameters()
+            elif env.stage == 5 and current_criterion > config.SUCCESS_CRITERION_THRESHOLD:
+                dash.save_fig(results_path, env.stage)
                 break
 
             loss_acc = 0
+
+    #anim.save()

@@ -1,6 +1,8 @@
 import numpy as np
 import matplotlib.pyplot as plt
-
+import os
+import time
+from pathlib import Path
 #plt.ion()
 
 
@@ -21,7 +23,7 @@ class Dashboard:
         axis_critic.get_yaxis().set_visible(False)
 
         props = dict(boxstyle='round', facecolor='wheat')
-        self.figtxt = plt.figtext(0.2, 0.97, 'Start', fontsize=8, verticalalignment='top', bbox=props)
+        self.figtxt = plt.figtext(0.1, 0.97, 'Start', fontsize=8, verticalalignment='top', bbox=props)
         self.fig.colorbar(self.im1_obj, ax=axis_affine)
 
         self._axes_graph = self.fig.add_subplot(212)
@@ -77,3 +79,9 @@ class Dashboard:
 
     def get_fig(self):
         return self.fig
+
+
+    def save_fig(self, path,stage):
+        figures_folder = Path(os.path.join(path, time.strftime("%Y%m%d-%H")))
+        figures_folder.mkdir(parents=True, exist_ok=True)
+        self.fig.savefig(os.path.join(figures_folder, "Stage: {}".format(stage)))
