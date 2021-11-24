@@ -33,5 +33,14 @@ class Agent:
     def set_motivation(self, motivation):
         self._motivation = motivation
 
+    def get_motivation(self):
+        return self._motivation
+
     def get_memory(self):
         return self._memory
+
+    def get_internal_state(self):
+        if self._motivation == config.RewardType.WATER:
+            return [-1]
+        else:
+            return [1]
