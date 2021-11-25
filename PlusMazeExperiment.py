@@ -20,9 +20,9 @@ def PlusMazeExperiment(agent, dashboard=False):
     def pre_stage_transition_update():
         if dashboard:
             dash.update(epoch_stats_df, env, agent.get_brain())
-            dash.save_fig(results_path, env.stage)
+            dash.save_fig(dashboard_screenshots_path, env.stage)
 
-    results_path = os.path.join('/Users/gkour/repositories/plusmaze/Results', '{}-{}'.format(agent.get_brain(),time.strftime("%Y%m%d-%H%M")))
+    dashboard_screenshots_path = os.path.join('/Users/gkour/repositories/plusmaze/Results', '{}-{}'.format(agent.get_brain(),time.strftime("%Y%m%d-%H%M")))
 
     trial = 0
     loss_acc = 0
