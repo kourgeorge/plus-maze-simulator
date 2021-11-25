@@ -4,7 +4,6 @@ from collections import deque
 import config
 import torch
 
-
 class Object(object):
     pass
 
@@ -25,8 +24,10 @@ def dist_selection(dist):
     # selection = np.argmax(dist == select_prob)
     if sum(dist) != 1:
         dist[0] = dist[0] + (1 - sum(dist))
-    action = np.argmax(np.random.multinomial(1, dist))
-
+    try:
+        action = np.argmax(np.random.multinomial(1, dist))
+    except:
+        action = np.argmax(dist)
     return action
 
 
