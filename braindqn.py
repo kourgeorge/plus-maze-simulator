@@ -2,12 +2,13 @@ __author__ = 'gkour'
 
 import numpy as np
 import torch
-import torch.optim as optim
 import torch.nn.functional as F
+import torch.optim as optim
+
 from abstractbrain import AbstractBrain
 from standardbrainnetwork import StandardBrainNetwork
 
-device = "cpu"
+torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 
 class BrainDQN(AbstractBrain):
@@ -15,21 +16,20 @@ class BrainDQN(AbstractBrain):
 
     def __init__(self, observation_size, num_actions, reward_discount, learning_rate=0.01):
         super(BrainDQN, self).__init__(observation_size, num_actions)
-        self.policy = StandardBrainNetwork(observation_size, num_actions).to(device)
-        self.optimizer = optim.Adam(self.policy.parameters(), lr=learning_rate)
+        self.network = StandardBrainNetwork(observation_size, num_actions)
+        self.optimizer = optim.Adam(self.network.parameters(), lr=learning_rate)
         self.reward_discount = reward_discount
         self.num_optimizations = 0
         print("Pytorch DQN. Num parameters: " + str(self.num_trainable_parameters()))
 
     def think(self, obs):
         with torch.no_grad():
-            action = self.policy(torch.from_numpy(obs).float().unsqueeze_(0)).argmax().item()
+            action = self.network(torch.from_numpy(obs).float().unsqueeze_(0)).argmax().item()
             distribution = np.zeros(self.num_actions())
             distribution[action] = 1
             return distribution
 
     def train(self, memory):
-
         minibatch_size = min(BrainDQN.BATCH_SIZE, len(memory))
         if minibatch_size == 0:
             return
@@ -41,7 +41,7 @@ class BrainDQN(AbstractBrain):
         reward_batch = torch.FloatTensor([data[2] for data in minibatch])
         nextstate_batch = torch.from_numpy(np.stack([data[3] for data in minibatch])).float()
 
-        state_action_values, _ = torch.max(self.policy(state_batch) * action_batch, dim=1)
+        state_action_values, _ = torch.max(self.network(state_batch) * action_batch, dim=1)
 
         expected_state_action_values = []
         for i in range(0, minibatch_size):
@@ -59,7 +59,7 @@ class BrainDQN(AbstractBrain):
         return loss.item()
 
     def save_model(self, path):
-        torch.save(self.policy.state_dict(), path)
+        torch.save(self.network.state_dict(), path)
 
     # def load_model(self, path):
     #     if os.path.exists(path):
@@ -67,6 +67,7 @@ class BrainDQN(AbstractBrain):
     #         self.target_net.load_state_dict(torch.load(path))
 
     def num_trainable_parameters(self):
-        return sum(p.numel() for p in self.policy.parameters())
+        return sum(p.numel() for p in self.network.parameters())
 
-
+    def get_network(self) -> StandardBrainNetwork:
+        return self.network

@@ -1,3 +1,5 @@
+__author__ = 'gkour'
+
 import numpy as np
 import matplotlib.pyplot as plt
 import os
@@ -16,8 +18,8 @@ class Dashboard:
         axis_actor = self.fig.add_subplot(421)
         axis_affine.title.set_text('Attention')
         axis_actor.title.set_text('Controller')
-        self.im1_obj = axis_affine.imshow(np.transpose(brain.policy.affine.weight.data.numpy()), cmap='RdBu', vmin=-2, vmax=2)
-        self.im2_obj = axis_actor.imshow(brain.policy.controller.weight.data.numpy(), cmap='RdBu', vmin=-2, vmax=2)
+        self.im1_obj = axis_affine.imshow(np.transpose(brain.get_network().affine.weight.data.numpy()), cmap='RdBu', vmin=-2, vmax=2)
+        self.im2_obj = axis_actor.imshow(brain.get_network().controller.weight.data.numpy(), cmap='RdBu', vmin=-2, vmax=2)
 
         props = dict(boxstyle='round', facecolor='wheat')
         self.figtxt = plt.figtext(0.1, 0.97, 'Start', fontsize=8, verticalalignment='top', bbox=props)
@@ -47,8 +49,8 @@ class Dashboard:
         )
 
         self.figtxt.set_text(textstr)
-        self.im1_obj.set_data(np.transpose(brain.policy.affine.weight.data.numpy()))
-        self.im2_obj.set_data(brain.policy.controller.weight.data.numpy())
+        self.im1_obj.set_data(np.transpose(brain.network.affine.weight.data.numpy()))
+        self.im2_obj.set_data(brain.network.controller.weight.data.numpy())
 
         self._line_correct.set_xdata(stats_df['Trial'])
         self._line_correct.set_ydata(stats_df['Correct'])

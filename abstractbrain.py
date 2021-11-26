@@ -1,6 +1,5 @@
 __author__ = 'gkour'
 
-
 class AbstractBrain:
 
     def __init__(self, observation_shape, num_actions):
@@ -15,6 +14,9 @@ class AbstractBrain:
         raise NotImplementedError()
 
     def num_trainable_parameters(self):
+        raise NotImplementedError()
+
+    def get_network(self):
         raise NotImplementedError()
 
     def observation_shape(self):

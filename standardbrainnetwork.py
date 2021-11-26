@@ -1,7 +1,11 @@
+__author__ = 'gkour'
+
 import torch.nn as nn
 import torch
 
+
 class StandardBrainNetwork(nn.Module):
+
     def __init__(self, num_channels, num_actions):
         super(StandardBrainNetwork, self).__init__()
         self.affine = nn.Linear(num_channels, 16, bias=False)
