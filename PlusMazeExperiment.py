@@ -13,6 +13,7 @@ reporting_interval = 100
 def PlusMazeExperiment(agent, dashboard=False):
 
     env = PlusMaze(relevant_cue=config.CueType.ODOR)
+    env.reset()
     stats = Stats()
 
     if dashboard:
@@ -28,7 +29,7 @@ def PlusMazeExperiment(agent, dashboard=False):
     trial = 0
     loss_acc = 0
     print("Stage 0: Baseline - Water Motivated, odor relevant. (Odors: {}, Correct: {})".format(env.get_odor_cues(),
-                                                                                                env._correct_cue_value))
+                                                                                                env.get_correct_cue_value()))
     while True:
         trial += 1
         utils.episode_rollout(env, agent)
@@ -53,13 +54,10 @@ def PlusMazeExperiment(agent, dashboard=False):
 
             current_criterion = np.mean(report.correct)
             if env.stage == 0 and current_criterion > config.SUCCESS_CRITERION_THRESHOLD:
-                #env.set_odor_options([[-2],[2]])
-                env.set_odor_cues([[.1, -.1], [.2, .0]])
-                #env.set_correct_cue_value([2])
-                env.set_correct_cue_value([.1, -.1])
+                env.set_random_odor_set()
                 env.stage += 1
                 print("Stage {}: Inter-dimensional shift (Odors: {}. Correct {})".format(env.stage, env.get_odor_cues(),
-                                                                                         env._correct_cue_value))
+                                                                                         env.get_correct_cue_value()))
 
                 #brain.policy.controller.reset_parameters()
 
@@ -83,9 +81,6 @@ def PlusMazeExperiment(agent, dashboard=False):
                 print("Stage 4: Extra-dimensional Shift (Light).")
                 agent.set_motivation(config.RewardType.WATER)
                 env.set_relevant_cue(config.CueType.LIGHT)
-                env.set_odor_cues([[0.2, 0.4], [0.8, 0.8]])
-                #env.set_odor_options([[3], [-3]])
-                env.set_correct_cue_value([0.4, 0.2])
                 env.stage += 1
 
                 #brain.policy.controller.reset_parameters()

@@ -16,9 +16,9 @@ if __name__ == '__main__':
     num_actions = env.num_actions()
     observation_size = env.state_shape()
 
-    repetitions = 3
+    repetitions = 25
 
-    brain_types = [BrainPG, BrainDQN]
+    brain_types = [BrainDQN,BrainPG]
     brains_reports = []
     for brain_type in brain_types:
         brain_repetition_reports = [None] * repetitions
@@ -33,3 +33,5 @@ if __name__ == '__main__':
     plot_behavior_results(brains_reports[0])
     plot_behavior_results(brains_reports[1])
     plot_days_per_stage(brains_reports)
+
+    x=1

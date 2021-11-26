@@ -43,7 +43,7 @@ class Dashboard:
 
     def update(self, stats_df, env:PlusMaze, brain):
         textstr = self.textstr.format(
-            env.stage, stats_df['Trial'].to_numpy()[-1], env.get_odor_cues(), env.get_light_cues(), env._correct_cue_value,
+            env.stage, stats_df['Trial'].to_numpy()[-1], env.get_odor_cues(), env.get_light_cues(), env.get_correct_cue_value(),
             stats_df['Correct'].to_numpy()[-1],
             stats_df['Reward'].to_numpy()[-1]
         )
