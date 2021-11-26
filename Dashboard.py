@@ -7,7 +7,7 @@ from pathlib import Path
 
 class Dashboard:
     def __init__(self, brain):
-        self.stage = 1
+        self.stage = 0
         self.fig = plt.figure(figsize=(9, 5), dpi=120, facecolor='w')
         self.textstr = "Stage:{}, Trial {}: Odors:{}, Lights:{}. CorrectCue: {}. Accuracy:{}, Reward: {}."
         axis_affine = self.fig.add_subplot(222)

@@ -37,6 +37,8 @@ def PlusMazeExperiment(agent, dashboard=False):
         if trial % reporting_interval == 0:
             report = utils.create_report_from_memory(agent.get_memory(), reporting_interval)
             epoch_stats_df = stats.update(trial, report)
+            pre_stage_transition_update()
+
             print(
                 'Trial: {}, Action Dist:{}, Corr.:{}, Rew.:{}, loss={};'.format(epoch_stats_df['Trial'].to_numpy()[-1],
                                                                                      epoch_stats_df['ActionDist'].to_numpy()[-1],
@@ -47,8 +49,6 @@ def PlusMazeExperiment(agent, dashboard=False):
             print(
                 'WPI:{}, WC: {}, FC:{}'.format(epoch_stats_df['WaterPreference'].to_numpy()[-1], epoch_stats_df['WaterCorrect'].to_numpy()[-1],
                                                epoch_stats_df['FoodCorrect'].to_numpy()[-1]))
-
-
 
             current_criterion = np.mean(report.correct)
             if env.stage == 0 and current_criterion > config.SUCCESS_CRITERION_THRESHOLD:
@@ -61,14 +61,12 @@ def PlusMazeExperiment(agent, dashboard=False):
                                                                                          env._correct_cue_value))
 
                 #brain.policy.controller.reset_parameters()
-                pre_stage_transition_update()
 
             elif env.stage == 1 and current_criterion > config.SUCCESS_CRITERION_THRESHOLD:
-
                 print("Stage 2: Transitioning to food Motivation")
                 agent.set_motivation(config.RewardType.FOOD)
                 env.stage += 1
-                pre_stage_transition_update()
+
            #     brain.policy.l2.reset_parameters()
             elif env.stage == 2 and current_criterion > config.SUCCESS_CRITERION_THRESHOLD:
                 print("Stage 3: Back to Water to Motivation")
@@ -79,7 +77,6 @@ def PlusMazeExperiment(agent, dashboard=False):
                 #env.set_correct_cue_value([0.5, 0.1])
 
                 #brain.policy.controller.reset_parameters()
-                pre_stage_transition_update()
 
             elif env.stage == 3 and current_criterion > config.SUCCESS_CRITERION_THRESHOLD:
                 print("Stage 4: Extra-dimensional Shift (Light)")
@@ -91,12 +88,13 @@ def PlusMazeExperiment(agent, dashboard=False):
                 env.stage += 1
 
                 #brain.policy.controller.reset_parameters()
-                pre_stage_transition_update()
 
             elif env.stage == 4 and current_criterion > config.SUCCESS_CRITERION_THRESHOLD:
-                pre_stage_transition_update()
                 break
 
             loss_acc = 0
-
+    epoch_stats_df._metadata = {'brain': str(agent.get_brain()),
+                                'brain_params': agent.get_brain().num_trainable_parameters(),
+                                'motivated_reward': agent._motivated_reward_value,
+                                'non_motivated_reward': agent._non_motivated_reward_value}
     return epoch_stats_df

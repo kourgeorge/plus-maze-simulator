@@ -3,7 +3,6 @@ from collections import Counter
 import matplotlib.pyplot as plt
 import numpy as np
 
-
 def plot_days_per_stage(reports_pg, reports_dqn):
 	stages = list(range(0, 5))
 	repetitions = len(reports_pg)
@@ -25,7 +24,7 @@ def plot_days_per_stage(reports_pg, reports_dqn):
 	fig, ax = plt.subplots(figsize=(10, 6))
 	ax.bar(stages, np.mean(days_per_stage_pg, axis=0), yerr=np.std(days_per_stage_pg, axis=0), color='b', width=width,
 		   label='PG', capsize=2)
-	ax.bar(np.array(stages) + width, np.mean(days_per_stage_dqn, axis=0), yerr=np.std(days_per_stage_dqn, axis=0),
+	ax.bar(stages + width, np.mean(days_per_stage_dqn, axis=0), yerr=np.std(days_per_stage_dqn, axis=0),
 		   color='g', width=width, label='DQN', capsize=2)
 	plt.title("Days Per stage - PG vs DQN. #reps={}".format(repetitions))
 	plt.legend()
@@ -81,7 +80,8 @@ def plot_behavior_results(reports):
 	plt.xlabel('Days')
 	plt.ylabel('Percent')
 
-	plt.title("")
+	plt.title("Behavioral Stats of {} individuals. brain{}. #params={}".format(
+		len(reports), reports[0]._metadata['brain'], reports[0]._metadata['brain_params']))
 	plt.legend()
 
 	# self._line_water_preference, = self._axes_graph.plot([], [], '^-', label='Water PI', markersize=3, alpha=0.4)
