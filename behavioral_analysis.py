@@ -3,30 +3,24 @@ from collections import Counter
 import matplotlib.pyplot as plt
 import numpy as np
 
-def plot_days_per_stage(reports_pg, reports_dqn):
+
+def plot_days_per_stage(brains_repetitions_reports):
 	stages = list(range(0, 5))
-	repetitions = len(reports_pg)
-	days_per_stage_pg = []
-	days_per_stage_dqn = []
-	for experiment_report_df_pg in reports_pg:
-		c = Counter(list(experiment_report_df_pg['Stage']))
-		days_per_stage_pg.append([c[i] for i in stages])
-
-	for experiment_report_df_dqn in reports_dqn:
-		c = Counter(list(experiment_report_df_dqn['Stage']))
-		days_per_stage_dqn.append([c[i] for i in stages])
-
-	days_per_stage_pg = np.stack(days_per_stage_pg)
-	days_per_stage_dqn = np.stack(days_per_stage_dqn)
-
 	width = 0.25
-	X = np.array(stages)
 	fig, ax = plt.subplots(figsize=(10, 6))
-	ax.bar(stages, np.mean(days_per_stage_pg, axis=0), yerr=np.std(days_per_stage_pg, axis=0), color='b', width=width,
-		   label='PG', capsize=2)
-	ax.bar(stages + width, np.mean(days_per_stage_dqn, axis=0), yerr=np.std(days_per_stage_dqn, axis=0),
-		   color='g', width=width, label='DQN', capsize=2)
-	plt.title("Days Per stage - PG vs DQN. #reps={}".format(repetitions))
+	for i, brain_reports in enumerate(brains_repetitions_reports):
+		repetitions = len(brain_reports)
+		days_per_stage_pg = []
+		for experiment_report_df_pg in brain_reports:
+			c = Counter(list(experiment_report_df_pg['Stage']))
+			days_per_stage_pg.append([c[i] for i in stages])
+
+		days_per_stage_pg = np.stack(days_per_stage_pg)
+
+		ax.bar(np.array(stages) + width*i, np.mean(days_per_stage_pg, axis=0), yerr=np.std(days_per_stage_pg, axis=0),
+			width=width, label=brain_reports[0]._metadata['brain'], capsize=2)
+
+	plt.title("Days Per stage for all brains. #reps={}".format(repetitions))
 	plt.legend()
 	plt.show()
 
