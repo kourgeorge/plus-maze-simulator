@@ -26,7 +26,7 @@ def PlusMazeExperiment(agent, dashboard=False):
 
     trial = 0
     loss_acc = 0
-    print("Stage 1: Baseline - Water Motivated, odor relevant. (Odors: {}, Correct: {})".format(env._odor_options,
+    print("Stage 0: Baseline - Water Motivated, odor relevant. (Odors: {}, Correct: {})".format(env._odor_options,
                                                                                    env._correct_cue_value))
     while True:
         trial += 1
@@ -51,7 +51,7 @@ def PlusMazeExperiment(agent, dashboard=False):
 
 
             current_criterion = np.mean(report.correct)
-            if env.stage == 1 and current_criterion > config.SUCCESS_CRITERION_THRESHOLD:
+            if env.stage == 0 and current_criterion > config.SUCCESS_CRITERION_THRESHOLD:
                 #env.set_odor_options([[-2],[2]])
                 env.set_odor_options([[-1, -1], [1, 1]])
                 #env.set_correct_cue_value([2])
@@ -63,15 +63,15 @@ def PlusMazeExperiment(agent, dashboard=False):
                 #brain.policy.controller.reset_parameters()
                 pre_stage_transition_update()
 
-            elif env.stage == 2 and current_criterion > config.SUCCESS_CRITERION_THRESHOLD:
+            elif env.stage == 1 and current_criterion > config.SUCCESS_CRITERION_THRESHOLD:
 
-                print("Stage 3: Transitioning to food Motivation")
+                print("Stage 2: Transitioning to food Motivation")
                 agent.set_motivation(config.RewardType.FOOD)
                 env.stage += 1
                 pre_stage_transition_update()
            #     brain.policy.l2.reset_parameters()
-            elif env.stage == 3 and current_criterion > config.SUCCESS_CRITERION_THRESHOLD:
-                print("Stage 4: Back to Water to Motivation")
+            elif env.stage == 2 and current_criterion > config.SUCCESS_CRITERION_THRESHOLD:
+                print("Stage 3: Back to Water to Motivation")
                 agent.set_motivation(config.RewardType.WATER)
                 env.stage += 1
                 #env.set_odor_options([[0.5, 0.1], [0.8, 0.3]])
@@ -81,8 +81,8 @@ def PlusMazeExperiment(agent, dashboard=False):
                 #brain.policy.controller.reset_parameters()
                 pre_stage_transition_update()
 
-            elif env.stage == 4 and current_criterion > config.SUCCESS_CRITERION_THRESHOLD:
-                print("Stage 5: Extra-dimensional Shift (Light)")
+            elif env.stage == 3 and current_criterion > config.SUCCESS_CRITERION_THRESHOLD:
+                print("Stage 4: Extra-dimensional Shift (Light)")
                 agent.set_motivation(config.RewardType.WATER)
                 env.set_relevant_cue(config.CueType.LIGHT)
                 env.set_odor_options([[0.02, 0.4], [0.8, 0.8]])
@@ -93,7 +93,7 @@ def PlusMazeExperiment(agent, dashboard=False):
                 #brain.policy.controller.reset_parameters()
                 pre_stage_transition_update()
 
-            elif env.stage == 5 and current_criterion > config.SUCCESS_CRITERION_THRESHOLD:
+            elif env.stage == 4 and current_criterion > config.SUCCESS_CRITERION_THRESHOLD:
                 pre_stage_transition_update()
                 break
 
