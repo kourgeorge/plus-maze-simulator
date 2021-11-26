@@ -14,6 +14,9 @@ class AbstractBrain:
     def train(self, experience):
         raise NotImplementedError()
 
+    def num_trainable_parameters(self):
+        raise NotImplementedError()
+
     def observation_shape(self):
         return self._observation_shape
 

@@ -1,25 +1,25 @@
 import config
-import utils
-
+from utils import ReplayMemory, epsilon_greedy
+from abstractbrain import AbstractBrain
 
 class Agent:
-    def __init__(self, brain, motivation=config.RewardType.WATER, motivated_reward_value=1, non_motivated_reward_value=0.3):
+    def __init__(self, brain:AbstractBrain, motivation=config.RewardType.WATER, motivated_reward_value=1, non_motivated_reward_value=0.3):
 
         self._brain = brain
         self._memory_size = 10240
-        self._memory = utils.ReplayMemory(self._memory_size)
+        self._memory = ReplayMemory(self._memory_size)
         self._motivation = motivation
         self._motivated_reward_value = motivated_reward_value
         self._non_motivated_reward_value = non_motivated_reward_value
 
-    def get_brain(self):
+    def get_brain(self)->AbstractBrain:
         return self._brain
 
     def decide(self, state):
         decision = self._brain.think(state)
         # action_prob = utils.normalize_dist((1-eps)*self.fitrah() + eps*brain_actions_prob)
         #action = utils.dist_selection(decision)
-        action = utils.epsilon_greedy(config.EXPLORATION_EPSILON, decision)
+        action = epsilon_greedy(config.EXPLORATION_EPSILON, decision)
         return action
 
     def evaluate_reward(self, reward_type):
@@ -39,7 +39,7 @@ class Agent:
     def get_motivation(self):
         return self._motivation
 
-    def get_memory(self):
+    def get_memory(self)->ReplayMemory:
         return self._memory
 
     def get_internal_state(self):
