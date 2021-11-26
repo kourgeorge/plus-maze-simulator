@@ -2,11 +2,13 @@ import numpy as np
 import matplotlib.pyplot as plt
 import os
 from pathlib import Path
+from environment import PlusMaze
+from abstractbrain import AbstractBrain
 #plt.ion()
 
 
 class Dashboard:
-    def __init__(self, brain):
+    def __init__(self, brain:AbstractBrain):
         self.stage = 0
         self.fig = plt.figure(figsize=(9, 5), dpi=120, facecolor='w')
         self.textstr = "Stage:{}, Trial {}: Odors:{}, Lights:{}. CorrectCue: {}. Accuracy:{}, Reward: {}."
@@ -37,9 +39,9 @@ class Dashboard:
             [self._line_correct.get_label(), self._line_reward.get_label(), self._line_water_correct.get_label(),
              self._line_food_correct.get_label(), self._line_water_preference.get_label()], loc=0)
 
-    def update(self, stats_df, env, brain):
+    def update(self, stats_df, env:PlusMaze, brain):
         textstr = self.textstr.format(
-            env.stage, stats_df['Trial'].to_numpy()[-1], env._odor_options, env._light_options, env._correct_cue_value,
+            env.stage, stats_df['Trial'].to_numpy()[-1], env.get_odor_cues(), env.get_light_cues(), env._correct_cue_value,
             stats_df['Correct'].to_numpy()[-1],
             stats_df['Reward'].to_numpy()[-1]
         )

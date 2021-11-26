@@ -9,6 +9,7 @@ import time
 
 reporting_interval = 100
 
+
 def PlusMazeExperiment(agent, dashboard=False):
 
     env = PlusMaze(relevant_cue=config.CueType.ODOR)
@@ -26,8 +27,8 @@ def PlusMazeExperiment(agent, dashboard=False):
 
     trial = 0
     loss_acc = 0
-    print("Stage 0: Baseline - Water Motivated, odor relevant. (Odors: {}, Correct: {})".format(env._odor_options,
-                                                                                   env._correct_cue_value))
+    print("Stage 0: Baseline - Water Motivated, odor relevant. (Odors: {}, Correct: {})".format(env.get_odor_cues(),
+                                                                                                env._correct_cue_value))
     while True:
         trial += 1
         utils.episode_rollout(env, agent)
@@ -53,11 +54,11 @@ def PlusMazeExperiment(agent, dashboard=False):
             current_criterion = np.mean(report.correct)
             if env.stage == 0 and current_criterion > config.SUCCESS_CRITERION_THRESHOLD:
                 #env.set_odor_options([[-2],[2]])
-                env.set_odor_options([[-1, -1], [1, 1]])
+                env.set_odor_cues([[.1, -.1], [.2, .0]])
                 #env.set_correct_cue_value([2])
-                env.set_correct_cue_value([-1, -1])
+                env.set_correct_cue_value([.1, -.1])
                 env.stage += 1
-                print("Stage {}: Inter-dimensional shift (Odors: {}. Correct {})".format(env.stage, env._odor_options,
+                print("Stage {}: Inter-dimensional shift (Odors: {}. Correct {})".format(env.stage, env.get_odor_cues(),
                                                                                          env._correct_cue_value))
 
                 #brain.policy.controller.reset_parameters()
@@ -79,10 +80,10 @@ def PlusMazeExperiment(agent, dashboard=False):
                 #brain.policy.controller.reset_parameters()
 
             elif env.stage == 3 and current_criterion > config.SUCCESS_CRITERION_THRESHOLD:
-                print("Stage 4: Extra-dimensional Shift (Light)")
+                print("Stage 4: Extra-dimensional Shift (Light).")
                 agent.set_motivation(config.RewardType.WATER)
                 env.set_relevant_cue(config.CueType.LIGHT)
-                env.set_odor_options([[0.02, 0.4], [0.8, 0.8]])
+                env.set_odor_cues([[0.2, 0.4], [0.8, 0.8]])
                 #env.set_odor_options([[3], [-3]])
                 env.set_correct_cue_value([0.4, 0.2])
                 env.stage += 1
@@ -93,6 +94,7 @@ def PlusMazeExperiment(agent, dashboard=False):
                 break
 
             loss_acc = 0
+
     epoch_stats_df._metadata = {'brain': str(agent.get_brain()),
                                 'brain_params': agent.get_brain().num_trainable_parameters(),
                                 'motivated_reward': agent._motivated_reward_value,

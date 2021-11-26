@@ -80,7 +80,7 @@ def plot_behavior_results(reports):
 	plt.xlabel('Days')
 	plt.ylabel('Percent')
 
-	plt.title("Behavioral Stats of {} individuals. brain{}. #params={}".format(
+	plt.title("Behavioral Stats of {} individuals. brain:{}. #params:{}.".format(
 		len(reports), reports[0]._metadata['brain'], reports[0]._metadata['brain_params']))
 	plt.legend()
 

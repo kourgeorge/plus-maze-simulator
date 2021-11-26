@@ -12,9 +12,9 @@ class PlusMaze:
 
         self._state = None
         self._relevant_cue = relevant_cue
-        self._odor_options = [[-1, 1], [1, -1]]# [[-1],[1]] #
-        self._light_options = [[0.4, 0.2], [0.1, 0.9]] # [[-1], [1]]#
-        self._correct_cue_value = [1,-1]  # [-1] #
+        self._odor_cues = [[.1, .3], [.2, .1]]# [[-1],[1]] #
+        self._light_cues = [[.4, .2], [.1, .9]] # [[-1], [1]]#
+        self._correct_cue_value = [.1,.3]  # [-1] #
         self.stage = 0
 
     def reset(self):
@@ -49,8 +49,8 @@ class PlusMaze:
         info.relevant_cue = self._relevant_cue
         info.correct_cue_value = self._correct_cue_value
         info.relevant_cue = self._relevant_cue
-        info.odor_options = self._odor_options
-        info.light_options = self._light_options
+        info.odor_options = self._odor_cues
+        info.light_options = self._light_cues
         info.outcome = outcome
         info.stage = self.stage
 
@@ -66,16 +66,22 @@ class PlusMaze:
         return 4 * (self.odor_encoding_size() + self.light_encoding_size())
 
     def odor_encoding_size(self):
-        return len(self._odor_options[0])
+        return len(self._odor_cues[0])
 
     def light_encoding_size(self):
-        return len(self._light_options[0])
+        return len(self._light_cues[0])
 
-    def set_odor_options(self, options):
-        self._odor_options = options
+    def get_odor_cues(self):
+        return self._odor_cues
 
-    def set_light_options(self, options):
-        self._light_options = options
+    def get_light_cues(self):
+        return self._light_cues
+
+    def set_odor_cues(self, options):
+        self._odor_cues = options
+
+    def set_light_cues(self, options):
+        self._light_cues = options
 
     def set_relevant_cue(self, relevant_cue):
         self._relevant_cue = relevant_cue
@@ -91,7 +97,7 @@ class PlusMaze:
         arm3O = random.choice([0, 1])
         arm3L = random.choice([0, 1])
 
-        return np.asarray(self._odor_options[arm1O] + self._light_options[arm1L] +
-                          self._odor_options[1 - arm1O] + self._light_options[1 - arm1L] +
-                          self._odor_options[arm3O] + self._light_options[arm3L] +
-                          self._odor_options[1 - arm3O] + self._light_options[1 - arm3L])
+        return np.asarray(self._odor_cues[arm1O] + self._light_cues[arm1L] +
+                          self._odor_cues[1 - arm1O] + self._light_cues[1 - arm1L] +
+                          self._odor_cues[arm3O] + self._light_cues[arm3L] +
+                          self._odor_cues[1 - arm3O] + self._light_cues[1 - arm3L])
