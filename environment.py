@@ -73,11 +73,17 @@ class PlusMaze:
     def set_random_odor_set(self):
         new_odor1 = PlusMaze.random_stimuli_encoding(self.odor_encoding_size())
         new_odor2 = PlusMaze.random_stimuli_encoding(self.odor_encoding_size())
+        while(np.linalg.norm(np.array(new_odor1)-np.array(new_odor2))<0.2):
+            new_odor1 = PlusMaze.random_stimuli_encoding(self.odor_encoding_size())
+            new_odor2 = PlusMaze.random_stimuli_encoding(self.odor_encoding_size())
         self.set_odor_cues([new_odor1,new_odor2])
 
     def set_random_light_set(self):
         new_light1 = PlusMaze.random_stimuli_encoding(self.light_encoding_size())
         new_light2 = PlusMaze.random_stimuli_encoding(self.light_encoding_size())
+        while (np.linalg.norm(np.array(new_light1) - np.array(new_light2)) < 0.2):
+            new_light1 = PlusMaze.random_stimuli_encoding(self.odor_encoding_size())
+            new_light2 = PlusMaze.random_stimuli_encoding(self.odor_encoding_size())
         self.set_light_cues([new_light1,new_light2])
 
     @staticmethod
