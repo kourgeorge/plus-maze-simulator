@@ -1,14 +1,11 @@
 __author__ = 'gkour'
 
-import random
 import numpy as np
 import torch
-import torch.nn as nn
 import torch.optim as optim
 import torch.nn.functional as F
 from abstractbrain import AbstractBrain
-import os.path
-import copy
+from standardbrainnetwork import StandardBrainNetwork
 
 device = "cpu"
 
@@ -18,7 +15,7 @@ class BrainDQN(AbstractBrain):
 
     def __init__(self, observation_size, num_actions, reward_discount, learning_rate=0.01):
         super(BrainDQN, self).__init__(observation_size, num_actions)
-        self.policy = DQN(observation_size, num_actions).to(device)
+        self.policy = StandardBrainNetwork(observation_size, num_actions).to(device)
         self.optimizer = optim.Adam(self.policy.parameters(), lr=learning_rate)
         self.reward_discount = reward_discount
         self.num_optimizations = 0
@@ -73,18 +70,3 @@ class BrainDQN(AbstractBrain):
         return sum(p.numel() for p in self.policy.parameters())
 
 
-class DQN(nn.Module):
-    def __init__(self, num_channels, num_actions):
-        super(DQN, self).__init__()
-        self.affine = nn.Linear(num_channels, 16, bias=False)
-        self.controller = nn.Linear(16, num_actions, bias=False)
-        self.model = torch.nn.Sequential(
-            self.affine,
-            nn.Dropout(p=0.6),
-            nn.Sigmoid(),
-            self.controller,
-            nn.Softmax(dim=-1)
-        )
-
-    def forward(self, x):
-        return self.model(x)

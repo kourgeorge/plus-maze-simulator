@@ -7,6 +7,8 @@ import torch
 class Object(object):
     pass
 
+def has_err(x):
+    return bool(((x != x) | (x == float("inf")) | (x == float("-inf"))).any().item())
 
 def epsilon_greedy(eps, dist):
     p = np.random.rand()

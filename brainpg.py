@@ -8,14 +8,9 @@ import torch.optim as optim
 import torch.nn.functional as F
 from abstractbrain import AbstractBrain
 import os.path
-
-#torch.manual_seed(0)
+from standardbrainnetwork import StandardBrainNetwork
 
 device = "cpu"
-
-
-def has_err(x):
-    return bool(((x != x) | (x == float("inf")) | (x == float("-inf"))).any().item())
 
 
 class BrainPG(AbstractBrain):
@@ -23,7 +18,7 @@ class BrainPG(AbstractBrain):
 
     def __init__(self, observation_size, num_actions, reward_discount, learning_rate=0.01):
         super(BrainPG, self).__init__(observation_size, num_actions)
-        self.policy = Policy(observation_size, num_actions).to(device)
+        self.policy = StandardBrainNetwork(observation_size, num_actions).to(device)
         self.optimizer = optim.Adam(self.policy.parameters(), lr=learning_rate)
         self.reward_discount = reward_discount
         self.num_optimizations = 0
@@ -69,20 +64,3 @@ class BrainPG(AbstractBrain):
 
     def num_trainable_parameters(self):
         return sum(p.numel() for p in self.policy.parameters())
-
-
-class Policy(nn.Module):
-    def __init__(self, num_channels, num_actions):
-        super(Policy, self).__init__()
-        self.affine = nn.Linear(num_channels, 16, bias=False)
-        self.controller = nn.Linear(16, num_actions, bias=False)
-        self.model = torch.nn.Sequential(
-            self.affine,
-            nn.Dropout(p=0.6),
-            nn.Sigmoid(),
-            self.controller,
-            nn.Softmax(dim=-1)
-        )
-
-    def forward(self, x):
-        return self.model(x)
