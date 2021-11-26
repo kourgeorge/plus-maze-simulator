@@ -28,6 +28,7 @@ def PlusMazeExperiment(agent, dashboard=False):
 
     trial = 0
     loss_acc = 0
+    print('============================ Brain:{} ======================='.format(str(agent.get_brain())))
     print("Stage 0: Baseline - Water Motivated, odor relevant. (Odors: {}, Correct: {})".format(env.get_odor_cues(),
                                                                                                 env.get_correct_cue_value()))
     while True:
@@ -56,18 +57,21 @@ def PlusMazeExperiment(agent, dashboard=False):
             if env.stage == 0 and current_criterion > config.SUCCESS_CRITERION_THRESHOLD:
                 env.set_random_odor_set()
                 env.stage += 1
+                print('---------------------------------------------------------------------')
                 print("Stage {}: Inter-dimensional shift (Odors: {}. Correct {})".format(env.stage, env.get_odor_cues(),
                                                                                          env.get_correct_cue_value()))
 
                 #brain.policy.controller.reset_parameters()
 
             elif env.stage == 1 and current_criterion > config.SUCCESS_CRITERION_THRESHOLD:
+                print('---------------------------------------------------------------------')
                 print("Stage 2: Transitioning to food Motivation")
                 agent.set_motivation(config.RewardType.FOOD)
                 env.stage += 1
 
            #     brain.policy.l2.reset_parameters()
             elif env.stage == 2 and current_criterion > config.SUCCESS_CRITERION_THRESHOLD:
+                print('---------------------------------------------------------------------')
                 print("Stage 3: Back to Water to Motivation")
                 agent.set_motivation(config.RewardType.WATER)
                 env.stage += 1
@@ -78,6 +82,7 @@ def PlusMazeExperiment(agent, dashboard=False):
                 #brain.policy.controller.reset_parameters()
 
             elif env.stage == 3 and current_criterion > config.SUCCESS_CRITERION_THRESHOLD:
+                print('---------------------------------------------------------------------')
                 print("Stage 4: Extra-dimensional Shift (Light).")
                 agent.set_motivation(config.RewardType.WATER)
                 env.set_relevant_cue(config.CueType.LIGHT)

@@ -2,7 +2,8 @@ from collections import Counter
 
 import matplotlib.pyplot as plt
 import numpy as np
-
+from scipy.stats import sem
+import time
 
 def plot_days_per_stage(brains_repetitions_reports):
 	stages = list(range(0, 5))
@@ -17,12 +18,13 @@ def plot_days_per_stage(brains_repetitions_reports):
 
 		days_per_stage_pg = np.stack(days_per_stage_pg)
 
-		ax.bar(np.array(stages) + width*i, np.mean(days_per_stage_pg, axis=0), yerr=np.std(days_per_stage_pg, axis=0),
+		ax.bar(np.array(stages) + width*i, np.mean(days_per_stage_pg, axis=0), yerr=sem(days_per_stage_pg, axis=0, nan_policy='omit'),
 			width=width, label=brain_reports[0]._metadata['brain'], capsize=2)
 
 	plt.title("Days Per stage for all brains. #reps={}".format(repetitions))
 	plt.legend()
-	plt.show()
+
+	plt.savefig('Results/days_in_stage_-{}'.format(time.strftime("%Y%m%d-%H%M")))
 
 
 def days_to_consider_in_each_stage(reports, q=75):
@@ -66,7 +68,7 @@ def plot_behavior_results(reports):
 
 	formats = ['g+-', 'y-', '^-', 'bo-', 'ro-']
 	for i,signal in enumerate(signals):
-		ax = plt.errorbar(X, np.nanmean(results_dict[signal], axis=0), yerr=np.nanstd(results_dict[signal], axis=0), fmt=formats[i], label=signal, alpha=0.6)
+		ax = plt.errorbar(X, np.nanmean(results_dict[signal], axis=0), yerr=sem(results_dict[signal], axis=0, nan_policy='omit'), fmt=formats[i], label=signal, alpha=0.6)
 
 	for stage in stage_indices[1:]:
 		plt.axvline(x=stage + 0.5, alpha=0.5, dashes=(5, 2, 1, 2), lw=2)
@@ -78,6 +80,4 @@ def plot_behavior_results(reports):
 		len(reports), reports[0]._metadata['brain'], reports[0]._metadata['brain_params']))
 	plt.legend()
 
-	# self._line_water_preference, = self._axes_graph.plot([], [], '^-', label='Water PI', markersize=3, alpha=0.4)
-	# self._line_water_correct, = self._axes_graph.plot([], [], 'bo-', label='Water Correct', markersize=3)
-	# self._line_food_correct, = self._axes_graph.plot([], [], 'ro-', label='Food Correct', markersize=3)
+	plt.savefig('Results/Behavioural_stats_{}-{}'.format(reports[0]._metadata['brain'],time.strftime("%Y%m%d-%H%M")))
