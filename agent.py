@@ -42,6 +42,9 @@ class Agent:
     def get_memory(self)->ReplayMemory:
         return self._memory
 
+    def clear_memory(self):
+        self._memory = ReplayMemory(self._memory_size)
+
     def get_internal_state(self):
         if self._motivation == config.RewardType.WATER:
             return [-1]
