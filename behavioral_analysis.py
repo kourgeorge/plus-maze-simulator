@@ -45,8 +45,10 @@ def days_to_consider_in_each_stage(reports, q=75):
 def plot_behavior_results(reports):
 	stages = list(range(0, 5))
 	days_each_stage = days_to_consider_in_each_stage(reports)
-	signals = ['Reward', 'Correct', 'WaterPreference', 'WaterCorrect', 'FoodCorrect', 'AffineDim']
+	b_signals = ['Correct', 'Reward', 'WaterPreference', 'WaterCorrect', 'FoodCorrect']
+	n_signals = ['AffineDim']
 
+	signals = b_signals+n_signals
 	# days_each_stage_sum = np.cumsum(days_each_stage)
 	results_dict = {}
 	for signal in signals:
@@ -64,20 +66,30 @@ def plot_behavior_results(reports):
 
 
 	fig = plt.figure(figsize=(9, 5), dpi=120, facecolor='w')
+	axes_behavioral_graph = fig.add_subplot(211)
+	axes_neural_graph = fig.add_subplot(212)
+
 	X = np.array(list(range(0,stage_indices[-1])))+1
 
-	formats = ['g-','g+-', 'y-', '^-', 'bo-', 'ro-', 'm^-']
-	for i,signal in enumerate(signals):
-		ax = plt.errorbar(X, np.nanmean(results_dict[signal], axis=0), yerr=sem(results_dict[signal], axis=0, nan_policy='omit'), fmt=formats[i], label=signal, alpha=0.6)
+	formats = ['g+-', 'y-', '^-', 'bo-', 'ro-']
+	for i,signal in enumerate(b_signals):
+		ax = axes_behavioral_graph.errorbar(X, np.nanmean(results_dict[signal], axis=0), yerr=sem(results_dict[signal], axis=0, nan_policy='omit'), fmt=formats[i], label=signal, alpha=0.6)
+
+	formats = ['m^-']
+	for i,signal in enumerate(n_signals):
+		ax = axes_neural_graph.errorbar(X, np.nanmean(results_dict[signal], axis=0), yerr=sem(results_dict[signal], axis=0, nan_policy='omit'), fmt=formats[i], label=signal, alpha=0.6)
 
 	for stage in stage_indices[1:]:
-		plt.axvline(x=stage + 0.5, alpha=0.5, dashes=(5, 2, 1, 2), lw=2)
+		axes_behavioral_graph.axvline(x=stage + 0.5, alpha=0.5, dashes=(5, 2, 1, 2), lw=2)
+		axes_neural_graph.axvline(x=stage + 0.5, alpha=0.5, dashes=(5, 2, 1, 2), lw=2)
 
 	plt.xlabel('Days')
 	plt.ylabel('Percent')
 
-	plt.title("Behavioral Stats of {} individuals. brain:{}. #params:{}.".format(
+	fig.suptitle("Behavioral Stats of {} individuals. brain:{}. #params:{}.".format(
 		len(reports), reports[0]._metadata['brain'], reports[0]._metadata['brain_params']))
-	plt.legend()
+
+	axes_behavioral_graph.legend()
+	axes_neural_graph.legend()
 
 	plt.savefig('Results/Behavioural_stats_{}-{}'.format(reports[0]._metadata['brain'],time.strftime("%Y%m%d-%H%M")))

@@ -172,4 +172,4 @@ def unsupervised_dimensionality(samples_embedding, explained_variance=0.95):
     num_pcs = min(len(samples_embedding), len(samples_embedding[0]))
     pca = decomposition.PCA(n_components=num_pcs).fit(samples_embedding)
     dimensionality = np.cumsum(pca.explained_variance_ratio_)
-    return (np.argmax(dimensionality > explained_variance) + 1) / num_pcs
+    return (np.argmax(dimensionality > explained_variance) + 1)
