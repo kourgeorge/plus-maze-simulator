@@ -37,4 +37,6 @@ class Stats:
             ('Reward', avg_reward),
             ('WaterPreference', water_preference),
             ('WaterCorrect', water_correct_percent),
-            ('FoodCorrect', food_correct_percent)])
+            ('FoodCorrect', food_correct_percent),
+            ('AffineDim', report.affine_dim)])
+

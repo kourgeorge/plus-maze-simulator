@@ -45,7 +45,7 @@ def days_to_consider_in_each_stage(reports, q=75):
 def plot_behavior_results(reports):
 	stages = list(range(0, 5))
 	days_each_stage = days_to_consider_in_each_stage(reports)
-	signals = ['Reward', 'Correct', 'WaterPreference', 'WaterCorrect', 'FoodCorrect']
+	signals = ['Reward', 'Correct', 'WaterPreference', 'WaterCorrect', 'FoodCorrect', 'AffineDim']
 
 	# days_each_stage_sum = np.cumsum(days_each_stage)
 	results_dict = {}
@@ -66,7 +66,7 @@ def plot_behavior_results(reports):
 	fig = plt.figure(figsize=(9, 5), dpi=120, facecolor='w')
 	X = np.array(list(range(0,stage_indices[-1])))+1
 
-	formats = ['g+-', 'y-', '^-', 'bo-', 'ro-']
+	formats = ['g-','g+-', 'y-', '^-', 'bo-', 'ro-', 'm^-']
 	for i,signal in enumerate(signals):
 		ax = plt.errorbar(X, np.nanmean(results_dict[signal], axis=0), yerr=sem(results_dict[signal], axis=0, nan_policy='omit'), fmt=formats[i], label=signal, alpha=0.6)
 

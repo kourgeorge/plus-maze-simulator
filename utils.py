@@ -1,8 +1,12 @@
-import numpy as np
 import random
 from collections import deque
+
+import numpy as np
+from sklearn import decomposition
+
 import config
-import torch
+from abstractbrain import AbstractBrain
+
 
 class Object(object):
     pass
@@ -139,7 +143,7 @@ def episode_rollout(env, agent):
     return steps, total_reward, act_dist
 
 
-def create_report_from_memory(experience: ReplayMemory, last):
+def create_report_from_memory(experience: ReplayMemory, brain:AbstractBrain, last):
     if last == -1:
         pass
     last_exp = experience.last(last)
@@ -154,4 +158,18 @@ def create_report_from_memory(experience: ReplayMemory, last):
     report_dict.arm_type_water = [1 if action < 2 else 0 for action in report_dict.action]
     report_dict.correct = [1 if info.outcome != config.RewardType.NONE else 0 for info in infos]
     report_dict.stage = [info.stage for info in infos]
+    report_dict.affine_dim = electrophysiology_analysis(brain)
     return report_dict
+
+
+def electrophysiology_analysis(brain:AbstractBrain):
+    affine = brain.network.affine.weight.T.detach().numpy()
+    affine_dim = unsupervised_dimensionality(affine)
+    return affine_dim
+
+
+def unsupervised_dimensionality(samples_embedding, explained_variance=0.95):
+    num_pcs = min(len(samples_embedding), len(samples_embedding[0]))
+    pca = decomposition.PCA(n_components=num_pcs).fit(samples_embedding)
+    dimensionality = np.cumsum(pca.explained_variance_ratio_)
+    return (np.argmax(dimensionality > explained_variance) + 1) / num_pcs
