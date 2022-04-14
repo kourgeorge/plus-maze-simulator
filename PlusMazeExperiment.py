@@ -1,4 +1,5 @@
 from environment import PlusMaze
+from motivatedagent import MotivatedAgent
 import numpy as np
 import config
 import utils
@@ -10,7 +11,7 @@ import time
 reporting_interval = 100
 
 
-def PlusMazeExperiment(agent, dashboard=False):
+def PlusMazeExperiment(agent:MotivatedAgent, dashboard=False):
 
     env = PlusMaze(relevant_cue=config.CueType.ODOR)
     env.reset()
@@ -22,7 +23,7 @@ def PlusMazeExperiment(agent, dashboard=False):
     def pre_stage_transition_update():
         if dashboard:
             dash.update(epoch_stats_df, env, agent.get_brain())
-            dash.save_fig(dashboard_screenshots_path, env.stage)
+            dash.save_fig(dashboard_screenshots_path, env._stage)
 
     dashboard_screenshots_path = os.path.join('/Users/gkour/repositories/plusmaze/Results', '{}-{}'.format(agent.get_brain(),time.strftime("%Y%m%d-%H%M")))
 
@@ -31,7 +32,7 @@ def PlusMazeExperiment(agent, dashboard=False):
     print('============================ Brain:{} ======================='.format(str(agent.get_brain())))
     print("Stage 0: Baseline - Water Motivated, odor relevant. (Odors: {}, Correct: {})".format(env.get_odor_cues(),
                                                                                                 env.get_correct_cue_value()))
-    while True:
+    while env._stage < 5:
         trial += 1
         utils.episode_rollout(env, agent)
         loss = agent.smarten()
@@ -39,7 +40,6 @@ def PlusMazeExperiment(agent, dashboard=False):
         if trial % reporting_interval == 0:
 
             report = utils.create_report_from_memory(agent.get_memory(), agent.get_brain(), reporting_interval)
-            #agent.clear_memory()
             epoch_stats_df = stats.update(trial, report)
             pre_stage_transition_update()
 
@@ -55,44 +55,8 @@ def PlusMazeExperiment(agent, dashboard=False):
                                                epoch_stats_df['FoodCorrect'].to_numpy()[-1]))
 
             current_criterion = np.mean(report.correct)
-            if env.stage == 0 and current_criterion > config.SUCCESS_CRITERION_THRESHOLD:
-                env.set_random_odor_set()
-                env.stage += 1
-                print('---------------------------------------------------------------------')
-                print("Stage {}: Inter-dimensional shift (Odors: {}. Correct {})".format(env.stage, env.get_odor_cues(),
-                                                                                         env.get_correct_cue_value()))
-
-                #brain.policy.controller.reset_parameters()
-
-            elif env.stage == 1 and current_criterion > config.SUCCESS_CRITERION_THRESHOLD:
-                print('---------------------------------------------------------------------')
-                print("Stage 2: Transitioning to food Motivation")
-                agent.set_motivation(config.RewardType.FOOD)
-                env.stage += 1
-
-           #     brain.policy.l2.reset_parameters()
-            elif env.stage == 2 and current_criterion > config.SUCCESS_CRITERION_THRESHOLD:
-                print('---------------------------------------------------------------------')
-                print("Stage 3: Back to Water to Motivation")
-                agent.set_motivation(config.RewardType.WATER)
-                env.stage += 1
-                #env.set_odor_options([[0.5, 0.1], [0.8, 0.3]])
-                #env.set_odor_options([[3], [-3]])
-                #env.set_correct_cue_value([0.5, 0.1])
-
-                #brain.policy.controller.reset_parameters()
-
-            elif env.stage == 3 and current_criterion > config.SUCCESS_CRITERION_THRESHOLD:
-                print('---------------------------------------------------------------------')
-                print("Stage 4: Extra-dimensional Shift (Light).")
-                agent.set_motivation(config.RewardType.WATER)
-                env.set_relevant_cue(config.CueType.LIGHT)
-                env.stage += 1
-
-                #brain.policy.controller.reset_parameters()
-
-            elif env.stage == 4 and current_criterion > config.SUCCESS_CRITERION_THRESHOLD:
-                break
+            if current_criterion > config.SUCCESS_CRITERION_THRESHOLD:
+                set_next_stage(env,agent)
 
             loss_acc = 0
 
@@ -101,3 +65,24 @@ def PlusMazeExperiment(agent, dashboard=False):
                                 'motivated_reward': agent._motivated_reward_value,
                                 'non_motivated_reward': agent._non_motivated_reward_value}
     return epoch_stats_df
+
+
+def set_next_stage(env:PlusMaze, agent:MotivatedAgent):
+    env._stage += 1
+    print('---------------------------------------------------------------------')
+    if env._stage==1:
+        env.set_random_odor_set()
+        print("Stage {}: IDshift (Odors: {}. Correct {})".format(env._stage, env.get_odor_cues(),
+                                                                                 env.get_correct_cue_value()))
+    elif env._stage==2:
+        agent.set_motivation(config.RewardType.FOOD)
+        print("Stage 2: Mshift{}".format(agent.get_motivation()))
+
+    elif env._stage==3:
+        agent.set_motivation(config.RewardType.WATER)
+        env.set_random_odor_set()
+        print("Stage 3: MShift(Water)+IDshift (Odors: {}. Correct {})".format(env._stage, env.get_odor_cues(),
+                                                                                 env.get_correct_cue_value()))
+    elif env._stage==4:
+        env.set_relevant_cue(config.CueType.LIGHT)
+        print("Stage 4: EDShift (Light).")

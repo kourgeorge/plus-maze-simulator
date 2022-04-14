@@ -13,7 +13,7 @@ class Dashboard:
     def __init__(self, brain:AbstractBrain):
         self.stage = 0
         self.fig = plt.figure(figsize=(9, 7), dpi=120, facecolor='w')
-        self.textstr = "Stage:{}, Trial {}: Odors:{}, Lights:{}. CorrectCue: {}. Accuracy:{}, Reward: {}."
+        self.text_curr_stage = "Stage:{}, Trial {}: Odors:{}, Lights:{}. CorrectCue: {}. Accuracy:{}, Reward: {}."
         axis_affine = self.fig.add_subplot(322)
         axis_actor = self.fig.add_subplot(421)
         axis_affine.title.set_text('Attention')
@@ -22,6 +22,7 @@ class Dashboard:
         self.im2_obj = axis_actor.imshow(brain.get_network().controller.weight.data.numpy(), cmap='RdBu', vmin=-2, vmax=2)
 
         props = dict(boxstyle='round', facecolor='wheat')
+        self.figtxtbrain = plt.figtext(0.1, 0.99, "Brain:{}".format(str(brain)), fontsize=8, verticalalignment='top', bbox=props)
         self.figtxt = plt.figtext(0.1, 0.97, 'Start', fontsize=8, verticalalignment='top', bbox=props)
         self.fig.colorbar(self.im1_obj, ax=axis_affine)
 
@@ -53,8 +54,8 @@ class Dashboard:
             [self._line_affine_dimensionality.get_label()], loc=0)
 
     def update(self, stats_df, env:PlusMaze, brain):
-        textstr = self.textstr.format(
-            env.stage, stats_df['Trial'].to_numpy()[-1], env.get_odor_cues(), env.get_light_cues(), env.get_correct_cue_value(),
+        textstr = self.text_curr_stage.format(
+            env._stage, stats_df['Trial'].to_numpy()[-1], env.get_odor_cues(), env.get_light_cues(), env.get_correct_cue_value(),
             stats_df['Correct'].to_numpy()[-1],
             stats_df['Reward'].to_numpy()[-1]
         )
@@ -81,8 +82,8 @@ class Dashboard:
         self._line_affine_dimensionality.set_xdata(stats_df['Trial'])
         self._line_affine_dimensionality.set_ydata(stats_df['AffineDim'])
 
-        if self.stage < env.stage:
-            self.stage = env.stage
+        if self.stage < env._stage:
+            self.stage = env._stage
             self._axes_graph.axvline(x=stats_df['Trial'].to_numpy()[-1] - 50, alpha=0.5, dashes=(5, 2, 1, 2), lw=2)
             self._axes_neural_graph.axvline(x=stats_df['Trial'].to_numpy()[-1] - 50, alpha=0.5, dashes=(5, 2, 1, 2), lw=2)
 

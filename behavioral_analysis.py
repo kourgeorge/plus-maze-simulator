@@ -27,10 +27,10 @@ def plot_days_per_stage(brains_repetitions_reports):
 	plt.savefig('Results/days_in_stage_-{}'.format(time.strftime("%Y%m%d-%H%M")))
 
 
-def days_to_consider_in_each_stage(reports, q=75):
+def days_to_consider_in_each_stage(subject_reports, q=75):
 	stages = list(range(0, 5))
 	days_per_stage = []
-	for experiment_report_df in reports:
+	for experiment_report_df in subject_reports:
 		c = Counter(list(experiment_report_df['Stage']))
 		days_per_stage.append([c[i] for i in stages])
 

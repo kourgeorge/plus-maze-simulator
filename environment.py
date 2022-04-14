@@ -15,7 +15,7 @@ class PlusMaze:
         self._relevant_cue = relevant_cue
         self._odor_cues = None
         self._light_cues = None
-        self.stage = 0
+        self._stage = 0
         self.set_random_odor_set()
         self.set_random_light_set()
 
@@ -54,7 +54,7 @@ class PlusMaze:
         info.odor_options = self._odor_cues
         info.light_options = self._light_cues
         info.outcome = outcome
-        info.stage = self.stage
+        info.stage = self._stage
 
         return info
 
