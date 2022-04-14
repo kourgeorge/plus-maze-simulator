@@ -60,13 +60,11 @@ class ReplayMemory:
     def __init__(self, capacity):
         self.capacity = capacity
         self.memory = []
-        self.position = 0
 
     def push(self, *transition):
-        if len(self.memory) < self.capacity:
-            self.memory.append(None)
-        self.memory[self.position] = transition
-        self.position = (self.position + 1) % self.capacity
+        if len(self.memory) > self.capacity:
+            del self.memory[0]
+        self.memory.append(transition)
 
     def sample(self, batch_size):
         return random.sample(self.memory, batch_size)
@@ -118,7 +116,6 @@ class NStepsReplayMemory(ReplayMemory):
 def episode_rollout(env, agent):
     total_reward = 0
 
-    # num_actions = env.action_space.n
     num_actions = env.num_actions()
 
     act_dist = np.zeros(num_actions)
