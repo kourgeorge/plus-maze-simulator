@@ -28,6 +28,7 @@ class Dashboard:
 
         self._axes_graph = self.fig.add_subplot(312)
         self._axes_graph.set_ylabel('Behavioral [%]')
+        self._axes_graph.set_ylim(0, 1)
         self._line_correct, = self._axes_graph.plot([], [], 'g+-', label='Correct', alpha=0.3)
         self._line_reward, = self._axes_graph.plot([], [], 'y-', label='Reward', alpha=0.2)
         self._line_water_preference, = self._axes_graph.plot([], [], '^-', label='Water PI', markersize=3, alpha=0.4)
@@ -36,11 +37,10 @@ class Dashboard:
 
         self._axes_neural_graph = self.fig.add_subplot(313)
         self._axes_neural_graph.set_ylabel('Neural [%]')
-
-        self._axes_graph.set_ylim(0, 1)
         self._axes_neural_graph.set_ylim(0, 10)
-
         self._line_affine_dimensionality, = self._axes_neural_graph.plot([], [], 'm^-', label='Affine Dim', markersize=3,
+                                                                  alpha=0.4)
+        self._line_controller_dimensionality, = self._axes_neural_graph.plot([], [], 'g^-', label='Controller Dim', markersize=3,
                                                                   alpha=0.4)
 
         self._axes_graph.legend(
@@ -50,8 +50,8 @@ class Dashboard:
              self._line_food_correct.get_label(), self._line_water_preference.get_label()], loc=0)
 
         self._axes_neural_graph.legend(
-            [self._line_affine_dimensionality],
-            [self._line_affine_dimensionality.get_label()], loc=0)
+            [self._line_affine_dimensionality, self._line_controller_dimensionality],
+            [self._line_affine_dimensionality.get_label(), self._line_controller_dimensionality.get_label()], loc=0)
 
     def update(self, stats_df, env:PlusMaze, brain):
         textstr = self.text_curr_stage.format(
@@ -82,6 +82,9 @@ class Dashboard:
         self._line_affine_dimensionality.set_xdata(stats_df['Trial'])
         self._line_affine_dimensionality.set_ydata(stats_df['AffineDim'])
 
+        self._line_controller_dimensionality.set_xdata(stats_df['Trial'])
+        self._line_controller_dimensionality.set_ydata(stats_df['ControllerDim'])
+
         if self.stage < env._stage:
             self.stage = env._stage
             self._axes_graph.axvline(x=stats_df['Trial'].to_numpy()[-1] - 50, alpha=0.5, dashes=(5, 2, 1, 2), lw=2)
@@ -89,10 +92,10 @@ class Dashboard:
 
 
         self._axes_graph.relim()
-        self._axes_graph.autoscale_view()
+        #self._axes_graph.autoscale_view()
 
         self._axes_neural_graph.relim()
-        self._axes_neural_graph.autoscale_view()
+        #self._axes_neural_graph.autoscale_view()
 
     def get_fig(self):
         return self.fig

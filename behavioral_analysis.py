@@ -1,9 +1,10 @@
 from collections import Counter
-
+import config
 import matplotlib.pyplot as plt
 import numpy as np
 from scipy.stats import sem
 import time
+
 
 def plot_days_per_stage(brains_repetitions_reports):
 	stages = list(range(0, 5))
@@ -20,6 +21,8 @@ def plot_days_per_stage(brains_repetitions_reports):
 
 		ax.bar(np.array(stages) + width*i, np.mean(days_per_stage_pg, axis=0), yerr=sem(days_per_stage_pg, axis=0, nan_policy='omit'),
 			width=width, label=brain_reports[0]._metadata['brain'], capsize=2)
+
+	plt.xticks(np.array(stages) + width/2,config.stage_names, rotation=0, fontsize='12', horizontalalignment='center')
 
 	plt.title("Days Per stage for all brains. #reps={}".format(repetitions))
 	plt.legend()
@@ -46,7 +49,7 @@ def plot_behavior_results(reports):
 	stages = list(range(0, 5))
 	days_each_stage = days_to_consider_in_each_stage(reports)
 	b_signals = ['Correct', 'Reward', 'WaterPreference', 'WaterCorrect', 'FoodCorrect']
-	n_signals = ['AffineDim']
+	n_signals = ['AffineDim','ControllerDim']
 
 	signals = b_signals+n_signals
 	# days_each_stage_sum = np.cumsum(days_each_stage)
@@ -75,7 +78,7 @@ def plot_behavior_results(reports):
 	for i,signal in enumerate(b_signals):
 		ax = axes_behavioral_graph.errorbar(X, np.nanmean(results_dict[signal], axis=0), yerr=sem(results_dict[signal], axis=0, nan_policy='omit'), fmt=formats[i], label=signal, alpha=0.6)
 
-	formats = ['m^-']
+	formats = ['m^-', 'g^-']
 	for i,signal in enumerate(n_signals):
 		ax = axes_neural_graph.errorbar(X, np.nanmean(results_dict[signal], axis=0), yerr=sem(results_dict[signal], axis=0, nan_policy='omit'), fmt=formats[i], label=signal, alpha=0.6)
 
@@ -91,5 +94,7 @@ def plot_behavior_results(reports):
 
 	axes_behavioral_graph.legend()
 	axes_neural_graph.legend()
+	axes_behavioral_graph.set_ylim(0, 1)
+	axes_neural_graph.set_ylim(0, 8)
 
 	plt.savefig('Results/Behavioural_stats_{}-{}'.format(reports[0]._metadata['brain'],time.strftime("%Y%m%d-%H%M")))

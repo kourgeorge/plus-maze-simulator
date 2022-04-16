@@ -38,5 +38,6 @@ class Stats:
             ('WaterPreference', water_preference),
             ('WaterCorrect', water_correct_percent),
             ('FoodCorrect', food_correct_percent),
-            ('AffineDim', report.affine_dim)])
+            ('AffineDim', report.affine_dim),
+            ('ControllerDim', report.controller_dim)])
 
