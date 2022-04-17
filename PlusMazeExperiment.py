@@ -30,7 +30,7 @@ def PlusMazeExperiment(agent:MotivatedAgent, dashboard=False):
     trial = 0
     loss_acc = 0
     print('============================ Brain:{} ======================='.format(str(agent.get_brain())))
-    print("Stage 0: Baseline - Water Motivated, odor relevant. (Odors: {}, Correct: {})".format(env.get_odor_cues(),
+    print("Stage {}: {} - Water Motivated, odor relevant. (Odors: {}, Correct: {})".format(env._stage, config.stage_names[env._stage],env.get_odor_cues(),
                                                                                                 env.get_correct_cue_value()))
     while env._stage < 5:
         trial += 1
@@ -38,7 +38,8 @@ def PlusMazeExperiment(agent:MotivatedAgent, dashboard=False):
         loss = agent.smarten()
         loss_acc += loss
         if trial % reporting_interval == 0:
-
+            # loss = agent.smarten()
+            # loss_acc += loss
             report = utils.create_report_from_memory(agent.get_memory(), agent.get_brain(), reporting_interval)
             epoch_stats_df = stats.update(trial, report)
             pre_stage_transition_update()
@@ -55,7 +56,8 @@ def PlusMazeExperiment(agent:MotivatedAgent, dashboard=False):
                                                epoch_stats_df['FoodCorrect'].to_numpy()[-1]))
 
             current_criterion = np.mean(report.correct)
-            if current_criterion > config.SUCCESS_CRITERION_THRESHOLD:
+            reward = np.mean(report.reward)
+            if current_criterion > config.SUCCESS_CRITERION_THRESHOLD and reward>0.6:
                 set_next_stage(env,agent)
 
             loss_acc = 0
@@ -71,18 +73,20 @@ def set_next_stage(env:PlusMaze, agent:MotivatedAgent):
     env._stage += 1
     print('---------------------------------------------------------------------')
     if env._stage==1:
+        old_odor = np.array(env.get_correct_cue_value())
         env.set_random_odor_set()
-        print("Stage {}: IDshift (Odors: {}. Correct {})".format(env._stage, env.get_odor_cues(),
-                                                                                 env.get_correct_cue_value()))
+        new_odor = np.array(env.get_correct_cue_value())
+        print("Stage {}: {} (Odors: {}. Odor_delta {})".format(env._stage, config.stage_names[env._stage], env.get_odor_cues(),
+                                                                                 np.linalg.norm(old_odor-new_odor)))
     elif env._stage==2:
         agent.set_motivation(config.RewardType.FOOD)
-        print("Stage 2: Mshift{}".format(agent.get_motivation()))
+        print("Stage {}: {}".format(env._stage, config.stage_names[env._stage]))
 
     elif env._stage==3:
         agent.set_motivation(config.RewardType.WATER)
         env.set_random_odor_set()
-        print("Stage 3: MShift(Water)+IDshift (Odors: {}. Correct {})".format(env._stage, env.get_odor_cues(),
+        print("Stage {}: {} (Odors: {}. Correct {})".format(env._stage, config.stage_names[env._stage], env.get_odor_cues(),
                                                                                  env.get_correct_cue_value()))
     elif env._stage==4:
         env.set_relevant_cue(config.CueType.LIGHT)
-        print("Stage 4: EDShift (Light).")
+        print("Stage {}: {}.".format(env._stage, config.stage_names[env._stage]))
