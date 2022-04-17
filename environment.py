@@ -11,7 +11,7 @@ class PlusMaze:
         # correct_value: 1/-1 the identity of the correct cue
 
         self._state = None
-        self.stimuli_encoding_size = 2
+        self.stimuli_encoding_size = config.STIMULIENCODINGSIZE
         self._relevant_cue = relevant_cue
         self._odor_cues = None
         self._light_cues = None
