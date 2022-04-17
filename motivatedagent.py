@@ -1,7 +1,8 @@
 import config
-from utils import ReplayMemory, epsilon_greedy
+from utils import epsilon_greedy
+from ReplayMemory import ReplayMemory
 from abstractbrain import AbstractBrain
-
+import numpy as np
 
 class MotivatedAgent:
     def __init__(self, brain:AbstractBrain, memory_size=config.MEMORY_SIZE, motivation=config.RewardType.WATER, motivated_reward_value=1, non_motivated_reward_value=0.3):

@@ -1,7 +1,10 @@
 import numpy as np
 import pandas as pd
 from collections import OrderedDict
-
+import utils
+import config
+from ReplayMemory import ReplayMemory
+from abstractbrain import AbstractBrain
 
 class Stats:
 
@@ -41,3 +44,21 @@ class Stats:
             ('AffineDim', report.affine_dim),
             ('ControllerDim', report.controller_dim)])
 
+    @staticmethod
+    def create_report_from_memory(experience: ReplayMemory, brain: AbstractBrain, last):
+        if last == -1:
+            pass
+        last_exp = experience.last(last)
+        actions = [data[1] for data in last_exp]
+        rewards = [data[2] for data in last_exp]
+        infos = [data[5] for data in last_exp]
+
+        report_dict = utils.Object()
+        report_dict.action_1hot = actions
+        report_dict.action = np.argmax(actions, axis=1)
+        report_dict.reward = rewards
+        report_dict.arm_type_water = [1 if action < 2 else 0 for action in report_dict.action]
+        report_dict.correct = [1 if info.outcome != config.RewardType.NONE else 0 for info in infos]
+        report_dict.stage = [info.stage for info in infos]
+        report_dict.affine_dim, report_dict.controller_dim = utils.electrophysiology_analysis(brain)
+        return report_dict

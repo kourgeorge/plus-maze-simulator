@@ -40,7 +40,7 @@ def PlusMazeExperiment(agent:MotivatedAgent, dashboard=False):
         if trial % reporting_interval == 0:
             # loss = agent.smarten()
             # loss_acc += loss
-            report = utils.create_report_from_memory(agent.get_memory(), agent.get_brain(), reporting_interval)
+            report = Stats.create_report_from_memory(agent.get_memory(), agent.get_brain(), reporting_interval)
             epoch_stats_df = stats.update(trial, report)
             pre_stage_transition_update()
 
