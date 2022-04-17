@@ -35,7 +35,7 @@ class BrainDQN(AbstractBrain):
             return
         self.num_optimizations += 1
 
-        minibatch = memory.last(minibatch_size)
+        minibatch = memory.sample(minibatch_size)
         state_batch = torch.from_numpy(np.stack([np.stack(data[0]) for data in minibatch])).float()
         action_batch = torch.FloatTensor([data[1] for data in minibatch])
         reward_batch = torch.FloatTensor([data[2] for data in minibatch])
