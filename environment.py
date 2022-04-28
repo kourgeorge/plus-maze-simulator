@@ -65,14 +65,14 @@ class PlusMaze:
         return len(self.action_space())
 
     def state_shape(self):
-        return 4 * (self.odor_encoding_size() + self.light_encoding_size())
+        return (self.odor_encoding_size(),8)
 
     def odor_encoding_size(self):
         return self.stimuli_encoding_size
 
     def set_random_odor_set(self):
         new_odor1 = PlusMaze.random_stimuli_encoding(self.odor_encoding_size())
-        new_odor2 = PlusMaze.random_stimuli_encoding(self.odor_encoding_size())
+        new_odor2 = list(np.round(utils.get_orthogonal(new_odor1),2))
         while(np.linalg.norm(np.array(new_odor1)-np.array(new_odor2))<0.2):
             new_odor1 = PlusMaze.random_stimuli_encoding(self.odor_encoding_size())
             new_odor2 = PlusMaze.random_stimuli_encoding(self.odor_encoding_size())
@@ -88,7 +88,9 @@ class PlusMaze:
 
     @staticmethod
     def random_stimuli_encoding(encoding_size):
-        return list(np.round(np.random.rand(encoding_size)*2-1,2))
+        point = np.random.rand(encoding_size) * 2 - 1
+        point=np.round(point/np.linalg.norm(point),2)
+        return list(point)
 
     def light_encoding_size(self):
         return self.stimuli_encoding_size
