@@ -1,4 +1,4 @@
-from environment import PlusMaze
+from environment import PlusMaze, PlusMazeOneHotCues
 from motivatedagent import MotivatedAgent
 import numpy as np
 import config
@@ -13,7 +13,7 @@ reporting_interval = 100
 
 def PlusMazeExperiment(agent:MotivatedAgent, dashboard=False):
 
-    env = PlusMaze(relevant_cue=config.CueType.ODOR)
+    env = PlusMazeOneHotCues(relevant_cue=config.CueType.ODOR)
     env.reset()
     stats = Stats()
 
@@ -30,9 +30,10 @@ def PlusMazeExperiment(agent:MotivatedAgent, dashboard=False):
     trial = 0
     loss_acc = 0
     print('============================ Brain:{} ======================='.format(str(agent.get_brain())))
-    print("Stage {}: {} - Water Motivated, odor relevant. (Odors: {}, Correct: {})".format(env._stage, config.stage_names[env._stage],env.get_odor_cues(),
-                                                                                                env.get_correct_cue_value()))
-    while env._stage < 5:
+    print("Stage {}: {} - Water Motivated, odor relevant. (Odors: {}, Correct: {})".format(env._stage, config.stage_names[env._stage], [np.argmax(encoding) for encoding in env.get_odor_cues()],
+                                                                                             np.argmax(env.get_correct_cue_value())))
+
+    while env._stage < 5 and trial<reporting_interval*40:
         trial += 1
         utils.episode_rollout(env, agent)
         loss = agent.smarten()
@@ -73,11 +74,8 @@ def set_next_stage(env:PlusMaze, agent:MotivatedAgent):
     env._stage += 1
     print('---------------------------------------------------------------------')
     if env._stage==1:
-        old_odor = np.array(env.get_correct_cue_value())
         env.set_random_odor_set()
-        new_odor = np.array(env.get_correct_cue_value())
-        print("Stage {}: {} (Odors: {}. Odor_delta {})".format(env._stage, config.stage_names[env._stage], env.get_odor_cues(),
-                                                                                 np.linalg.norm(old_odor-new_odor)))
+        print("Stage {}: {} (Odors: {}, Correct:{})".format(env._stage, config.stage_names[env._stage], [np.argmax(encoding) for encoding in env.get_odor_cues()],np.argmax(env.get_correct_cue_value())))
     elif env._stage==2:
         agent.set_motivation(config.RewardType.FOOD)
         print("Stage {}: {}".format(env._stage, config.stage_names[env._stage]))
@@ -85,8 +83,9 @@ def set_next_stage(env:PlusMaze, agent:MotivatedAgent):
     elif env._stage==3:
         agent.set_motivation(config.RewardType.WATER)
         env.set_random_odor_set()
-        print("Stage {}: {} (Odors: {}. Correct {})".format(env._stage, config.stage_names[env._stage], env.get_odor_cues(),
-                                                                                 env.get_correct_cue_value()))
+        print("Stage {}: {} (Odors: {}. Correct {})".format(env._stage, config.stage_names[env._stage], [np.argmax(encoding) for encoding in env.get_odor_cues()],
+                                                                                 np.argmax(env.get_correct_cue_value())))
     elif env._stage==4:
         env.set_relevant_cue(config.CueType.LIGHT)
-        print("Stage {}: {}.".format(env._stage, config.stage_names[env._stage]))
+        print("Stage {}: {} (Lights: {}. Correct {})".format(env._stage, config.stage_names[env._stage], [np.argmax(encoding) for encoding in env.get_light_cues()],
+                                                                                 np.argmax(env.get_correct_cue_value())))

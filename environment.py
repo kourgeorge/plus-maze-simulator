@@ -11,7 +11,7 @@ class PlusMaze:
         # correct_value: 1/-1 the identity of the correct cue
 
         self._state = None
-        self.stimuli_encoding_size = config.STIMULIENCODINGSIZE
+        self.stimuli_encoding_size = 2
         self._relevant_cue = relevant_cue
         self._odor_cues = None
         self._light_cues = None
@@ -125,3 +125,63 @@ class PlusMaze:
                           self._odor_cues[1 - arm1O] + self._light_cues[1 - arm1L] +
                           self._odor_cues[arm3O] + self._light_cues[arm3L] +
                           self._odor_cues[1 - arm3O] + self._light_cues[1 - arm3L])
+
+
+class PlusMazeOneHotCues(PlusMaze):
+    def __init__(self, *args, **kwargs):
+        super(PlusMazeOneHotCues, self).__init__(*args, **kwargs)
+        self.stimuli_encoding_size = 6
+        self.set_random_odor_set()
+        self.set_random_light_set()
+
+
+    def step(self, action):
+        # returns reward, new state, done
+
+        option_cues_length = self.light_encoding_size() + self.odor_encoding_size()
+        selected_arm_cues_ind = option_cues_length * action
+        selected_cues = self._state[:, action, :]
+        #        print('state {}, action:{} selected arm cues:{}'.format(self._state,action,selected_cues ))
+        self._state = np.ones(self.state_shape())
+        selected_cues_items = [selected_cues[0:self.odor_encoding_size()]] + \
+                              [selected_cues[
+                               self.odor_encoding_size():self.odor_encoding_size() + self.light_encoding_size()]]
+
+        if np.array_equal(selected_cues[self._relevant_cue.value, :], self.get_correct_cue_value()):
+            outcome = config.RewardType.WATER if action in [0, 1] else config.RewardType.FOOD
+            return self._state, outcome, 1, self._get_step_info(outcome)
+        return self._state, config.RewardType.NONE, 1, self._get_step_info(config.RewardType.NONE)
+
+    def state_shape(self):
+        return (self.num_actions(), self.odor_encoding_size(), 2)  # TODO:fix that
+
+    def odor_encoding_size(self):
+        return self.stimuli_encoding_size
+
+    def set_random_odor_set(self):
+        o1, o2 = random.sample(range(0, self.stimuli_encoding_size), 2)
+        self._odor_cues = [np.eye(self.stimuli_encoding_size)[o1], np.eye(self.stimuli_encoding_size)[o2]]
+
+    def set_random_light_set(self):
+        l1, l2 = random.sample(range(0, self.stimuli_encoding_size), 2)
+        self._light_cues = [np.eye(self.stimuli_encoding_size)[l1], np.eye(self.stimuli_encoding_size)[l2]]
+
+    def random_state(self):
+        arm1O = random.choice([0, 1])
+        arm1L = random.choice([0, 1])
+
+        # use the same combination for arms 3 and arms 4. select randomly.
+        arm3O = random.choice([0, 1])
+        arm3L = random.choice([0, 1])
+        state = np.ndarray(shape=[2, 4, self.stimuli_encoding_size])
+        state[0, 0, :] = self._odor_cues[arm1O]
+        state[0, 1, :] = self._odor_cues[1 - arm1O]
+        state[0, 2, :] = self._odor_cues[arm3O]
+        state[0, 3, :] = self._odor_cues[1 - arm3O]
+
+        state[1, 0, :] = self._light_cues[arm1L]
+        state[1, 1, :] = self._light_cues[1 - arm1L]
+        state[1, 2, :] = self._light_cues[arm3L]
+        state[1, 3, :] = self._light_cues[1 - arm3L]
+
+        return state
