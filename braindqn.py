@@ -6,7 +6,7 @@ import torch.nn.functional as F
 import torch.optim as optim
 
 from abstractbrain import AbstractBrain
-from standardbrainnetwork import StandardBrainNetwork
+from standardbrainnetwork import StandardBrainNetworkAttention as StandardBrainNetwork
 
 torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
@@ -24,7 +24,8 @@ class BrainDQN(AbstractBrain):
 
     def think(self, obs):
         with torch.no_grad():
-            action = self.network(torch.from_numpy(obs).float().unsqueeze_(0)).argmax().item()
+            action_probs = self.network(torch.from_numpy(obs).float().unsqueeze_(0))
+            action = action_probs.argmax().item()
             distribution = np.zeros(self.num_actions())
             distribution[action] = 1
             return distribution

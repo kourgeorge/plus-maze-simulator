@@ -8,7 +8,7 @@ import torch.optim as optim
 import torch.nn.functional as F
 from abstractbrain import AbstractBrain
 import os.path
-from standardbrainnetwork import StandardBrainNetwork
+from standardbrainnetwork import StandardBrainNetworkAttention as StandardBrainNetwork
 
 torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
@@ -25,7 +25,7 @@ class BrainPG(AbstractBrain):
 
     def think(self, obs):
         with torch.no_grad():
-            action_probs = self.network(torch.FloatTensor(obs))
+            action_probs = self.network(torch.from_numpy(obs).float().unsqueeze_(0))
         return action_probs.tolist()
 
     def train(self, memory):
