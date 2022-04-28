@@ -14,17 +14,21 @@ class Dashboard:
         self.stage = 0
         self.fig = plt.figure(figsize=(9, 7), dpi=120, facecolor='w')
         self.text_curr_stage = "Stage:{}, Trial {}: Odors:{}, Lights:{}. CorrectCue: {}. Accuracy:{}, Reward: {}."
-        axis_affine = self.fig.add_subplot(322)
-        axis_actor = self.fig.add_subplot(421)
-        axis_affine.title.set_text('Attention')
-        axis_actor.title.set_text('Controller')
-        self.im1_obj = axis_affine.imshow(np.transpose(brain.get_network().affine.weight.data.numpy()), cmap='RdBu', vmin=-2, vmax=2)
-        self.im2_obj = axis_actor.imshow(brain.get_network().controller.weight.data.numpy(), cmap='RdBu', vmin=-2, vmax=2)
+        axis_stimuli = self.fig.add_subplot(322)
+        axis_door_attn = self.fig.add_subplot(341)
+        axis_dim_attn = self.fig.add_subplot(342)
+        axis_stimuli.title.set_text('Stimuli Processing')
+        axis_door_attn.title.set_text('Door Attention')
+        axis_dim_attn.title.set_text('Dimension Attention')
+        axis_dim_attn.set_axis_off()
+        self.im1_obj = axis_stimuli.imshow(np.transpose(brain.get_network().get_affine().data.numpy()), cmap='RdBu', vmin=-2, vmax=2)
+        self.im2_obj = axis_door_attn.imshow(brain.get_network().controller.data.numpy().T, cmap='RdBu', vmin=-2, vmax=2)
+        self.im3_obj = axis_dim_attn.imshow(brain.get_network().dim_attn.data.numpy(), cmap='RdBu', vmin=-2, vmax=2)
 
         props = dict(boxstyle='round', facecolor='wheat')
         self.figtxtbrain = plt.figtext(0.1, 0.99, "Brain:{}".format(str(brain)), fontsize=8, verticalalignment='top', bbox=props)
         self.figtxt = plt.figtext(0.1, 0.97, 'Start', fontsize=8, verticalalignment='top', bbox=props)
-        self.fig.colorbar(self.im1_obj, ax=axis_affine)
+        self.fig.colorbar(self.im1_obj, ax=axis_stimuli)
 
         self._axes_graph = self.fig.add_subplot(312)
         self._axes_graph.set_ylabel('Behavioral [%]')
@@ -53,16 +57,18 @@ class Dashboard:
             [self._line_affine_dimensionality, self._line_controller_dimensionality],
             [self._line_affine_dimensionality.get_label(), self._line_controller_dimensionality.get_label()], loc=0)
 
-    def update(self, stats_df, env:PlusMaze, brain):
+    def update(self, stats_df, env: PlusMaze, brain):
         textstr = self.text_curr_stage.format(
-            env._stage, stats_df['Trial'].to_numpy()[-1], env.get_odor_cues(), env.get_light_cues(), env.get_correct_cue_value(),
+            env._stage, stats_df['Trial'].to_numpy()[-1], [np.argmax(encoding) for encoding in env.get_odor_cues()],
+            [np.argmax(encoding) for encoding in env.get_light_cues()], np.argmax(env.get_correct_cue_value()),
             stats_df['Correct'].to_numpy()[-1],
             stats_df['Reward'].to_numpy()[-1]
         )
 
         self.figtxt.set_text(textstr)
-        self.im1_obj.set_data(np.transpose(brain.network.affine.weight.data.numpy()))
-        self.im2_obj.set_data(brain.network.controller.weight.data.numpy())
+        self.im1_obj.set_data(np.transpose(brain.network.get_affine().data.numpy()))
+        self.im2_obj.set_data(brain.network.controller.data.numpy().T)
+        self.im3_obj.set_data(brain.network.dim_attn.data.numpy())
 
         self._line_correct.set_xdata(stats_df['Trial'])
         self._line_correct.set_ydata(stats_df['Correct'])
@@ -92,10 +98,10 @@ class Dashboard:
 
 
         self._axes_graph.relim()
-        #self._axes_graph.autoscale_view()
+        self._axes_graph.autoscale_view()
 
         self._axes_neural_graph.relim()
-        #self._axes_neural_graph.autoscale_view()
+        self._axes_neural_graph.autoscale_view()
 
     def get_fig(self):
         return self.fig
