@@ -66,7 +66,8 @@ def episode_rollout(env, agent):
     while not terminated:
         steps += 1
         # env.render()
-        state = np.concatenate((env_state,agent.get_internal_state()))
+        #state = np.concatenate((env_state,agent.get_internal_state()))
+        state = env_state
         action = agent.decide(state)
         dec_1hot = np.zeros(num_actions)
         dec_1hot[action] = 1

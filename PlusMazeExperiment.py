@@ -1,3 +1,5 @@
+__author__ = 'gkour'
+
 from environment import PlusMaze, PlusMazeOneHotCues
 from motivatedagent import MotivatedAgent
 import numpy as np
@@ -7,9 +9,14 @@ from Dashboard import Dashboard
 from Stats import Stats
 import os
 import time
+from enum import Enum
 
 reporting_interval = 100
+max_experiment_length_in_days = 50
 
+class EperimentStatus(Enum):
+    COMPLETED = 'completed'
+    ABORTED = 'aborted'
 
 def PlusMazeExperiment(agent:MotivatedAgent, dashboard=False):
 
@@ -33,7 +40,12 @@ def PlusMazeExperiment(agent:MotivatedAgent, dashboard=False):
     print("Stage {}: {} - Water Motivated, odor relevant. (Odors: {}, Correct: {})".format(env._stage, config.stage_names[env._stage], [np.argmax(encoding) for encoding in env.get_odor_cues()],
                                                                                              np.argmax(env.get_correct_cue_value())))
 
-    while env._stage < 5 and trial<reporting_interval*40:
+    while env._stage < 5:
+
+        if trial>reporting_interval*max_experiment_length_in_days:
+            print("Agent failed to learn.")
+            return EperimentStatus.ABORTED, None
+
         trial += 1
         utils.episode_rollout(env, agent)
         loss = agent.smarten()
@@ -67,7 +79,7 @@ def PlusMazeExperiment(agent:MotivatedAgent, dashboard=False):
                                 'brain_params': agent.get_brain().num_trainable_parameters(),
                                 'motivated_reward': agent._motivated_reward_value,
                                 'non_motivated_reward': agent._non_motivated_reward_value}
-    return epoch_stats_df
+    return EperimentStatus.COMPLETED, epoch_stats_df
 
 
 def set_next_stage(env:PlusMaze, agent:MotivatedAgent):

@@ -21,9 +21,9 @@ class Dashboard:
         axis_door_attn.title.set_text('Door Attention')
         axis_dim_attn.title.set_text('Dimension Attention')
         axis_dim_attn.set_axis_off()
-        self.im1_obj = axis_stimuli.imshow(np.transpose(brain.get_network().get_affine().data.numpy()), cmap='RdBu', vmin=-2, vmax=2)
-        self.im2_obj = axis_door_attn.imshow(brain.get_network().controller.data.numpy().T, cmap='RdBu', vmin=-2, vmax=2)
-        self.im3_obj = axis_dim_attn.imshow(brain.get_network().dim_attn.data.numpy(), cmap='RdBu', vmin=-2, vmax=2)
+        self.im1_obj = axis_stimuli.imshow(np.transpose(brain.get_network().get_stimuli_layer().data.numpy()), cmap='RdBu', vmin=-2, vmax=2)
+        self.im2_obj = axis_door_attn.imshow(brain.get_network().get_door_attention().data.numpy().T, cmap='RdBu', vmin=-2, vmax=2)
+        self.im3_obj = axis_dim_attn.imshow(brain.get_network().get_dimension_attention().data.numpy(), cmap='RdBu', vmin=-2, vmax=2)
 
         props = dict(boxstyle='round', facecolor='wheat')
         self.figtxtbrain = plt.figtext(0.1, 0.99, "Brain:{}".format(str(brain)), fontsize=8, verticalalignment='top', bbox=props)
@@ -66,9 +66,9 @@ class Dashboard:
         )
 
         self.figtxt.set_text(textstr)
-        self.im1_obj.set_data(np.transpose(brain.network.get_affine().data.numpy()))
-        self.im2_obj.set_data(brain.network.controller.data.numpy().T)
-        self.im3_obj.set_data(brain.network.dim_attn.data.numpy())
+        self.im1_obj.set_data(np.transpose(brain.network.get_stimuli_layer().data.numpy()))
+        self.im2_obj.set_data(brain.network.get_door_attention().data.numpy().T)
+        self.im3_obj.set_data(brain.network.get_dimension_attention().data.numpy())
 
         self._line_correct.set_xdata(stats_df['Trial'])
         self._line_correct.set_ydata(stats_df['Correct'])

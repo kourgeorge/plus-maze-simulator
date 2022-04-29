@@ -27,26 +27,27 @@ class StandardBrainNetworkAttention(nn.Module):
 	def __init__(self, num_channels, num_actions):
 		super(StandardBrainNetworkAttention, self).__init__()
 		self.models = nn.ModuleList([ChannelProccessor(6, 1) for _ in range(num_channels)])
-		self.dim_attn = nn.Parameter(nn.init.xavier_uniform_(torch.empty(size=(1,num_channels))), requires_grad=True)
-		self.controller = nn.Parameter(nn.init.xavier_uniform_(torch.empty(size=(1,num_actions))), requires_grad=True)
+		self.dim_attn = nn.Parameter(nn.init.xavier_uniform_(torch.empty(size=(1, num_channels))), requires_grad=True)
+		self.door_attn = nn.Parameter(nn.init.xavier_uniform_(torch.empty(size=(1, num_actions))), requires_grad=True)
 
 	def forward(self, x, door_attention=None):
-		channels = [torch.select(x, dim=1, index=t) for t in range(x.shape[1])] # the +1 is for the batch dimension
-		processed_channels = torch.cat([self.models[i](channel) for i, channel in enumerate(channels)],dim=-1)
-		processed_channels_t = torch.transpose(processed_channels,dim0=-1,dim1=-2)
-		dimension_attended = torch.matmul(torch.softmax(self.dim_attn, dim=-1),processed_channels_t.squeeze())
+		channels = [torch.select(x, dim=1, index=t) for t in range(x.shape[1])]  # the +1 is for the batch dimension
+		processed_channels = torch.cat([self.models[i](channel) for i, channel in enumerate(channels)], dim=-1)
+		processed_channels_t = torch.transpose(processed_channels, dim0=-1, dim1=-2)
+		dimension_attended = torch.matmul(torch.softmax(self.dim_attn, dim=-1), processed_channels_t.squeeze())
 		if door_attention is None:
-			door_attended = torch.softmax(torch.mul(torch.softmax(self.controller, dim=-1),dimension_attended), dim=-1).squeeze()
+			door_attended = torch.softmax(torch.mul(torch.softmax(self.door_attn, dim=-1), dimension_attended), dim=-1).squeeze()
 		else:
-			door_attended = torch.softmax(torch.mul(torch.softmax(torch.tensor(door_attention).float(), dim=-1), dimension_attended),
-										  dim=-1).squeeze()
+			door_attended = torch.softmax(
+				torch.mul(torch.softmax(torch.tensor(door_attention).float(), dim=-1), dimension_attended),
+				dim=-1).squeeze()
 		return door_attended
 
 	def get_stimuli_layer(self):
 		return torch.stack([channel_porc.model[0].weight.squeeze() for channel_porc in self.models])
 
-	def get_controller(self):
-		return self.controller
+	def get_door_attention(self):
+		return self.door_attn
 
 	def get_dimension_attention(self):
 		return self.dim_attn
@@ -68,10 +69,8 @@ class SeparateNetworkAttention(nn.Module):
 	def get_stimuli_layer(self):
 		return torch.stack([channel_porc.model[0].weight.squeeze() for channel_porc in self.model_water.models])
 
-	def get_controller(self):
-		return self.model_water.controller
+	def get_door_attention(self):
+		return self.model_water.door_attn
 
 	def get_dimension_attention(self):
 		return self.model_water.dim_attn
-
-
