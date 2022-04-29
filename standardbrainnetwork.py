@@ -6,20 +6,20 @@ from Modules import ChannelProccessor
 
 
 class StandardBrainNetworkOrig(nn.Module):
-    def __init__(self, num_channels, num_actions):
-        super(StandardBrainNetworkOrig, self).__init__()
-        self.affine = nn.Linear(num_channels, 16, bias=False)
-        self.controller = nn.Linear(16, num_actions, bias=False)
-        self.model = torch.nn.Sequential(
-            self.affine,
-            nn.Dropout(p=0.6),
-            nn.Sigmoid(),
-            self.controller,
-            nn.Softmax(dim=-1)
-        )
+	def __init__(self, num_channels, num_actions):
+		super(StandardBrainNetworkOrig, self).__init__()
+		self.affine = nn.Linear(num_channels, 16, bias=False)
+		self.controller = nn.Linear(16, num_actions, bias=False)
+		self.model = torch.nn.Sequential(
+			self.affine,
+			nn.Dropout(p=0.6),
+			nn.Sigmoid(),
+			self.controller,
+			nn.Softmax(dim=-1)
+		)
 
-    def forward(self, x):
-        return self.model(x)
+	def forward(self, x):
+		return self.model(x)
 
 
 class StandardBrainNetworkAttention(nn.Module):
@@ -71,7 +71,7 @@ class SeparateNetworkAttention(nn.Module):
 			channel_porc.model[0].weight.squeeze() for channel_porc in self.model_food.models])
 
 	def get_door_attention(self):
-		return torch.cat([self.model_water.door_attn,self.model_food.door_attn])
+		return torch.cat([self.model_water.door_attn, self.model_food.door_attn])
 
 	def get_dimension_attention(self):
-		return torch.cat([self.model_water.dim_attn,self.model_food.dim_attn])
+		return torch.cat([self.model_water.dim_attn, self.model_food.dim_attn])

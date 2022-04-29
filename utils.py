@@ -85,7 +85,6 @@ def electrophysiology_analysis(brain:AbstractBrain):
 
 
 def unsupervised_dimensionality(samples_embedding, explained_variance=0.95):
-    return 1
     num_pcs = min(len(samples_embedding), len(samples_embedding[0]))
     pca = decomposition.PCA(n_components=num_pcs).fit(samples_embedding)
     dimensionality = np.cumsum(pca.explained_variance_ratio_)
