@@ -33,7 +33,6 @@ class FilterSum2(nn.Module):
 		return torch.transpose(torch.stack(res,dim=1),dim0=1,dim1=3)
 
 
-
 class LinearTranspose(nn.Module):
 	def __init__(self,in_features, out_features):
 		super(LinearTranspose, self).__init__()
@@ -44,6 +43,7 @@ class LinearTranspose(nn.Module):
 		res = torch.transpose(F.linear(input, self.weight, self.bias), dim0=-1, dim1=-2).squeeze()
 		return res
 
+
 class AttentionTranspose(nn.Module):
 	def __init__(self, attention_size):
 		super(AttentionTranspose, self).__init__()
@@ -53,6 +53,7 @@ class AttentionTranspose(nn.Module):
 		res = torch.transpose(torch.matmul(input, torch.softmax(self.attn, dim=0)).squeeze(), dim0=-1, dim1=-2)
 		return res
 
+
 class Attention1(nn.Module):
 	def __init__(self, attention_size):
 		super(Attention1, self).__init__()
@@ -60,4 +61,17 @@ class Attention1(nn.Module):
 
 	def forward(self, input):
 		res = torch.mul(input,torch.softmax(self.attn, dim=-1))
+		return res
+
+
+class ChannelProccessor(nn.Module):
+	def __init__(self,in_features, out_features):
+		super(ChannelProccessor, self).__init__()
+		self.model = nn.Sequential(
+			nn.Linear(in_features, out_features, bias=False),
+			nn.LeakyReLU()
+		)
+
+	def forward(self, input):
+		res = self.model(input)
 		return res
