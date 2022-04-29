@@ -1,7 +1,5 @@
 import numpy as np
 from sklearn import decomposition
-
-import config
 from abstractbrain import AbstractBrain
 
 
@@ -17,14 +15,10 @@ def epsilon_greedy(eps, dist):
         selection = np.random.randint(low=0, high=len(dist))
     else:
         selection = dist_selection(dist)
-        #selection = np.argmax(dist)
     return selection
 
 
 def dist_selection(dist):
-    # dist = softmax(dist)
-    # select_prob = np.random.choice(dist, p=dist)
-    # selection = np.argmax(dist == select_prob)
     if sum(dist) != 1:
         dist = dist/np.sum(dist)
     try:
@@ -41,7 +35,6 @@ def softmax(x, temprature=1):
     Rows are scores for each class.
     Columns are predictions (samples).
     """
-    # x = normalize(np.reshape(x, (1, -1)), norm='l2')[0]
     ex_x = np.exp(temprature * np.subtract(x, max(x)))
     if np.isinf(np.sum(ex_x)):
         raise Exception('Inf in softmax')
@@ -81,32 +74,18 @@ def episode_rollout(env, agent):
     return steps, total_reward, act_dist
 
 
-def create_report_from_memory(experience: ReplayMemory, brain:AbstractBrain, last):
-    if last == -1:
-        pass
-    last_exp = experience.last(last)
-    actions = [data[1] for data in last_exp]
-    rewards = [data[2] for data in last_exp]
-    infos = [data[5] for data in last_exp]
-
-    report_dict = Object()
-    report_dict.action_1hot = actions
-    report_dict.action = np.argmax(actions, axis=1)
-    report_dict.reward = rewards
-    report_dict.arm_type_water = [1 if action < 2 else 0 for action in report_dict.action]
-    report_dict.correct = [1 if info.outcome != config.RewardType.NONE else 0 for info in infos]
-    report_dict.stage = [info.stage for info in infos]
-    report_dict.affine_dim = electrophysiology_analysis(brain)
-    return report_dict
-
 
 def electrophysiology_analysis(brain:AbstractBrain):
-    affine = brain.network.affine.weight.T.detach().numpy()
+    affine = brain.network.get_stimuli_layer().T.detach().numpy()
     affine_dim = unsupervised_dimensionality(affine)
-    return affine_dim
+    controller = brain.network.get_door_attention().T.detach().numpy()
+    controller_dim = unsupervised_dimensionality(controller)
+
+    return affine_dim, controller_dim
 
 
 def unsupervised_dimensionality(samples_embedding, explained_variance=0.95):
+    return 1
     num_pcs = min(len(samples_embedding), len(samples_embedding[0]))
     pca = decomposition.PCA(n_components=num_pcs).fit(samples_embedding)
     dimensionality = np.cumsum(pca.explained_variance_ratio_)
