@@ -4,6 +4,7 @@ from ReplayMemory import ReplayMemory
 from abstractbrain import AbstractBrain
 import numpy as np
 
+
 class MotivatedAgent:
     def __init__(self, brain:AbstractBrain, memory_size=config.MEMORY_SIZE, motivation=config.RewardType.WATER, motivated_reward_value=1, non_motivated_reward_value=0.3):
 
@@ -14,13 +15,11 @@ class MotivatedAgent:
         self._motivated_reward_value = motivated_reward_value
         self._non_motivated_reward_value = non_motivated_reward_value
 
-    def get_brain(self)->AbstractBrain:
+    def get_brain(self) -> AbstractBrain:
         return self._brain
 
     def decide(self, state):
-        decision = self._brain.think(state)
-        # action_prob = utils.normalize_dist((1-eps)*self.fitrah() + eps*brain_actions_prob)
-        #action = utils.dist_selection(decision)
+        decision = self._brain.think(np.expand_dims(state,0), self.get_motivation()).detach().numpy()
         action = epsilon_greedy(config.EXPLORATION_EPSILON, decision)
         return action
 
@@ -33,7 +32,7 @@ class MotivatedAgent:
         self._memory.push(*experience)
 
     def smarten(self):
-        return self._brain.train(self._memory)
+        return self._brain.train(self._memory, self.get_motivation())
 
     def set_motivation(self, motivation):
         self._motivation = motivation
@@ -41,7 +40,7 @@ class MotivatedAgent:
     def get_motivation(self):
         return self._motivation
 
-    def get_memory(self)->ReplayMemory:
+    def get_memory(self) -> ReplayMemory:
         return self._memory
 
     def clear_memory(self):
