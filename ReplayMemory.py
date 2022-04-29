@@ -1,5 +1,5 @@
 import numpy as np
-
+import config
 
 class ReplayMemory:
 
@@ -16,7 +16,7 @@ class ReplayMemory:
     #    return random.sample(self.memory, batch_size)
 
     def sample(self, batch_size):
-        indices = np.clip(np.random.geometric(1/10, size=batch_size), 1, len(self))
+        indices = np.clip(np.random.geometric(config.FORGETTING, size=batch_size), 1, len(self))
         return [self.memory[-item] for item in indices]
 
     def write(self, file_name):
