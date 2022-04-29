@@ -26,7 +26,7 @@ def dist_selection(dist):
     # select_prob = np.random.choice(dist, p=dist)
     # selection = np.argmax(dist == select_prob)
     if sum(dist) != 1:
-        dist[0] = dist[0] + (1 - sum(dist))
+        dist = dist/np.sum(dist)
     try:
         action = np.argmax(np.random.multinomial(1, dist))
     except:
