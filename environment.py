@@ -159,7 +159,14 @@ class PlusMazeOneHotCues(PlusMaze):
         return self.stimuli_encoding_size
 
     def set_random_odor_set(self):
+        if self._odor_cues is None:
+            o1, o2 = random.sample(range(0, self.stimuli_encoding_size), 2)
+            self._odor_cues = [np.eye(self.stimuli_encoding_size)[o1], np.eye(self.stimuli_encoding_size)[o2]]
+            return
+        old_cues = [np.argmax(self._odor_cues[0]), np.argmax(self._odor_cues[1])]
         o1, o2 = random.sample(range(0, self.stimuli_encoding_size), 2)
+        while o1 in old_cues or o2 in old_cues:
+            o1, o2 = random.sample(range(0, self.stimuli_encoding_size), 2)
         self._odor_cues = [np.eye(self.stimuli_encoding_size)[o1], np.eye(self.stimuli_encoding_size)[o2]]
 
     def set_random_light_set(self):
