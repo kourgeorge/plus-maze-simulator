@@ -67,10 +67,11 @@ class SeparateNetworkAttention(nn.Module):
 			return self.model_food(x)
 
 	def get_stimuli_layer(self):
-		return torch.stack([channel_porc.model[0].weight.squeeze() for channel_porc in self.model_water.models])
+		return torch.stack([channel_porc.model[0].weight.squeeze() for channel_porc in self.model_water.models] + [
+			channel_porc.model[0].weight.squeeze() for channel_porc in self.model_food.models])
 
 	def get_door_attention(self):
-		return self.model_water.door_attn
+		return torch.cat([self.model_water.door_attn,self.model_food.door_attn])
 
 	def get_dimension_attention(self):
-		return self.model_water.dim_attn
+		return torch.cat([self.model_water.dim_attn,self.model_food.dim_attn])
