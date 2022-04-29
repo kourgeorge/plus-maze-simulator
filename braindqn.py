@@ -14,7 +14,7 @@ torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 class BrainDQN(AbstractBrain):
     BATCH_SIZE = 20
 
-    def __init__(self, network:torch.nn.Mod, reward_discount=1, learning_rate=0.01):
+    def __init__(self, network, reward_discount=1, learning_rate=0.01):
         super(BrainDQN, self).__init__()
         self.network = network
         self.optimizer = optim.Adam(self.network.parameters(), lr=learning_rate)
