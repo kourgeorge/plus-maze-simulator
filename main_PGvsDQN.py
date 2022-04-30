@@ -18,21 +18,20 @@ if __name__ == '__main__':
 
     repetitions = 15
 
-    agents_DQN_spec = [BrainDQN, FullyConnectedNetwork, config.MOTIVATED_REWARD, config.NON_MOTIVATED_REWARD]
-    agents_PG_spec = [BrainPG, FullyConnectedNetwork, config.MOTIVATED_REWARD, config.NON_MOTIVATED_REWARD]
+    agents_DQN_spec = [[BrainDQN, FullyConnectedNetwork, config.MOTIVATED_REWARD, config.NON_MOTIVATED_REWARD]]
+    agents_PG_spec = [[BrainPG, FullyConnectedNetwork, config.MOTIVATED_REWARD, config.NON_MOTIVATED_REWARD]]
 
-    # agents_DQN_spec = [MotivationDependantBrainDQN, SeparateMotivationAreasNetwork, config.MOTIVATED_REWARD, config.NON_MOTIVATED_REWARD]
-    # agents_PG_spec = [MotivationDependantBrainPG, SeparateMotivationAreasNetwork, config.MOTIVATED_REWARD, config.NON_MOTIVATED_REWARD]
+    agents_DQN_spec.append([MotivationDependantBrainDQN, SeparateMotivationAreasNetwork, config.MOTIVATED_REWARD, config.NON_MOTIVATED_REWARD])
+    agents_PG_spec.append([MotivationDependantBrainPG, SeparateMotivationAreasNetwork, config.MOTIVATED_REWARD, config.NON_MOTIVATED_REWARD])
 
-    # agents_DQN_spec = [BrainDQNFixedDoorAttention, DoorAttentionAttention, config.MOTIVATED_REWARD, config.NON_MOTIVATED_REWARD]
-    # agents_PG_spec = [BrainPGFixedDoorAttention, DoorAttentionAttention, config.MOTIVATED_REWARD, config.NON_MOTIVATED_REWARD]
-
-    # agents_DQN_spec = [MotivationDependantBrainDQNLateOutcomeEvaluation, SeparateMotivationAreasNetwork, config.MOTIVATED_REWARD, config.NON_MOTIVATED_REWARD]
-    # agents_PG_spec = [MotivationDependantBrainPGLateOutcomeEvaluation, SeparateMotivationAreasNetwork, config.MOTIVATED_REWARD, config.NON_MOTIVATED_REWARD]
+    agents_DQN_spec.append([BrainDQNFixedDoorAttention, DoorAttentionAttention, config.MOTIVATED_REWARD, config.NON_MOTIVATED_REWARD])
+    agents_PG_spec.append([BrainPGFixedDoorAttention, DoorAttentionAttention, config.MOTIVATED_REWARD, config.NON_MOTIVATED_REWARD])
+    #
+    agents_DQN_spec.append([MotivationDependantBrainDQNLateOutcomeEvaluation, SeparateMotivationAreasNetwork, config.MOTIVATED_REWARD, config.NON_MOTIVATED_REWARD])
+    agents_PG_spec.append([MotivationDependantBrainPGLateOutcomeEvaluation, SeparateMotivationAreasNetwork, config.MOTIVATED_REWARD, config.NON_MOTIVATED_REWARD])
 
     brains_reports = []
-
-    for agent_spec in [agents_DQN_spec, agents_PG_spec]:
+    for agent_spec in agents_DQN_spec+agents_PG_spec:
         completed_experiments = 0
         aborted_experiments = 0
         brain_repetition_reports = [None] * repetitions
@@ -49,8 +48,8 @@ if __name__ == '__main__':
         print("{} out of {} experiments were aborted".format(aborted_experiments,
                                                              aborted_experiments + completed_experiments))
 
-    plot_behavior_results(brains_reports[0])
-    plot_behavior_results(brains_reports[1])
     plot_days_per_stage(brains_reports)
+    for brain_report in brains_reports:
+        plot_behavior_results(brain_report)
 
     x=1
