@@ -8,7 +8,7 @@ from motivatedbrain import MotivatedBrain
 
 class FixedDoorAttentionBrain(MotivatedBrain):
 	def __init__(self, *args, **kwargs):
-		super(FixedDoorAttentionBrain, self).__init__(*args, **kwargs)
+		super().__init__(*args, **kwargs)
 
 	def think(self, obs, agent: MotivatedAgent):
 		if agent.get_motivation() == config.RewardType.WATER:
