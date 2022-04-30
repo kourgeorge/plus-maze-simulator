@@ -38,9 +38,9 @@ class MotivatedBrain(AbstractBrain):
 
 		action_values = self.think(state_batch, agent)
 
-		return self.train(state_batch, action_batch, reward_batch, action_values)
+		return self.train(state_batch, action_batch, reward_batch, action_values, nextstate_batch)
 
-	def train(self, state_batch, action_batch, reward_batch, action_values):
+	def train(self, state_batch, action_batch, reward_batch, action_values, nextstate_batch):
 		'''Given a set of states (s), actions (a), and obtained rewards (r) and  state-action values under current
 		policy pi_t(s,a), improve the policy.'''
 		raise NotImplementedError()

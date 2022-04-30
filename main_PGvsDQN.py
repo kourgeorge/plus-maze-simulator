@@ -27,6 +27,9 @@ if __name__ == '__main__':
     agents_DQN_spec = [BrainDQNSeparateNetworks, SeparateNetworkAttention, config.MOTIVATED_REWARD, config.NON_MOTIVATED_REWARD]
     agents_PG_spec = [BrainPGSeparateNetworks, SeparateNetworkAttention, config.MOTIVATED_REWARD, config.NON_MOTIVATED_REWARD]
 
+    #agents_DQN_spec = [BrainDQNSeparateNetworksLateOutcomeEvaluation, SeparateNetworkAttention, config.MOTIVATED_REWARD, config.NON_MOTIVATED_REWARD]
+    #agents_PG_spec = [BrainPGSeparateNetworksLateOutcomeEvaluation, SeparateNetworkAttention, config.MOTIVATED_REWARD, config.NON_MOTIVATED_REWARD]
+
     brains_reports = []
 
     for agent_spec in [agents_DQN_spec, agents_PG_spec]:
