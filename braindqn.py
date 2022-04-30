@@ -6,7 +6,6 @@ import torch.nn.functional as F
 import torch.optim as optim
 import config
 from abstractbrain import AbstractBrain
-from standardbrainnetwork import StandardBrainNetworkAttention, StandardBrainNetworkOrig
 
 torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
@@ -23,7 +22,7 @@ class BrainDQN(AbstractBrain):
         print("Pytorch DQN. Num parameters: " + str(self.num_trainable_parameters()))
 
     def think(self, obs, agent_state):
-        action_probs = self.network(torch.from_numpy(obs).float().unsqueeze_(0))
+        action_probs = self.network(torch.FloatTensor(obs))
         return action_probs
 
     def train(self, memory, agent_state):
@@ -84,5 +83,4 @@ class BrainDQNSeparateNetworks(BrainDQN):
 
     def think(self, obs, motivation):
         action_probs = self.network(torch.FloatTensor(obs), motivation.value)
-
         return action_probs

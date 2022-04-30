@@ -22,7 +22,8 @@ class BrainPG(AbstractBrain):
         print("Pytorch PG. Num parameters: " + str(self.num_trainable_parameters()))
 
     def think(self, obs, agent_state):
-        return self.network(torch.from_numpy(obs).float().unsqueeze_(0))
+        action_probs = self.network(torch.FloatTensor(obs))
+        return action_probs
 
     def train(self, memory, agent_state):
         minibatch_size = min(BrainPG.BATCH_SIZE, len(memory))

@@ -19,7 +19,7 @@ class MotivatedAgent:
         return self._brain
 
     def decide(self, state):
-        decision = self._brain.think(np.expand_dims(state,0), self.get_motivation()).detach().numpy()
+        decision = self._brain.think(np.expand_dims(state,0), self.get_motivation()).squeeze().detach().numpy()
         action = epsilon_greedy(config.EXPLORATION_EPSILON, decision)
         return action
 

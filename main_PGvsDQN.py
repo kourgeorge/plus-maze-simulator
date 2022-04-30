@@ -18,7 +18,10 @@ if __name__ == '__main__':
 
     repetitions = 15
 
-    # agents_DQN_spec = [BrainDQNFixedDoorAttention, StandardBrainNetworkAttention, config.MOTIVATED_REWARD, config.NON_MOTIVATED_REWARD]
+    agents_DQN_spec = [BrainDQN, FullyConnectedBrainNetwork, config.MOTIVATED_REWARD, config.NON_MOTIVATED_REWARD]
+    agents_PG_spec = [BrainPG, FullyConnectedBrainNetwork, config.MOTIVATED_REWARD, config.NON_MOTIVATED_REWARD]
+
+    #agents_DQN_spec = [BrainDQNFixedDoorAttention, StandardBrainNetworkAttention, config.MOTIVATED_REWARD, config.NON_MOTIVATED_REWARD]
     # agents_PG_spec = [BrainPGFixedDoorAttention, StandardBrainNetworkAttention, config.MOTIVATED_REWARD, config.NON_MOTIVATED_REWARD]
 
     agents_DQN_spec = [BrainDQNSeparateNetworks, SeparateNetworkAttention, config.MOTIVATED_REWARD, config.NON_MOTIVATED_REWARD]

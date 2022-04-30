@@ -5,10 +5,10 @@ import torch
 from Modules import ChannelProccessor
 
 
-class StandardBrainNetworkOrig(nn.Module):
+class FullyConnectedBrainNetwork(nn.Module):
 	def __init__(self, num_channels, num_actions):
-		super(StandardBrainNetworkOrig, self).__init__()
-		self.affine = nn.Linear(num_channels, 16, bias=False)
+		super(FullyConnectedBrainNetwork, self).__init__()
+		self.affine = nn.Linear(num_channels*num_actions*6, 16, bias=False)
 		self.controller = nn.Linear(16, num_actions, bias=False)
 		self.model = torch.nn.Sequential(
 			self.affine,
@@ -19,7 +19,16 @@ class StandardBrainNetworkOrig(nn.Module):
 		)
 
 	def forward(self, x):
-		return self.model(x)
+		return self.model(torch.flatten(x, start_dim=1))
+
+	def get_stimuli_layer(self):
+		return self.model[0].weight
+
+	def get_door_attention(self):
+		return self.model[3].weight
+
+	def get_dimension_attention(self):
+		return torch.tensor(0)
 
 
 class StandardBrainNetworkAttention(nn.Module):
