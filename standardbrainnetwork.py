@@ -5,9 +5,9 @@ import torch
 from Modules import ChannelProccessor
 
 
-class FullyConnectedBrainNetwork(nn.Module):
+class FullyConnectedNetwork(nn.Module):
 	def __init__(self, num_channels, num_actions):
-		super(FullyConnectedBrainNetwork, self).__init__()
+		super().__init__()
 		self.affine = nn.Linear(num_channels*num_actions*6, 16, bias=False)
 		self.controller = nn.Linear(16, num_actions, bias=False)
 		self.model = torch.nn.Sequential(
@@ -31,10 +31,10 @@ class FullyConnectedBrainNetwork(nn.Module):
 		return torch.tensor(0)
 
 
-class StandardBrainNetworkAttention(nn.Module):
+class DoorAttentionAttention(nn.Module):
 
 	def __init__(self, num_channels, num_actions):
-		super(StandardBrainNetworkAttention, self).__init__()
+		super().__init__()
 		self.models = nn.ModuleList([ChannelProccessor(6, 1) for _ in range(num_channels)])
 		self.dim_attn = nn.Parameter(nn.init.xavier_uniform_(torch.empty(size=(1, num_channels))), requires_grad=True)
 		self.door_attn = nn.Parameter(nn.init.xavier_uniform_(torch.empty(size=(1, num_actions))), requires_grad=True)
@@ -62,12 +62,12 @@ class StandardBrainNetworkAttention(nn.Module):
 		return self.dim_attn
 
 
-class SeparateNetworkAttention(nn.Module):
+class SeparateMotivationAreasNetwork(nn.Module):
 
 	def __init__(self, num_channels, num_actions):
-		super(SeparateNetworkAttention, self).__init__()
-		self.model_food = StandardBrainNetworkAttention(num_channels, num_actions)
-		self.model_water = StandardBrainNetworkAttention(num_channels, num_actions)
+		super().__init__()
+		self.model_food = DoorAttentionAttention(num_channels, num_actions)
+		self.model_water = DoorAttentionAttention(num_channels, num_actions)
 
 	def forward(self, x, motivation):
 		if motivation == 'water':

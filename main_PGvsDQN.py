@@ -4,9 +4,9 @@ from motivatedagent import MotivatedAgent
 from environment import PlusMazeOneHotCues
 
 import config
-from standardbrainnetwork import StandardBrainNetworkAttention, SeparateNetworkAttention
-from braindqn import BrainDQN, BrainDQNFixedDoorAttention, BrainDQNSeparateNetworks
-from brainpg import BrainPG, BrainPGFixedDoorAttention, BrainPGSeparateNetworks
+from standardbrainnetwork import FullyConnectedNetwork, DoorAttentionAttention, SeparateMotivationAreasNetwork
+from braindqn import BrainDQN, BrainDQNFixedDoorAttention, MotivationDependantBrainDQN,MotivationDependantBrainDQNLateOutcomeEvaluation
+from brainpg import BrainPG, BrainPGFixedDoorAttention, MotivationDependantBrainPG, MotivationDependantBrainPGLateOutcomeEvaluation
 from PlusMazeExperiment import PlusMazeExperiment, EperimentStatus
 from behavioral_analysis import plot_days_per_stage, plot_behavior_results
 
@@ -18,17 +18,17 @@ if __name__ == '__main__':
 
     repetitions = 15
 
-    agents_DQN_spec = [BrainDQN, FullyConnectedBrainNetwork, config.MOTIVATED_REWARD, config.NON_MOTIVATED_REWARD]
-    agents_PG_spec = [BrainPG, FullyConnectedBrainNetwork, config.MOTIVATED_REWARD, config.NON_MOTIVATED_REWARD]
+    agents_DQN_spec = [BrainDQN, FullyConnectedNetwork, config.MOTIVATED_REWARD, config.NON_MOTIVATED_REWARD]
+    agents_PG_spec = [BrainPG, FullyConnectedNetwork, config.MOTIVATED_REWARD, config.NON_MOTIVATED_REWARD]
 
-    #agents_DQN_spec = [BrainDQNFixedDoorAttention, StandardBrainNetworkAttention, config.MOTIVATED_REWARD, config.NON_MOTIVATED_REWARD]
-    # agents_PG_spec = [BrainPGFixedDoorAttention, StandardBrainNetworkAttention, config.MOTIVATED_REWARD, config.NON_MOTIVATED_REWARD]
+    # agents_DQN_spec = [MotivationDependantBrainDQN, SeparateMotivationAreasNetwork, config.MOTIVATED_REWARD, config.NON_MOTIVATED_REWARD]
+    # agents_PG_spec = [MotivationDependantBrainPG, SeparateMotivationAreasNetwork, config.MOTIVATED_REWARD, config.NON_MOTIVATED_REWARD]
 
-    agents_DQN_spec = [BrainDQNSeparateNetworks, SeparateNetworkAttention, config.MOTIVATED_REWARD, config.NON_MOTIVATED_REWARD]
-    agents_PG_spec = [BrainPGSeparateNetworks, SeparateNetworkAttention, config.MOTIVATED_REWARD, config.NON_MOTIVATED_REWARD]
+    # agents_DQN_spec = [BrainDQNFixedDoorAttention, DoorAttentionAttention, config.MOTIVATED_REWARD, config.NON_MOTIVATED_REWARD]
+    # agents_PG_spec = [BrainPGFixedDoorAttention, DoorAttentionAttention, config.MOTIVATED_REWARD, config.NON_MOTIVATED_REWARD]
 
-    #agents_DQN_spec = [BrainDQNSeparateNetworksLateOutcomeEvaluation, SeparateNetworkAttention, config.MOTIVATED_REWARD, config.NON_MOTIVATED_REWARD]
-    #agents_PG_spec = [BrainPGSeparateNetworksLateOutcomeEvaluation, SeparateNetworkAttention, config.MOTIVATED_REWARD, config.NON_MOTIVATED_REWARD]
+    # agents_DQN_spec = [MotivationDependantBrainDQNLateOutcomeEvaluation, SeparateMotivationAreasNetwork, config.MOTIVATED_REWARD, config.NON_MOTIVATED_REWARD]
+    # agents_PG_spec = [MotivationDependantBrainPGLateOutcomeEvaluation, SeparateMotivationAreasNetwork, config.MOTIVATED_REWARD, config.NON_MOTIVATED_REWARD]
 
     brains_reports = []
 

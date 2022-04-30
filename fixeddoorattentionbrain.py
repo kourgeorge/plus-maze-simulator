@@ -3,10 +3,10 @@ __author__ = 'gkour'
 import torch
 import config
 from motivatedagent import MotivatedAgent
-from motivatedbrain import MotivatedBrain
+from motivationdependantbrain import MotivationDependantBrain
 
 
-class FixedDoorAttentionBrain(MotivatedBrain):
+class FixedDoorAttentionBrain(MotivationDependantBrain):
 	def __init__(self, *args, **kwargs):
 		super().__init__(*args, **kwargs)
 

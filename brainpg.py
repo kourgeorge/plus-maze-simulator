@@ -4,17 +4,16 @@ import torch
 import torch.optim as optim
 
 from fixeddoorattentionbrain import FixedDoorAttentionBrain
-from motivatedbrain import MotivatedBrain
+from motivationdependantbrain import NetworkBrain, MotivationDependantBrain
 from lateoutcomeevaluationbrain import LateOutcomeEvaluationBrain
-from motivatedagent import MotivatedAgent
 torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 
-class BrainPG(MotivatedBrain):
+class BrainPG(NetworkBrain):
 
     def __init__(self, network, reward_discount=1, learning_rate=0.01):
-        super().__init__(network, reward_discount)
-        self.optimizer = optim.Adam(network.parameters(), lr=learning_rate)
+        super().__init__(network, optim.Adam(network.parameters(), lr=learning_rate), reward_discount)
+
 
     def optimize(self, state_batch, action_batch, reward_batch, action_values, nextstate_batch):
         state_action_values, _ = torch.max(action_values * action_batch, dim=1)
@@ -33,20 +32,16 @@ class BrainPG(MotivatedBrain):
         return loss.item()
 
 
-class BrainPGFixedDoorAttention(FixedDoorAttentionBrain, BrainPG):
-    def __init__(self,  *args, **kwargs):
-        super().__init__(*args, **kwargs)
-
-
-class BrainPGSeparateNetworks(BrainPG):
-    def __init__(self,  *args, **kwargs):
-        super().__init__(*args, **kwargs)
-
-    def think(self, obs,  agent:MotivatedAgent):
-        action_probs = self.network(torch.FloatTensor(obs), agent.get_motivation().value)
-        return action_probs
-
-
-class BrainPGSeparateNetworksLateOutcomeEvaluation(LateOutcomeEvaluationBrain, BrainPGSeparateNetworks):
+class MotivationDependantBrainPG(MotivationDependantBrain, BrainPG):
     def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+
+class MotivationDependantBrainPGLateOutcomeEvaluation(LateOutcomeEvaluationBrain, MotivationDependantBrainPG):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+
+class BrainPGFixedDoorAttention(MotivationDependantBrainPG, BrainPG):
+    def __init__(self,  *args, **kwargs):
         super().__init__(*args, **kwargs)

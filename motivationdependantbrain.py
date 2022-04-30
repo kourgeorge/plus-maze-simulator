@@ -9,13 +9,13 @@ import os.path
 torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 
-class MotivatedBrain(AbstractBrain):
+class NetworkBrain(AbstractBrain):
 	BATCH_SIZE = 20
 
-	def __init__(self, network, reward_discount=1):
-		super().__init__()
+	def __init__(self, network, optimizer, reward_discount=1):
+		super().__init__(reward_discount)
 		self.network = network
-		self.reward_discount = reward_discount
+		self.optimizer = optimizer
 		self.consolidation_counter = 0
 		print("{}. Num parameters: {}".format(str(self),self.num_trainable_parameters()))
 
@@ -60,6 +60,18 @@ class MotivatedBrain(AbstractBrain):
 
 	def get_network(self):
 		return self.network
+
+
+class MotivationDependantBrain(NetworkBrain):
+	BATCH_SIZE = 20
+
+	def __init__(self, network, reward_discount=1):
+		super().__init__(network,reward_discount)
+
+	def think(self, obs, agent):
+		action_probs = self.network(torch.FloatTensor(obs), agent.get_motivation().value)
+		return action_probs
+
 
 
 

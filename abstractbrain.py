@@ -1,9 +1,10 @@
 __author__ = 'gkour'
 
+
 class AbstractBrain:
 
-    def __init__(self):
-        pass
+    def __init__(self, reward_discount):
+        self.reward_discount = reward_discount
 
     def think(self, obs, agent):
         '''Given an observation should return a distribution over the action set'''
