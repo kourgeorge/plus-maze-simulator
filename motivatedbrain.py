@@ -15,23 +15,22 @@ class MotivatedBrain(AbstractBrain):
 	def __init__(self, network, reward_discount=1):
 		super().__init__()
 		self.network = network
-
 		self.reward_discount = reward_discount
-		self.num_optimizations = 0
+		self.consolidation_counter = 0
 		print("{}. Num parameters: {}".format(str(self),self.num_trainable_parameters()))
 
 	def think(self, obs, agent):
 		action_probs = self.network(torch.FloatTensor(obs))
 		return action_probs
 
-	def consolidate(self, memory, agent, batch_size=BATCH_SIZE, optimization_steps=100):
+	def consolidate(self, memory, agent, batch_size=BATCH_SIZE, iterations=100):
 		minibatch_size = min(batch_size, len(memory))
 		if minibatch_size == 0:
 			return
-		self.num_optimizations += 1
+		self.consolidation_counter += 1
 
 		losses = []
-		for _ in range(optimization_steps):
+		for _ in range(iterations):
 			minibatch = memory.sample(minibatch_size)
 			state_batch = torch.from_numpy(np.stack([np.stack(data[0]) for data in minibatch])).float()
 			action_batch = torch.FloatTensor([data[1] for data in minibatch])
