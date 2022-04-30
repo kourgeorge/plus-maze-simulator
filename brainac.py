@@ -35,7 +35,7 @@ class BrainAC(AbstractBrain):
             action_probs, _ = self.policy(torch.FloatTensor(obs))
         return action_probs.tolist()
 
-    def train(self, memory):
+    def consolidate(self, memory):
         minibatch_size = min(BrainAC.BATCH_SIZE, len(memory))
         if minibatch_size < BrainAC.BATCH_SIZE:
             return 0

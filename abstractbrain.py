@@ -5,11 +5,11 @@ class AbstractBrain:
     def __init__(self):
         pass
 
-    def think(self, obs, agent_state):
+    def think(self, obs, agent):
         '''Given an observation should return a distribution over the action set'''
         raise NotImplementedError()
 
-    def train(self, memory, agent_state):
+    def consolidate(self, memory, agent):
         raise NotImplementedError()
 
     def num_trainable_parameters(self):

@@ -51,7 +51,7 @@ class Stats:
         last_exp = experience.last(last)
         actions = [data[1] for data in last_exp]
         rewards = [data[2] for data in last_exp]
-        infos = [data[5] for data in last_exp]
+        infos = [data[6] for data in last_exp]
 
         report_dict = utils.Object()
         report_dict.action_1hot = actions

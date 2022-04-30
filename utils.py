@@ -65,10 +65,10 @@ def episode_rollout(env, agent):
         dec_1hot = np.zeros(num_actions)
         dec_1hot[action] = 1
         act_dist += dec_1hot
-        new_state, reward, terminated, info = env.step(action)
-        reward = agent.evaluate_reward(reward)
+        new_state, outcome, terminated, info = env.step(action)
+        reward = agent.evaluate_outcome(outcome)
         total_reward += reward
-        agent.add_experience(state, dec_1hot, reward, new_state, terminated, info)
+        agent.add_experience(state, dec_1hot, reward, outcome, new_state, terminated, info)
         state = new_state
 
     return steps, total_reward, act_dist

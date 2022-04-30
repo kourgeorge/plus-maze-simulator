@@ -19,20 +19,20 @@ class MotivatedAgent:
         return self._brain
 
     def decide(self, state):
-        decision = self._brain.think(np.expand_dims(state,0), self.get_motivation()).squeeze().detach().numpy()
+        decision = self._brain.think(np.expand_dims(state,0), self).squeeze().detach().numpy()
         action = epsilon_greedy(config.EXPLORATION_EPSILON, decision)
         return action
 
-    def evaluate_reward(self, reward_type):
-        if reward_type == config.RewardType.NONE:
+    def evaluate_outcome(self, outcome):
+        if outcome == config.RewardType.NONE:
             return 0
-        return self._motivated_reward_value if reward_type == self._motivation else self._non_motivated_reward_value
+        return self._motivated_reward_value if outcome == self._motivation else self._non_motivated_reward_value
 
     def add_experience(self, *experience):
         self._memory.push(*experience)
 
     def smarten(self):
-        return self._brain.train(self._memory, self.get_motivation())
+        return self._brain.consolidate(self._memory, self)
 
     def set_motivation(self, motivation):
         self._motivation = motivation
