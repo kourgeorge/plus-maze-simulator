@@ -24,23 +24,27 @@ class MotivatedBrain(AbstractBrain):
 		action_probs = self.network(torch.FloatTensor(obs))
 		return action_probs
 
-	def consolidate(self, memory, agent, batch_size=BATCH_SIZE):
+	def consolidate(self, memory, agent, batch_size=BATCH_SIZE, optimization_steps=100):
 		minibatch_size = min(batch_size, len(memory))
 		if minibatch_size == 0:
 			return
 		self.num_optimizations += 1
 
-		minibatch = memory.sample(minibatch_size)
-		state_batch = torch.from_numpy(np.stack([np.stack(data[0]) for data in minibatch])).float()
-		action_batch = torch.FloatTensor([data[1] for data in minibatch])
-		reward_batch = torch.FloatTensor([data[2] for data in minibatch])
-		nextstate_batch = torch.from_numpy(np.stack([data[4] for data in minibatch])).float()
+		losses = []
+		for _ in range(optimization_steps):
+			minibatch = memory.sample(minibatch_size)
+			state_batch = torch.from_numpy(np.stack([np.stack(data[0]) for data in minibatch])).float()
+			action_batch = torch.FloatTensor([data[1] for data in minibatch])
+			reward_batch = torch.FloatTensor([data[2] for data in minibatch])
+			nextstate_batch = torch.from_numpy(np.stack([data[4] for data in minibatch])).float()
 
-		action_values = self.think(state_batch, agent)
+			action_values = self.think(state_batch, agent)
 
-		return self.train(state_batch, action_batch, reward_batch, action_values, nextstate_batch)
+			losses += [self.optimize(state_batch, action_batch, reward_batch, action_values, nextstate_batch)]
 
-	def train(self, state_batch, action_batch, reward_batch, action_values, nextstate_batch):
+		return np.mean(losses)
+
+	def optimize(self, state_batch, action_batch, reward_batch, action_values, nextstate_batch):
 		'''Given a set of states (s), actions (a), and obtained rewards (r) and  state-action values under current
 		policy pi_t(s,a), improve the policy.'''
 		raise NotImplementedError()
@@ -57,3 +61,8 @@ class MotivatedBrain(AbstractBrain):
 
 	def get_network(self):
 		return self.network
+
+
+
+
+

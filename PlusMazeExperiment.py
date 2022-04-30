@@ -11,8 +11,8 @@ import os
 import time
 from enum import Enum
 
-reporting_interval = 100
-max_experiment_length_in_days = 50
+trials_in_day = 100
+max_experiment_length = 50 #days
 
 class EperimentStatus(Enum):
     COMPLETED = 'completed'
@@ -42,27 +42,25 @@ def PlusMazeExperiment(agent:MotivatedAgent, dashboard=False):
 
     while env._stage < 5:
 
-        if trial>reporting_interval*max_experiment_length_in_days:
+        if trial>trials_in_day*max_experiment_length:
             print("Agent failed to learn.")
             return EperimentStatus.ABORTED, None
 
         trial += 1
         utils.episode_rollout(env, agent)
-        loss = agent.smarten()
-        loss_acc += loss
-        if trial % reporting_interval == 0:
-            # loss = agent.smarten()
-            # loss_acc += loss
-            report = Stats.create_report_from_memory(agent.get_memory(), agent.get_brain(), reporting_interval)
+
+        if trial % trials_in_day == 0:
+            loss = agent.smarten()
+            report = Stats.create_report_from_memory(agent.get_memory(), agent.get_brain(), trials_in_day)
             epoch_stats_df = stats.update(trial, report)
             pre_stage_transition_update()
 
             print(
                 'Trial: {}, Action Dist:{}, Corr.:{}, Rew.:{}, loss={};'.format(epoch_stats_df['Trial'].to_numpy()[-1],
-                                                                                     epoch_stats_df['ActionDist'].to_numpy()[-1],
-                                                                                     epoch_stats_df['Correct'].to_numpy()[-1],
-                                                                                     epoch_stats_df['Reward'].to_numpy()[-1],
-                                                                                     round(loss_acc / reporting_interval,2)))
+                                                                                epoch_stats_df['ActionDist'].to_numpy()[-1],
+                                                                                epoch_stats_df['Correct'].to_numpy()[-1],
+                                                                                epoch_stats_df['Reward'].to_numpy()[-1],
+                                                                                round(loss / trials_in_day, 2)))
 
             print(
                 'WPI:{}, WC: {}, FC:{}'.format(epoch_stats_df['WaterPreference'].to_numpy()[-1], epoch_stats_df['WaterCorrect'].to_numpy()[-1],
@@ -73,7 +71,6 @@ def PlusMazeExperiment(agent:MotivatedAgent, dashboard=False):
             if current_criterion > config.SUCCESS_CRITERION_THRESHOLD and reward>0.6:
                 set_next_stage(env,agent)
 
-            loss_acc = 0
 
     epoch_stats_df._metadata = {'brain': str(agent.get_brain()),
                                 'brain_params': agent.get_brain().num_trainable_parameters(),
