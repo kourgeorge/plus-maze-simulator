@@ -42,6 +42,6 @@ class MotivationDependantBrainPGLateOutcomeEvaluation(LateOutcomeEvaluationBrain
         super().__init__(*args, **kwargs)
 
 
-class BrainPGFixedDoorAttention(MotivationDependantBrainPG, BrainPG):
+class BrainPGFixedDoorAttention(FixedDoorAttentionBrain, MotivationDependantBrain, BrainPG):
     def __init__(self,  *args, **kwargs):
         super().__init__(*args, **kwargs)
