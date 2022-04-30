@@ -12,9 +12,11 @@ def plot_days_per_stage(brains_repetitions_reports):
 	stages = list(range(0, 5))
 	width = 0.25
 	fig, ax = plt.subplots(figsize=(10, 6))
+	brain_names = []
 	for i, brain_reports in enumerate(brains_repetitions_reports):
 		repetitions = len(brain_reports)
 		days_per_stage_pg = []
+		brain_names+=[brain_reports[0]._metadata['brain']]
 		for experiment_report_df_pg in brain_reports:
 			c = Counter(list(experiment_report_df_pg['Stage']))
 			days_per_stage_pg.append([c[i] for i in stages])
@@ -26,7 +28,7 @@ def plot_days_per_stage(brains_repetitions_reports):
 
 	plt.xticks(np.array(stages) + width/2,config.stage_names, rotation=0, fontsize='12', horizontalalignment='center')
 
-	plt.title("Days Per stage for all brains. #reps={}".format(repetitions))
+	plt.title("Days Per stage. #reps={}\nBrains:[{}]".format(repetitions,','.join(brain_names)))
 	plt.legend()
 
 	plt.savefig('Results/days_in_stage_-{}'.format(time.strftime("%Y%m%d-%H%M")))
