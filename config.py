@@ -1,3 +1,5 @@
+__author__ = 'gkour'
+
 from enum import Enum
 
 REPORTING_INTERVAL = 100

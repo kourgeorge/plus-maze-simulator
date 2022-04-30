@@ -1,3 +1,5 @@
+__author__ = 'gkour'
+
 from collections import Counter
 import config
 import matplotlib.pyplot as plt

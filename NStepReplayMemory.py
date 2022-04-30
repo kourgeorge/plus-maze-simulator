@@ -1,3 +1,5 @@
+__author__ = 'gkour'
+
 from ReplayMemory import ReplayMemory
 from collections import deque
 

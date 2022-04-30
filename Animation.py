@@ -1,3 +1,5 @@
+__author__ = 'gkour'
+
 import matplotlib.animation as manimation
 
 

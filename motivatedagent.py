@@ -1,3 +1,5 @@
+__author__ = 'gkour'
+
 import config
 from utils import epsilon_greedy
 from ReplayMemory import ReplayMemory

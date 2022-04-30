@@ -1,3 +1,5 @@
+__author__ = 'gkour'
+
 import random
 import numpy as np
 import config
