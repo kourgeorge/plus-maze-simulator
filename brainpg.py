@@ -13,7 +13,8 @@ torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 class BrainPG(MotivatedBrain):
 
     def __init__(self, network, reward_discount=1, learning_rate=0.01):
-        super().__init__(network, optim.Adam(network.parameters(), lr=learning_rate), reward_discount)
+        super().__init__(network, reward_discount)
+        self.optimizer = optim.Adam(network.parameters(), lr=learning_rate)
 
     def optimize(self, state_batch, action_batch, reward_batch, action_values, nextstate_batch):
         state_action_values, _ = torch.max(action_values * action_batch, dim=1)
@@ -47,7 +48,5 @@ class BrainPGSeparateNetworks(BrainPG):
 
 
 class BrainPGSeparateNetworksLateOutcomeEvaluation(LateOutcomeEvaluationBrain, BrainPGSeparateNetworks):
-    BATCH_SIZE = 20
-
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

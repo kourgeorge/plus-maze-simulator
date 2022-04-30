@@ -12,10 +12,10 @@ torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 class MotivatedBrain(AbstractBrain):
 	BATCH_SIZE = 20
 
-	def __init__(self, network, optimizer, reward_discount=1):
+	def __init__(self, network, reward_discount=1):
 		super().__init__()
 		self.network = network
-		self.optimizer = optimizer
+
 		self.reward_discount = reward_discount
 		self.num_optimizations = 0
 		print("{}. Num parameters: {}".format(str(self),self.num_trainable_parameters()))
