@@ -14,7 +14,7 @@ torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 class BrainDQN(MotivatedBrain):
 
 	def __init__(self, network, reward_discount=1, learning_rate=0.01):
-		super(BrainDQN, self).__init__(network, optim.Adam(network.parameters(), lr=learning_rate), reward_discount)
+		super().__init__(network, optim.Adam(network.parameters(), lr=learning_rate), reward_discount)
 
 	def optimize(self, state_batch, action_batch, reward_batch, action_values, nextstate_batch):
 		state_action_values, _ = torch.max(action_values * action_batch, dim=1)
@@ -36,12 +36,12 @@ class BrainDQN(MotivatedBrain):
 
 class BrainDQNFixedDoorAttention(FixedDoorAttentionBrain, BrainDQN):
 	def __init__(self, *args, **kwargs):
-		super(FixedDoorAttentionBrain, self).__init__(*args, **kwargs)
+		super().__init__(*args, **kwargs)
 
 
 class BrainDQNSeparateNetworks(BrainDQN):
 	def __init__(self, *args, **kwargs):
-		super(BrainDQNSeparateNetworks, self).__init__(*args, **kwargs)
+		super().__init__(*args, **kwargs)
 
 	def think(self, obs, agent: MotivatedAgent):
 		action_probs = self.network(torch.FloatTensor(obs), agent.get_motivation().value)
@@ -52,5 +52,4 @@ class BrainDQNSeparateNetworksLateOutcomeEvaluation(LateOutcomeEvaluationBrain, 
 	BATCH_SIZE = 20
 
 	def __init__(self, *args, **kwargs):
-		super(LateOutcomeEvaluationBrain, self).__init__(*args, **kwargs)
-		super(BrainDQNSeparateNetworks, self).__init__(*args, **kwargs)
+		super().__init__(*args, **kwargs)

@@ -9,7 +9,7 @@ class LateOutcomeEvaluationBrain(AbstractBrain):
 	BATCH_SIZE = 20
 
 	def __init__(self, *args, **kwargs):
-		super(AbstractBrain, self).__init__(*args, **kwargs)
+		super().__init__(*args, **kwargs)
 
 	def consolidate(self, memory, agent, batch_size=BATCH_SIZE, optimization_steps=100):
 		minibatch_size = min(batch_size, len(memory))

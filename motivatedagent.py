@@ -8,7 +8,8 @@ import numpy as np
 
 
 class MotivatedAgent:
-    def __init__(self, brain:AbstractBrain, memory_size=config.MEMORY_SIZE, motivation=config.RewardType.WATER, motivated_reward_value=1, non_motivated_reward_value=0.3):
+    def __init__(self, brain: AbstractBrain, memory_size=config.MEMORY_SIZE, motivation=config.RewardType.WATER,
+                 motivated_reward_value=1, non_motivated_reward_value=0.3):
 
         self._brain = brain
         self._memory_size = memory_size

@@ -13,7 +13,7 @@ class MotivatedBrain(AbstractBrain):
 	BATCH_SIZE = 20
 
 	def __init__(self, network, optimizer, reward_discount=1):
-		super(MotivatedBrain, self).__init__()
+		super().__init__()
 		self.network = network
 		self.optimizer = optimizer
 		self.reward_discount = reward_discount
