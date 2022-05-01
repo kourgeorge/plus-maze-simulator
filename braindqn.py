@@ -4,14 +4,12 @@ import torch
 import torch.nn.functional as F
 import torch.optim as optim
 
-from fixeddoorattentionbrain import FixedDoorAttentionBrain
-from motivationdependantbrain import MotivationDependantBrain, NetworkBrain
-from lateoutcomeevaluationbrain import LateOutcomeEvaluationBrain
+from torchbrain import TorchBrain
 
 torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 
-class BrainDQN(NetworkBrain):
+class BrainDQN(TorchBrain):
 
 	def __init__(self, network, reward_discount=1, learning_rate=0.01):
 		super().__init__(network, optim.Adam(network.parameters(), lr=learning_rate), reward_discount)
@@ -34,15 +32,3 @@ class BrainDQN(NetworkBrain):
 		return loss.item()
 
 
-class MotivationDependantBrainDQN(MotivationDependantBrain, BrainDQN):
-	def __init__(self, *args, **kwargs):
-		super().__init__(*args, **kwargs)
-
-
-class MotivationDependantBrainDQNLateOutcomeEvaluation(LateOutcomeEvaluationBrain, MotivationDependantBrainDQN):
-	def __init__(self, *args, **kwargs):
-		super().__init__(*args, **kwargs)
-
-class BrainDQNFixedDoorAttention(FixedDoorAttentionBrain, MotivationDependantBrain, BrainDQN):
-	def __init__(self, *args, **kwargs):
-		super().__init__(*args, **kwargs)

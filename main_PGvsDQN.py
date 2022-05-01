@@ -1,12 +1,15 @@
 __author__ = 'gkour'
 
+from fixeddoorattentionbrain import BrainDQNFixedDoorAttention, BrainPGFixedDoorAttention
+from lateoutcomeevaluationbrain import MotivationDependantBrainDQNLateOutcomeEvaluation, MotivationDependantBrainPGLateOutcomeEvaluation
 from motivatedagent import MotivatedAgent
 from environment import PlusMazeOneHotCues
 
 import config
+from motivationdependantbrain import MotivationDependantBrainDQN, MotivationDependantBrainPG
 from standardbrainnetwork import FullyConnectedNetwork, DoorAttentionAttention, SeparateMotivationAreasNetwork
-from braindqn import BrainDQN, BrainDQNFixedDoorAttention, MotivationDependantBrainDQN,MotivationDependantBrainDQNLateOutcomeEvaluation
-from brainpg import BrainPG, BrainPGFixedDoorAttention, MotivationDependantBrainPG, MotivationDependantBrainPGLateOutcomeEvaluation
+from braindqn import BrainDQN
+from brainpg import BrainPG
 from PlusMazeExperiment import PlusMazeExperiment, EperimentStatus
 from behavioral_analysis import plot_days_per_stage, plot_behavior_results
 
@@ -18,8 +21,8 @@ if __name__ == '__main__':
 
     repetitions = 15
 
-    agents_DQN_spec = [[BrainDQN, FullyConnectedNetwork, config.MOTIVATED_REWARD, config.NON_MOTIVATED_REWARD]]
-    agents_PG_spec = [[BrainPG, FullyConnectedNetwork, config.MOTIVATED_REWARD, config.NON_MOTIVATED_REWARD]]
+    agents_DQN_spec.append([BrainDQN, FullyConnectedNetwork, config.MOTIVATED_REWARD, config.NON_MOTIVATED_REWARD])
+    agents_PG_spec.append([BrainPG, FullyConnectedNetwork, config.MOTIVATED_REWARD, config.NON_MOTIVATED_REWARD])
 
     agents_DQN_spec.append([MotivationDependantBrainDQN, SeparateMotivationAreasNetwork, config.MOTIVATED_REWARD, config.NON_MOTIVATED_REWARD])
     agents_PG_spec.append([MotivationDependantBrainPG, SeparateMotivationAreasNetwork, config.MOTIVATED_REWARD, config.NON_MOTIVATED_REWARD])
@@ -29,6 +32,8 @@ if __name__ == '__main__':
     #
     agents_DQN_spec.append([MotivationDependantBrainDQNLateOutcomeEvaluation, SeparateMotivationAreasNetwork, config.MOTIVATED_REWARD, config.NON_MOTIVATED_REWARD])
     agents_PG_spec.append([MotivationDependantBrainPGLateOutcomeEvaluation, SeparateMotivationAreasNetwork, config.MOTIVATED_REWARD, config.NON_MOTIVATED_REWARD])
+
+    agent_specs = [x for y in zip(agents_DQN_spec, agents_PG_spec) for x in y]
 
     brains_reports = []
     for agent_spec in agents_DQN_spec+agents_PG_spec:
