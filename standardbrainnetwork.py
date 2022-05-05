@@ -6,9 +6,9 @@ from Modules import ChannelProccessor
 
 
 class FullyConnectedNetwork(nn.Module):
-	def __init__(self, num_channels, num_actions):
+	def __init__(self, encoding_size, num_channels, num_actions):
 		super().__init__()
-		self.affine = nn.Linear(num_channels*num_actions*6, 16, bias=False)
+		self.affine = nn.Linear(num_channels*num_actions*encoding_size, 16, bias=False)
 		self.controller = nn.Linear(16, num_actions, bias=False)
 		self.model = torch.nn.Sequential(
 			self.affine,
@@ -33,9 +33,9 @@ class FullyConnectedNetwork(nn.Module):
 
 class DoorAttentionAttention(nn.Module):
 
-	def __init__(self, num_channels, num_actions):
+	def __init__(self, encoding_size, num_channels, num_actions):
 		super().__init__()
-		self.models = nn.ModuleList([ChannelProccessor(6, 1) for _ in range(num_channels)])
+		self.models = nn.ModuleList([ChannelProccessor(encoding_size, 1) for _ in range(num_channels)])
 		self.dim_attn = nn.Parameter(nn.init.xavier_uniform_(torch.empty(size=(1, num_channels))), requires_grad=True)
 		self.door_attn = nn.Parameter(nn.init.xavier_uniform_(torch.empty(size=(1, num_actions))), requires_grad=True)
 
@@ -64,10 +64,10 @@ class DoorAttentionAttention(nn.Module):
 
 class SeparateMotivationAreasNetwork(nn.Module):
 
-	def __init__(self, num_channels, num_actions):
+	def __init__(self, encoding_size, num_channels, num_actions):
 		super().__init__()
-		self.model_food = DoorAttentionAttention(num_channels, num_actions)
-		self.model_water = DoorAttentionAttention(num_channels, num_actions)
+		self.model_food = DoorAttentionAttention(encoding_size, num_channels, num_actions)
+		self.model_water = DoorAttentionAttention(encoding_size, num_channels, num_actions)
 
 	def forward(self, x, motivation):
 		if motivation == 'water':

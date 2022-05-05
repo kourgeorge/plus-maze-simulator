@@ -16,10 +16,11 @@ from behavioral_analysis import plot_days_per_stage, plot_behavior_results
 
 if __name__ == '__main__':
     env = PlusMazeOneHotCues(relevant_cue=config.CueType.ODOR)
-    num_actions = env.num_actions()
     observation_size = env.state_shape()
 
-    repetitions = 15
+    repetitions = 10
+    agents_DQN_spec=[]
+    agents_PG_spec= []
 
     agents_DQN_spec.append([BrainDQN, FullyConnectedNetwork, config.MOTIVATED_REWARD, config.NON_MOTIVATED_REWARD])
     agents_PG_spec.append([BrainPG, FullyConnectedNetwork, config.MOTIVATED_REWARD, config.NON_MOTIVATED_REWARD])
@@ -36,14 +37,14 @@ if __name__ == '__main__':
     agent_specs = [x for y in zip(agents_DQN_spec, agents_PG_spec) for x in y]
 
     brains_reports = []
-    for agent_spec in agents_DQN_spec+agents_PG_spec:
+    for agent_spec in agent_specs:
         completed_experiments = 0
         aborted_experiments = 0
         brain_repetition_reports = [None] * repetitions
         while completed_experiments < repetitions:
-            agent = MotivatedAgent(agent_spec[0](agent_spec[1](2, 4)), motivation=config.RewardType.WATER,
+            agent = MotivatedAgent(agent_spec[0](agent_spec[1](env.stimuli_encoding_size, 2, env.num_actions())), motivation=config.RewardType.WATER,
                                    motivated_reward_value=agent_spec[2], non_motivated_reward_value=agent_spec[3])
-            success, experiment_report_df = PlusMazeExperiment(agent, dashboard=False)
+            success, experiment_report_df = PlusMazeExperiment(agent, dashboard=True)
             if success == EperimentStatus.COMPLETED:
                 brain_repetition_reports[completed_experiments] = experiment_report_df
                 completed_experiments += 1
