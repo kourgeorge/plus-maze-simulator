@@ -26,7 +26,7 @@ def plot_days_per_stage(brains_repetitions_reports):
 		ax.bar(np.array(stages) + width*i, np.mean(days_per_stage_pg, axis=0), yerr=sem(days_per_stage_pg, axis=0, nan_policy='omit'),
 			width=width, label="{}:{}".format(brain_reports[0]._metadata['brain'],brain_reports[0]._metadata['brain_params']), capsize=2)
 
-	plt.xticks(np.array(stages) + width/4*len(brains_repetitions_reports),config.stage_names, rotation=0, fontsize='10', horizontalalignment='center')
+	plt.xticks(np.array(stages) + width/2*len(brains_repetitions_reports),config.stage_names, rotation=0, fontsize='10', horizontalalignment='center')
 
 	plt.title("Days Per stage. #reps={}".format(repetitions))
 	plt.legend()
