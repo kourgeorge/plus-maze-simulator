@@ -10,14 +10,15 @@ from abstractbrain import AbstractBrain
 
 class Stats:
 
-    def __init__(self):
+    def __init__(self, metadata=None):
         self.action_dist = np.zeros(4)
         self.epoch_stats_df = pd.DataFrame()
+        self.metadata = metadata
 
     def update(self, trial, report):
         stats = self.collect_stats(trial, report)
         temp_df = pd.DataFrame([stats], columns=stats.keys())
-        self.epoch_stats_df = pd.concat([self.epoch_stats_df, temp_df], axis=0).reset_index(drop=True)
+        self.epoch_stats_df = self.epoch_stats_df.append(temp_df, ignore_index=True)
 
         return self.epoch_stats_df
 
@@ -62,5 +63,6 @@ class Stats:
         report_dict.arm_type_water = [1 if action < 2 else 0 for action in report_dict.action]
         report_dict.correct = [1 if info.outcome != config.RewardType.NONE else 0 for info in infos]
         report_dict.stage = [info.stage for info in infos]
+        report_dict.brain = brain
         report_dict.affine_dim, report_dict.controller_dim = utils.electrophysiology_analysis(brain)
         return report_dict

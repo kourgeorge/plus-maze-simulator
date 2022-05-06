@@ -16,20 +16,25 @@ max_experiment_length = 50 #days
 
 class EperimentStatus(Enum):
     COMPLETED = 'completed'
-    ABORTED = 'aborted'
+    RUNNING = 'running'
 
 def PlusMazeExperiment(agent:MotivatedAgent, dashboard=False):
 
     env = PlusMazeOneHotCues(relevant_cue=config.CueType.ODOR)
     env.reset()
-    stats = Stats()
+    stats = Stats(metadata={'brain': str(agent.get_brain()),
+                                'network': agent.get_brain().get_network().__class__.__name__,
+                                'brain_params': agent.get_brain().num_trainable_parameters(),
+                                'motivated_reward': agent._motivated_reward_value,
+                                'non_motivated_reward': agent._non_motivated_reward_value,
+                                'experiment_status': EperimentStatus.RUNNING})
 
     if dashboard:
         dash = Dashboard(agent.get_brain())
 
     def pre_stage_transition_update():
         if dashboard:
-            dash.update(epoch_stats_df, env, agent.get_brain())
+            dash.update(stats.epoch_stats_df, env, agent.get_brain())
             dash.save_fig(dashboard_screenshots_path, env._stage)
 
     dashboard_screenshots_path = os.path.join('/Users/gkour/repositories/plusmaze/Results', '{}-{}'.format(agent.get_brain(),time.strftime("%Y%m%d-%H%M")))
@@ -44,7 +49,7 @@ def PlusMazeExperiment(agent:MotivatedAgent, dashboard=False):
 
         if trial>trials_in_day*max_experiment_length:
             print("Agent failed to learn.")
-            return EperimentStatus.ABORTED, None
+            return stats
 
         trial += 1
         utils.episode_rollout(env, agent)
@@ -52,31 +57,27 @@ def PlusMazeExperiment(agent:MotivatedAgent, dashboard=False):
         if trial % trials_in_day == 0:
             loss = agent.smarten()
             report = Stats.create_report_from_memory(agent.get_memory(), agent.get_brain(), trials_in_day)
-            epoch_stats_df = stats.update(trial, report)
+            stats.update(trial, report)
             pre_stage_transition_update()
 
             print(
-                'Trial: {}, Action Dist:{}, Corr.:{}, Rew.:{}, loss={};'.format(epoch_stats_df['Trial'].to_numpy()[-1],
-                                                                                epoch_stats_df['ActionDist'].to_numpy()[-1],
-                                                                                epoch_stats_df['Correct'].to_numpy()[-1],
-                                                                                epoch_stats_df['Reward'].to_numpy()[-1],
+                'Trial: {}, Action Dist:{}, Corr.:{}, Rew.:{}, loss={};'.format(stats.epoch_stats_df['Trial'].to_numpy()[-1],
+                                                                                stats.epoch_stats_df['ActionDist'].to_numpy()[-1],
+                                                                                stats.epoch_stats_df['Correct'].to_numpy()[-1],
+                                                                                stats.epoch_stats_df['Reward'].to_numpy()[-1],
                                                                                 round(loss / trials_in_day, 2)))
 
             print(
-                'WPI:{}, WC: {}, FC:{}'.format(epoch_stats_df['WaterPreference'].to_numpy()[-1], epoch_stats_df['WaterCorrect'].to_numpy()[-1],
-                                               epoch_stats_df['FoodCorrect'].to_numpy()[-1]))
+                'WPI:{}, WC: {}, FC:{}'.format(stats.epoch_stats_df['WaterPreference'].to_numpy()[-1], stats.epoch_stats_df['WaterCorrect'].to_numpy()[-1],
+                                               stats.epoch_stats_df['FoodCorrect'].to_numpy()[-1]))
 
             current_criterion = np.mean(report.correct)
             reward = np.mean(report.reward)
             if current_criterion > config.SUCCESS_CRITERION_THRESHOLD and reward>0.6:
                 set_next_stage(env,agent)
 
-
-    epoch_stats_df._metadata = {'brain': str(agent.get_brain()),
-                                'brain_params': agent.get_brain().num_trainable_parameters(),
-                                'motivated_reward': agent._motivated_reward_value,
-                                'non_motivated_reward': agent._non_motivated_reward_value}
-    return EperimentStatus.COMPLETED, epoch_stats_df
+    stats.metadata['experiment_status'] = EperimentStatus.COMPLETED
+    return stats
 
 
 def set_next_stage(env:PlusMaze, agent:MotivatedAgent):

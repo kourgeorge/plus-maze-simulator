@@ -8,25 +8,25 @@ from scipy.stats import sem
 import time
 
 
-def plot_days_per_stage(brains_repetitions_reports):
+def plot_days_per_stage(all_brains_types_stats):
 	stages = list(range(0, 5))
-	width = 0.7/len(brains_repetitions_reports)
+	width = 0.7/len(all_brains_types_stats)
 	fig, ax = plt.subplots(figsize=(10, 6))
 	brain_names = []
-	for i, brain_reports in enumerate(brains_repetitions_reports):
-		repetitions = len(brain_reports)
+	for i, brain_type_stats in enumerate(all_brains_types_stats):
+		repetitions = len(brain_type_stats)
 		days_per_stage_pg = []
-		brain_names+=[brain_reports[0]._metadata['brain']]
-		for experiment_report_df_pg in brain_reports:
-			c = Counter(list(experiment_report_df_pg['Stage']))
+		brain_names+=[brain_type_stats[0].metadata['brain']]
+		for experiment_stats in brain_type_stats:
+			c = Counter(list(experiment_stats.epoch_stats_df['Stage']))
 			days_per_stage_pg.append([c[i] for i in stages])
 
 		days_per_stage_pg = np.stack(days_per_stage_pg)
 
 		ax.bar(np.array(stages) + width*i, np.mean(days_per_stage_pg, axis=0), yerr=sem(days_per_stage_pg, axis=0, nan_policy='omit'),
-			width=width, label="{}:{}".format(brain_reports[0]._metadata['brain'],brain_reports[0]._metadata['brain_params']), capsize=2)
+			width=width, label="{}:{}".format(brain_type_stats[0].metadata['brain'],brain_type_stats[0].metadata['brain_params']), capsize=2)
 
-	plt.xticks(np.array(stages) + width/2*len(brains_repetitions_reports),config.stage_names, rotation=0, fontsize='10', horizontalalignment='center')
+	plt.xticks(np.array(stages) + width / 2 * len(all_brains_types_stats), config.stage_names, rotation=0, fontsize='10', horizontalalignment='center')
 
 	plt.title("Days Per stage. #reps={}".format(repetitions))
 	plt.legend()
@@ -38,7 +38,7 @@ def days_to_consider_in_each_stage(subject_reports, q=75):
 	stages = list(range(0, 5))
 	days_per_stage = []
 	for experiment_report_df in subject_reports:
-		c = Counter(list(experiment_report_df['Stage']))
+		c = Counter(list(experiment_report_df.epoch_stats_df['Stage']))
 		days_per_stage.append([c[i] for i in stages])
 
 	days_per_stage = np.array(days_per_stage)
@@ -49,9 +49,9 @@ def days_to_consider_in_each_stage(subject_reports, q=75):
 	return considered_days_per_stage
 
 
-def plot_behavior_results(reports):
+def plot_behavior_results(brain_type_stats):
 	stages = list(range(0, 5))
-	days_each_stage = days_to_consider_in_each_stage(reports)
+	days_each_stage = days_to_consider_in_each_stage(brain_type_stats)
 	b_signals = ['Correct', 'Reward', 'WaterPreference', 'WaterCorrect', 'FoodCorrect']
 	n_signals = ['AffineDim','ControllerDim']
 
@@ -59,11 +59,11 @@ def plot_behavior_results(reports):
 	# days_each_stage_sum = np.cumsum(days_each_stage)
 	results_dict = {}
 	for signal in signals:
-		results_dict[signal] = np.ndarray(shape=[len(reports), sum(days_each_stage)])
+		results_dict[signal] = np.ndarray(shape=[len(brain_type_stats), sum(days_each_stage)])
 	stage_indices = np.insert(np.cumsum(days_each_stage),0,0)
-	for i, report in enumerate(reports):
+	for i, report in enumerate(brain_type_stats):
 		for stage in stages:
-			stage_rows_df = report.loc[report['Stage'] == stage]
+			stage_rows_df = report.epoch_stats_df.loc[report.epoch_stats_df['Stage'] == stage]
 			days_in_stage_to_consider = np.min([len(stage_rows_df), days_each_stage[stage]])
 
 			for signal in signals:
@@ -94,11 +94,11 @@ def plot_behavior_results(reports):
 	plt.ylabel('Percent')
 
 	fig.suptitle("Behavioral Stats of {} individuals. brain:{}. #params:{}.".format(
-		len(reports), reports[0]._metadata['brain'], reports[0]._metadata['brain_params']))
+		len(brain_type_stats), brain_type_stats[0].metadata['brain'], brain_type_stats[0].metadata['brain_params']))
 
 	axes_behavioral_graph.legend()
 	axes_neural_graph.legend()
 	axes_behavioral_graph.set_ylim(0, 1)
 	axes_neural_graph.set_ylim(0, 8)
 
-	plt.savefig('Results/Behavioural_stats_{}-{}'.format(reports[0]._metadata['brain'],time.strftime("%Y%m%d-%H%M")))
+	plt.savefig('Results/Behavioural_stats_{}-{}'.format(brain_type_stats[0].metadata['brain'], time.strftime("%Y%m%d-%H%M")))
