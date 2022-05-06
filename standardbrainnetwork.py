@@ -8,8 +8,30 @@ from Modules import ChannelProccessor
 class FullyConnectedNetwork(nn.Module):
 	def __init__(self, encoding_size, num_channels, num_actions):
 		super().__init__()
-		self.affine = nn.Linear(num_channels*num_actions*encoding_size, 16, bias=False)
-		self.controller = nn.Linear(16, num_actions, bias=False)
+		self.affine = nn.Linear(num_channels*num_actions*encoding_size, 4, bias=False)
+		self.controller = nn.Linear(4, num_actions, bias=False)
+		self.model = torch.nn.Sequential(
+			self.affine,
+			nn.Softmax(dim=-1)
+		)
+
+	def forward(self, x):
+		return self.model(torch.flatten(x, start_dim=1))
+
+	def get_stimuli_layer(self):
+		return self.model[0].weight
+
+	def get_door_attention(self):
+		return torch.tensor([[0,0,0,0],[0,0,0,0]])
+
+	def get_dimension_attention(self):
+		return torch.tensor([[0,0,0,0],[0,0,0,0]])
+
+
+class FullyConnectedNetwork2Layers(FullyConnectedNetwork):
+	def __init__(self, encoding_size, num_channels, num_actions):
+		super().__init__(encoding_size, num_channels, num_actions)
+		self.controller = nn.Linear(4, num_actions, bias=False)
 		self.model = torch.nn.Sequential(
 			self.affine,
 			nn.Dropout(p=0.6),
@@ -28,7 +50,7 @@ class FullyConnectedNetwork(nn.Module):
 		return self.model[3].weight
 
 	def get_dimension_attention(self):
-		return torch.tensor(0)
+		return torch.tensor([[0,0,0,0],[0,0,0,0]])
 
 
 class DoorAttentionAttention(nn.Module):

@@ -7,7 +7,8 @@ from environment import PlusMazeOneHotCues
 
 import config
 from motivationdependantbrain import MotivationDependantBrainDQN, MotivationDependantBrainPG
-from standardbrainnetwork import FullyConnectedNetwork, DoorAttentionAttention, SeparateMotivationAreasNetwork
+from standardbrainnetwork import FullyConnectedNetwork, DoorAttentionAttention, SeparateMotivationAreasNetwork, \
+    FullyConnectedNetwork2Layers
 from braindqn import BrainDQN
 from brainpg import BrainPG
 from PlusMazeExperiment import PlusMazeExperiment, EperimentStatus
@@ -42,11 +43,12 @@ if __name__ == '__main__':
         aborted_experiments = 0
         brain_repetition_reports = [None] * repetitions
         while completed_experiments < repetitions:
-            agent = MotivatedAgent(agent_spec[0](agent_spec[1](env.stimuli_encoding_size, 2, env.num_actions())), motivation=config.RewardType.WATER,
+            agent = MotivatedAgent(agent_spec[0](agent_spec[1](env.stimuli_encoding_size, 2, env.num_actions())),
+                                   motivation=config.RewardType.WATER,
                                    motivated_reward_value=agent_spec[2], non_motivated_reward_value=agent_spec[3])
-            success, experiment_report_df = PlusMazeExperiment(agent, dashboard=True)
-            if success == EperimentStatus.COMPLETED:
-                brain_repetition_reports[completed_experiments] = experiment_report_df
+            experiment_stats = PlusMazeExperiment(agent, dashboard=True)
+            if experiment_stats.metadata['experiment_status'] == EperimentStatus.COMPLETED:
+                brain_repetition_reports[completed_experiments] = experiment_stats
                 completed_experiments += 1
             else:
                 aborted_experiments += 1
