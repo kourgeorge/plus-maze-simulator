@@ -23,7 +23,7 @@ def PlusMazeExperiment(agent:MotivatedAgent, dashboard=False):
     env = PlusMazeOneHotCues(relevant_cue=config.CueType.ODOR)
     env.reset()
     stats = Stats(metadata={'brain': str(agent.get_brain()),
-                                'network': agent.get_brain().get_network().__class__.__name__,
+                                'network': str(agent.get_brain().get_network()),
                                 'brain_params': agent.get_brain().num_trainable_parameters(),
                                 'motivated_reward': agent._motivated_reward_value,
                                 'non_motivated_reward': agent._non_motivated_reward_value,

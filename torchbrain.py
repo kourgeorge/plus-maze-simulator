@@ -4,6 +4,7 @@ import numpy as np
 import torch
 from abstractbrain import AbstractBrain
 import os.path
+from standardbrainnetwork import AbstractNetwork
 
 torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
@@ -11,7 +12,7 @@ torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 class TorchBrain(AbstractBrain):
 	BATCH_SIZE = 20
 
-	def __init__(self, network, optimizer, reward_discount=1):
+	def __init__(self, network:AbstractNetwork, optimizer, reward_discount=1):
 		super().__init__(reward_discount)
 		self.network = network
 		self.optimizer = optimizer

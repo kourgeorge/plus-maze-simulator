@@ -5,13 +5,15 @@ import matplotlib.pyplot as plt
 import os
 from pathlib import Path
 from environment import PlusMaze
-from abstractbrain import AbstractBrain
+from torchbrain import TorchBrain
+
 plt.ion()
 
 
 class Dashboard:
-    def __init__(self, brain:AbstractBrain):
+    def __init__(self, brain:TorchBrain):
         self.stage = 0
+        self.stage_initial_brain = brain
         self.fig = plt.figure(figsize=(9, 7), dpi=120, facecolor='w')
         self.text_curr_stage = "Stage:{}, Trial {}: Odors:{}, Lights:{}. CorrectCue: {}. Accuracy:{}, Reward: {}."
         axis_stimuli = self.fig.add_subplot(322)
@@ -26,8 +28,8 @@ class Dashboard:
         self.im3_obj = axis_dim_attn.imshow(brain.get_network().get_dimension_attention().data.numpy(), cmap='RdBu', vmin=-2, vmax=2)
 
         props = dict(boxstyle='round', facecolor='wheat')
-        self.figtxtbrain = plt.figtext(0.1, 0.99, "Brain:{}".format(str(brain)), fontsize=8, verticalalignment='top', bbox=props)
-        self.figtxt = plt.figtext(0.1, 0.97, 'Start', fontsize=8, verticalalignment='top', bbox=props)
+        self.figtxtbrain = plt.figtext(0.1, 0.98, "Brain - {}:{}({})".format(str(brain), str(brain.get_network()), str(brain.num_trainable_parameters())), fontsize=8, verticalalignment='top', bbox=props)
+        self.figtxt = plt.figtext(0.1, 0.95, 'Start', fontsize=8, verticalalignment='top', bbox=props)
         self.fig.colorbar(self.im1_obj, ax=axis_stimuli)
 
         self._axes_graph = self.fig.add_subplot(312)
@@ -46,6 +48,9 @@ class Dashboard:
                                                                   alpha=0.4)
         self._line_controller_dimensionality, = self._axes_neural_graph.plot([], [], 'g^-', label='Controller Dim', markersize=3,
                                                                   alpha=0.4)
+        self._line_controller_change, = self._axes_neural_graph.plot([], [], 'g^-', label='Controller Dim',
+                                                                             markersize=3,
+                                                                             alpha=0.4)
 
         self._axes_graph.legend(
             [self._line_correct, self._line_reward, self._line_water_correct, self._line_food_correct,
@@ -57,7 +62,7 @@ class Dashboard:
             [self._line_affine_dimensionality, self._line_controller_dimensionality],
             [self._line_affine_dimensionality.get_label(), self._line_controller_dimensionality.get_label()], loc=0)
 
-    def update(self, stats_df, env: PlusMaze, brain):
+    def update(self, stats_df, env: PlusMaze, brain:TorchBrain):
         textstr = self.text_curr_stage.format(
             env._stage, stats_df['Trial'].to_numpy()[-1], [np.argmax(encoding) for encoding in env.get_odor_cues()],
             [np.argmax(encoding) for encoding in env.get_light_cues()], np.argmax(env.get_correct_cue_value()),
@@ -93,6 +98,7 @@ class Dashboard:
 
         if self.stage < env._stage:
             self.stage = env._stage
+            self.stage_initial_brain = brain
             self._axes_graph.axvline(x=stats_df['Trial'].to_numpy()[-1] - 50, alpha=0.5, dashes=(5, 2, 1, 2), lw=2)
             self._axes_neural_graph.axvline(x=stats_df['Trial'].to_numpy()[-1] - 50, alpha=0.5, dashes=(5, 2, 1, 2), lw=2)
 

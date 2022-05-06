@@ -5,11 +5,25 @@ import torch
 from Modules import ChannelProccessor
 
 
-class FullyConnectedNetwork(nn.Module):
+class AbstractNetwork(nn.Module):
+
+	def __str__(self):
+		return self.__class__.__name__
+
+	def get_stimuli_layer(self):
+		raise NotImplementedError()
+
+	def get_door_attention(self):
+		raise NotImplementedError()
+
+	def get_dimension_attention(self):
+		raise NotImplementedError()
+
+
+class FullyConnectedNetwork(AbstractNetwork):
 	def __init__(self, encoding_size, num_channels, num_actions):
 		super().__init__()
-		self.affine = nn.Linear(num_channels*num_actions*encoding_size, 4, bias=False)
-		self.controller = nn.Linear(4, num_actions, bias=False)
+		self.affine = nn.Linear(num_channels * num_actions * encoding_size, 4, bias=False)
 		self.model = torch.nn.Sequential(
 			self.affine,
 			nn.Softmax(dim=-1)
@@ -22,10 +36,10 @@ class FullyConnectedNetwork(nn.Module):
 		return self.model[0].weight
 
 	def get_door_attention(self):
-		return torch.tensor([[0,0,0,0],[0,0,0,0]])
+		return torch.tensor([[0, 0, 0, 0], [0, 0, 0, 0]])
 
 	def get_dimension_attention(self):
-		return torch.tensor([[0,0,0,0],[0,0,0,0]])
+		return torch.tensor([[0, 0, 0, 0], [0, 0, 0, 0]])
 
 
 class FullyConnectedNetwork2Layers(FullyConnectedNetwork):
@@ -49,11 +63,8 @@ class FullyConnectedNetwork2Layers(FullyConnectedNetwork):
 	def get_door_attention(self):
 		return self.model[3].weight
 
-	def get_dimension_attention(self):
-		return torch.tensor([[0,0,0,0],[0,0,0,0]])
 
-
-class DoorAttentionAttention(nn.Module):
+class DoorAttentionAttention(AbstractNetwork):
 
 	def __init__(self, encoding_size, num_channels, num_actions):
 		super().__init__()
@@ -67,7 +78,8 @@ class DoorAttentionAttention(nn.Module):
 		processed_channels_t = torch.transpose(processed_channels, dim0=-1, dim1=-2)
 		dimension_attended = torch.matmul(torch.softmax(self.dim_attn, dim=-1), processed_channels_t.squeeze())
 		if door_attention is None:
-			door_attended = torch.softmax(torch.mul(torch.softmax(self.door_attn, dim=-1), dimension_attended), dim=-1).squeeze()
+			door_attended = torch.softmax(torch.mul(torch.softmax(self.door_attn, dim=-1), dimension_attended),
+										  dim=-1).squeeze()
 		else:
 			door_attended = torch.softmax(
 				torch.mul(torch.softmax(torch.tensor(door_attention).float(), dim=-1), dimension_attended),
@@ -84,7 +96,7 @@ class DoorAttentionAttention(nn.Module):
 		return self.dim_attn
 
 
-class SeparateMotivationAreasNetwork(nn.Module):
+class SeparateMotivationAreasNetwork(AbstractNetwork):
 
 	def __init__(self, encoding_size, num_channels, num_actions):
 		super().__init__()

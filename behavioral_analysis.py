@@ -24,7 +24,9 @@ def plot_days_per_stage(all_brains_types_stats):
 		days_per_stage_pg = np.stack(days_per_stage_pg)
 
 		ax.bar(np.array(stages) + width*i, np.mean(days_per_stage_pg, axis=0), yerr=sem(days_per_stage_pg, axis=0, nan_policy='omit'),
-			width=width, label="{}:{}".format(brain_type_stats[0].metadata['brain'],brain_type_stats[0].metadata['brain_params']), capsize=2)
+			width=width, label="{}:{}({})".format(brain_type_stats[0].metadata['brain'],
+												 brain_type_stats[0].metadata['network'],
+												 brain_type_stats[0].metadata['brain_params']), capsize=2)
 
 	plt.xticks(np.array(stages) + width / 2 * len(all_brains_types_stats), config.stage_names, rotation=0, fontsize='10', horizontalalignment='center')
 
