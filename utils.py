@@ -90,3 +90,11 @@ def unsupervised_dimensionality(samples_embedding, explained_variance=0.95):
     pca = decomposition.PCA(n_components=num_pcs).fit(samples_embedding)
     dimensionality = np.cumsum(pca.explained_variance_ratio_)
     return (np.argmax(dimensionality > explained_variance) + 1)
+
+
+def network_diff(brain1: TorchBrain, brain2: TorchBrain):
+    affine1 = brain1.get_network().get_stimuli_layer().T.detach().numpy()
+    affine2 = brain2.get_network().get_stimuli_layer().T.detach().numpy()
+    distance = np.linalg.norm(affine1-affine2, ord='fro')
+
+    return distance

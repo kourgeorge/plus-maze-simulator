@@ -40,7 +40,6 @@ def PlusMazeExperiment(agent:MotivatedAgent, dashboard=False):
     dashboard_screenshots_path = os.path.join('/Users/gkour/repositories/plusmaze/Results', '{}-{}'.format(agent.get_brain(),time.strftime("%Y%m%d-%H%M")))
 
     trial = 0
-    loss_acc = 0
     print('============================ Brain:{} ======================='.format(str(agent.get_brain())))
     print("Stage {}: {} - Water Motivated, odor relevant. (Odors: {}, Correct: {})".format(env._stage, config.stage_names[env._stage], [np.argmax(encoding) for encoding in env.get_odor_cues()],
                                                                                              np.argmax(env.get_correct_cue_value())))
@@ -56,8 +55,7 @@ def PlusMazeExperiment(agent:MotivatedAgent, dashboard=False):
 
         if trial % trials_in_day == 0:
             loss = agent.smarten()
-            report = Stats.create_report_from_memory(agent.get_memory(), agent.get_brain(), trials_in_day)
-            stats.update(trial, report)
+            stats.update_stats(agent,trial,trials_in_day)
             pre_stage_transition_update()
 
             print(
@@ -65,16 +63,16 @@ def PlusMazeExperiment(agent:MotivatedAgent, dashboard=False):
                                                                                 stats.epoch_stats_df['ActionDist'].to_numpy()[-1],
                                                                                 stats.epoch_stats_df['Correct'].to_numpy()[-1],
                                                                                 stats.epoch_stats_df['Reward'].to_numpy()[-1],
-                                                                                round(loss / trials_in_day, 2)))
+                                                                                round(loss, 2)))
 
             print(
                 'WPI:{}, WC: {}, FC:{}'.format(stats.epoch_stats_df['WaterPreference'].to_numpy()[-1], stats.epoch_stats_df['WaterCorrect'].to_numpy()[-1],
                                                stats.epoch_stats_df['FoodCorrect'].to_numpy()[-1]))
 
-            current_criterion = np.mean(report.correct)
-            reward = np.mean(report.reward)
+            current_criterion = np.mean(stats.reports[-1].correct)
+            reward = np.mean(stats.reports[-1].reward)
             if current_criterion > config.SUCCESS_CRITERION_THRESHOLD and reward>0.6:
-                set_next_stage(env,agent)
+                set_next_stage(env, agent)
 
     stats.metadata['experiment_status'] = EperimentStatus.COMPLETED
     return stats
