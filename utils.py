@@ -2,7 +2,7 @@ __author__ = 'gkour'
 
 import numpy as np
 from sklearn import decomposition
-from abstractbrain import AbstractBrain
+from torchbrain import TorchBrain
 
 
 class Object(object):
@@ -76,8 +76,7 @@ def episode_rollout(env, agent):
     return steps, total_reward, act_dist
 
 
-
-def electrophysiology_analysis(brain:AbstractBrain):
+def electrophysiology_analysis(brain: TorchBrain):
     affine = brain.network.get_stimuli_layer().T.detach().numpy()
     affine_dim = unsupervised_dimensionality(affine)
     controller = brain.network.get_door_attention().T.detach().numpy()
