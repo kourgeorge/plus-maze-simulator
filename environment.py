@@ -13,7 +13,7 @@ class PlusMaze:
         # correct_value: 1/-1 the identity of the correct cue
 
         self._state = None
-        self.stimuli_encoding_size = 2
+        self._stimuli_encoding_size = 2
         self._relevant_cue = relevant_cue
         self._odor_cues = None
         self._light_cues = None
@@ -28,13 +28,13 @@ class PlusMaze:
     def step(self, action):
         # returns reward, new state, done
 
-        option_cues_length = self.light_encoding_size() + self.odor_encoding_size()
+        option_cues_length = 2*self.stimuli_encoding_size()
         selected_arm_cues_ind = option_cues_length * action
         selected_cues = self._state[selected_arm_cues_ind:selected_arm_cues_ind + option_cues_length]
         #        print('state {}, action:{} selected arm cues:{}'.format(self._state,action,selected_cues ))
         self._state = np.asarray([-1] * self.state_shape())
-        selected_cues_items = [selected_cues[0:self.odor_encoding_size()]] + \
-                        [selected_cues[self.odor_encoding_size():self.odor_encoding_size() + self.light_encoding_size()]]
+        selected_cues_items = [selected_cues[0:self.stimuli_encoding_size()]] + \
+                              [selected_cues[self.stimuli_encoding_size():2*self.stimuli_encoding_size()]]
 
         if np.array_equal(selected_cues_items[self._relevant_cue.value], self.get_correct_cue_value()):
             outcome = config.RewardType.WATER if action in [0, 1] else config.RewardType.FOOD
@@ -67,25 +67,23 @@ class PlusMaze:
         return len(self.action_space())
 
     def state_shape(self):
-        return (self.odor_encoding_size(),8)
+        return (self.stimuli_encoding_size(), 8)
 
-    def odor_encoding_size(self):
-        return self.stimuli_encoding_size
 
     def set_random_odor_set(self):
-        new_odor1 = PlusMaze.random_stimuli_encoding(self.odor_encoding_size())
+        new_odor1 = PlusMaze.random_stimuli_encoding(self.stimuli_encoding_size())
         new_odor2 = list(np.round(utils.get_orthogonal(new_odor1),2))
         while(np.linalg.norm(np.array(new_odor1)-np.array(new_odor2))<0.2):
-            new_odor1 = PlusMaze.random_stimuli_encoding(self.odor_encoding_size())
-            new_odor2 = PlusMaze.random_stimuli_encoding(self.odor_encoding_size())
+            new_odor1 = PlusMaze.random_stimuli_encoding(self.stimuli_encoding_size())
+            new_odor2 = PlusMaze.random_stimuli_encoding(self.stimuli_encoding_size())
         self.set_odor_cues([new_odor1,new_odor2])
 
     def set_random_light_set(self):
-        new_light1 = PlusMaze.random_stimuli_encoding(self.light_encoding_size())
-        new_light2 = PlusMaze.random_stimuli_encoding(self.light_encoding_size())
+        new_light1 = PlusMaze.random_stimuli_encoding(self.stimuli_encoding_size())
+        new_light2 = PlusMaze.random_stimuli_encoding(self.stimuli_encoding_size())
         while (np.linalg.norm(np.array(new_light1) - np.array(new_light2)) < 0.2):
-            new_light1 = PlusMaze.random_stimuli_encoding(self.odor_encoding_size())
-            new_light2 = PlusMaze.random_stimuli_encoding(self.odor_encoding_size())
+            new_light1 = PlusMaze.random_stimuli_encoding(self.stimuli_encoding_size())
+            new_light2 = PlusMaze.random_stimuli_encoding(self.stimuli_encoding_size())
         self.set_light_cues([new_light1,new_light2])
 
     @staticmethod
@@ -94,8 +92,8 @@ class PlusMaze:
         point=np.round(point/np.linalg.norm(point),2)
         return list(point)
 
-    def light_encoding_size(self):
-        return self.stimuli_encoding_size
+    def stimuli_encoding_size(self):
+        return self._stimuli_encoding_size
 
     def get_odor_cues(self):
         return self._odor_cues
@@ -132,7 +130,7 @@ class PlusMaze:
 class PlusMazeOneHotCues(PlusMaze):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.stimuli_encoding_size = 6
+        self._stimuli_encoding_size = 6
         self.set_random_odor_set()
         self.set_random_light_set()
 
@@ -140,14 +138,14 @@ class PlusMazeOneHotCues(PlusMaze):
     def step(self, action):
         # returns reward, new state, done
 
-        option_cues_length = self.light_encoding_size() + self.odor_encoding_size()
+        option_cues_length = 2*self.stimuli_encoding_size()
         selected_arm_cues_ind = option_cues_length * action
         selected_cues = self._state[:, action, :]
         #        print('state {}, action:{} selected arm cues:{}'.format(self._state,action,selected_cues ))
         self._state = np.ones(self.state_shape())
-        selected_cues_items = [selected_cues[0:self.odor_encoding_size()]] + \
+        selected_cues_items = [selected_cues[0:self.stimuli_encoding_size()]] + \
                               [selected_cues[
-                               self.odor_encoding_size():self.odor_encoding_size() + self.light_encoding_size()]]
+                               self.stimuli_encoding_size():2*self.stimuli_encoding_size() ]]
 
         if np.array_equal(selected_cues[self._relevant_cue.value, :], self.get_correct_cue_value()):
             outcome = config.RewardType.WATER if action in [0, 1] else config.RewardType.FOOD
@@ -155,16 +153,16 @@ class PlusMazeOneHotCues(PlusMaze):
         return self._state, config.RewardType.NONE, 1, self._get_step_info(config.RewardType.NONE)
 
     def state_shape(self):
-        return (self.num_actions(), self.odor_encoding_size(), 2)  # TODO:fix that
+        return (self.num_actions(), self.stimuli_encoding_size(), 2)
 
-    def odor_encoding_size(self):
-        return self.stimuli_encoding_size
+    def stimuli_encoding_size(self):
+        return self._stimuli_encoding_size
 
     def set_random_odor_set(self):
-        self._odor_cues = PlusMazeOneHotCues._choose_new_cue_set(self._odor_cues, self.stimuli_encoding_size)
+        self._odor_cues = PlusMazeOneHotCues._choose_new_cue_set(self._odor_cues, self._stimuli_encoding_size)
 
     def set_random_light_set(self):
-        self._light_cues = PlusMazeOneHotCues._choose_new_cue_set(self._light_cues, self.stimuli_encoding_size)
+        self._light_cues = PlusMazeOneHotCues._choose_new_cue_set(self._light_cues, self._stimuli_encoding_size)
 
     def random_state(self):
         arm1O = random.choice([0, 1])
@@ -173,7 +171,7 @@ class PlusMazeOneHotCues(PlusMaze):
         # use the same combination for arms 3 and arms 4. select randomly.
         arm3O = random.choice([0, 1])
         arm3L = random.choice([0, 1])
-        state = np.ndarray(shape=[2, 4, self.stimuli_encoding_size])
+        state = np.ndarray(shape=[2, 4, self.stimuli_encoding_size()])
         state[0, 0, :] = self._odor_cues[arm1O]
         state[0, 1, :] = self._odor_cues[1 - arm1O]
         state[0, 2, :] = self._odor_cues[arm3O]
@@ -185,6 +183,9 @@ class PlusMazeOneHotCues(PlusMaze):
         state[1, 3, :] = self._light_cues[1 - arm3L]
 
         return state
+
+    def state_shape(self):
+        return (2, self.num_actions(), self.stimuli_encoding_size())
 
     @staticmethod
     def _choose_new_cue_set(old_cues_one_hot, encoding_size):
