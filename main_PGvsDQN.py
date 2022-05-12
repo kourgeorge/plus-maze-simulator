@@ -38,12 +38,12 @@ if __name__ == '__main__':
     agent_specs = [x for y in zip(agents_DQN_spec, agents_PG_spec) for x in y]
 
     brains_reports = []
-    for agent_spec in agent_specs:
+    for agent_spec in agents_DQN_spec+agents_PG_spec:
         completed_experiments = 0
         aborted_experiments = 0
         brain_repetition_reports = [None] * repetitions
         while completed_experiments < repetitions:
-            agent = MotivatedAgent(agent_spec[0](agent_spec[1](env.stimuli_encoding_size, 2, env.num_actions())),
+            agent = MotivatedAgent(agent_spec[0](agent_spec[1](env.stimuli_encoding_size(), 2, env.num_actions())),
                                    motivation=config.RewardType.WATER,
                                    motivated_reward_value=agent_spec[2], non_motivated_reward_value=agent_spec[3])
             experiment_stats = PlusMazeExperiment(agent, dashboard=True)

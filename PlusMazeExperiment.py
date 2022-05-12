@@ -55,7 +55,7 @@ def PlusMazeExperiment(agent:MotivatedAgent, dashboard=False):
 
         if trial % trials_in_day == 0:
             loss = agent.smarten()
-            stats.update_stats(agent,trial,trials_in_day)
+            stats.update_stats_from_agent(agent, trial, trials_in_day)
             pre_stage_transition_update()
 
             print(
@@ -83,6 +83,7 @@ def set_next_stage(env:PlusMaze, agent:MotivatedAgent):
     print('---------------------------------------------------------------------')
     if env._stage==1:
         env.set_random_odor_set()
+        #env.set_relevant_cue(config.CueType.LIGHT)
         print("Stage {}: {} (Odors: {}, Correct:{})".format(env._stage, config.stage_names[env._stage], [np.argmax(encoding) for encoding in env.get_odor_cues()],np.argmax(env.get_correct_cue_value())))
     elif env._stage==2:
         agent.set_motivation(config.RewardType.FOOD)

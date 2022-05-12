@@ -47,9 +47,10 @@ class Dashboard:
 
         self._axes_neural_graph = self.fig.add_subplot(313)
         self._axes_neural_graph.set_ylabel('Neural [%]')
-        self._axes_neural_graph.set_ylim(0, 10)
+        #self._axes_neural_graph.set_ylim(0, 10)
         self._line_brain_signals = []
-        for signal_name in brain.get_network().get_network_metrics():
+        all_brain_signals = list(brain.get_network().get_network_metrics().keys())+list(brain.get_network().network_diff(brain.get_network()).keys())
+        for signal_name in all_brain_signals:
             self._line_brain_signals += self._axes_neural_graph.plot([], [], 'o-', color=utils.colorify(signal_name), label=signal_name, markersize=3,
                                                                   alpha=0.4)
 
@@ -62,12 +63,12 @@ class Dashboard:
             [self._line_correct, self._line_reward, self._line_water_correct, self._line_food_correct,
              self._line_water_preference, ],
             [self._line_correct.get_label(), self._line_reward.get_label(), self._line_water_correct.get_label(),
-             self._line_food_correct.get_label(), self._line_water_preference.get_label()], loc=0)
+             self._line_food_correct.get_label(), self._line_water_preference.get_label()], loc=0, prop={'size': 5})
 
         self._axes_neural_graph.legend(
              self._line_brain_signals + self._line_brain_compare,
              [signal_line.get_label() for signal_line in self._line_brain_signals] +
-            [signal_line.get_label() for signal_line in self._line_brain_compare], loc=0)
+            [signal_line.get_label() for signal_line in self._line_brain_compare], loc=0, prop={'size': 5})
 
     def update(self, stats_df, env: PlusMaze, brain:TorchBrain):
         textstr = self.text_curr_stage.format(
@@ -97,17 +98,10 @@ class Dashboard:
         self._line_water_preference.set_xdata(stats_df['Trial'])
         self._line_water_preference.set_ydata(stats_df['WaterPreference'])
 
-        for i in range(len(self._line_brain_signals)):
-            num_points = len(stats_df['Trial'])
-            self._line_brain_signals[i].set_xdata(stats_df['Trial'])
-            sig = pd.Series([stats_df['BrainSignals'][j][i] for j in range(num_points)], dtype=float)
-            self._line_brain_signals[i].set_ydata(sig)
 
-        for i in range(len(self._line_brain_compare)):
-            num_points = len(stats_df['Trial'])
-            self._line_brain_compare[i].set_xdata(stats_df['Trial'])
-            sig = pd.Series([stats_df['BrainCompare'][j][i] for j in range(num_points)], dtype=float)
-            self._line_brain_compare[i].set_ydata(sig)
+        for line in self._line_brain_signals:
+            line.set_xdata(stats_df['Trial'])
+            line.set_ydata(stats_df[line.get_label()])
 
         if self.stage < env._stage:
             self.stage = env._stage

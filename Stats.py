@@ -12,15 +12,16 @@ from motivatedagent import MotivatedAgent
 
 
 class Stats:
-
+    """This class accumulate report objects that contains information about each day.
+    In addition, it maintains a regularly updated  dataframe that allows consumers read the information in an asier fashion."""
     def __init__(self, metadata=None):
         self.action_dist = np.zeros(4)
         self.reports = []
         self.epoch_stats_df = pd.DataFrame()
         self.metadata = metadata
 
-    def update_stats(self,agent:MotivatedAgent, trial, last):
-        report = Stats.create_report_from_memory(agent.get_memory(), agent.get_brain(), last)
+    def update_stats_from_agent(self, agent:MotivatedAgent, trial, last):
+        report = Stats._create_report_from_memory(agent.get_memory(), agent.get_brain(), last)
         self.reports += [report]
         stats = self.dataframe_report(trial, report)
         temp_df = pd.DataFrame([stats], columns=stats.keys())
@@ -40,21 +41,22 @@ class Stats:
             np.sum(np.logical_not(report.arm_type_water)), 2)
 
         return OrderedDict([
-            ('Trial', trial),
-            ('Stage', report.stage[-1]),
-            ('ActionDist', action_dist),
-            ('Correct', avg_correct),
-            ('Reward', avg_reward),
-            ('WaterPreference', water_preference),
-            ('WaterCorrect', water_correct_percent),
-            ('FoodCorrect', food_correct_percent),
-            ('BrainCompare', list(self.reports[-1].brain.get_network().network_diff(
-                self.reports[-2].brain.get_network() if len(self.reports) > 2 else self.reports[
-                    -1].brain.get_network()).values())),
-             ('BrainSignals', list(self.reports[-1].brain.get_network().get_network_metrics().values()))])
+                               ('Trial', trial),
+                               ('Stage', report.stage[-1]),
+                               ('ActionDist', action_dist),
+                               ('Correct', avg_correct),
+                               ('Reward', avg_reward),
+                               ('WaterPreference', water_preference),
+                               ('WaterCorrect', water_correct_percent),
+                               ('FoodCorrect', food_correct_percent)] +
+                           [(k, v) for k, v in self.reports[-1].brain.get_network().network_diff(
+                               self.reports[-2].brain.get_network() if len(self.reports) > 2 else self.reports[
+                                   -1].brain.get_network()).items()] +
+                           [(k, v) for k, v in self.reports[-1].brain.get_network().get_network_metrics().items()])
+
 
     @staticmethod
-    def create_report_from_memory(experience: ReplayMemory, brain: TorchBrain, last):
+    def _create_report_from_memory(experience: ReplayMemory, brain: TorchBrain, last):
         if last == -1:
             pass
         last_exp = experience.last(last)
@@ -70,5 +72,4 @@ class Stats:
         report_dict.correct = [1 if info.outcome != config.RewardType.NONE else 0 for info in infos]
         report_dict.stage = [info.stage for info in infos]
         report_dict.brain = copy.deepcopy(brain)
-        report_dict.affine_dim, report_dict.controller_dim = brain.electrophysiology_analysis()
         return report_dict
