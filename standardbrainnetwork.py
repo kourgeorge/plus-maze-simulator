@@ -5,6 +5,7 @@ import torch
 import numpy as np
 import utils
 from Modules import ChannelProccessor
+import scipy
 
 
 class AbstractNetwork(nn.Module):
@@ -137,15 +138,31 @@ class EfficientNetwork(AbstractNetwork):
 
 	def network_diff(self, network2):
 		dim_attn1 = self.dim_attn.detach().numpy()
-		dim_attn2 = network2.door_attn.detach().numpy()
-		dim_attn_distance = np.linalg.norm(dim_attn1 - dim_attn2, ord=norm)
+		dim_attn2 = network2.dim_attn.detach().numpy()
+		dim_attn_distance = EfficientNetwork.vector_distance(dim_attn1,dim_attn2)
 
-		door_attn1 = self.dim_attn.detach().numpy()
+		door_attn1 = self.door_attn.detach().numpy()
 		door_attn2 = network2.door_attn.detach().numpy()
-		door_attn_distance = np.linalg.norm(door_attn1 - door_attn2, ord=norm)
-		return {'dim_attn_distance': dim_attn_distance,
+		door_attn_distance = EfficientNetwork.vector_distance(door_attn1, door_attn2)
+
+		odor_proc1 = list(self.chanells_encoding[0].modules())[2].weight.detach().numpy()
+		odor_proc2 = list(network2.chanells_encoding[0].modules())[2].weight.detach().numpy()
+		odor_proc_distance = EfficientNetwork.vector_distance(odor_proc1, odor_proc2)
+
+
+		color_proc1 = list(self.chanells_encoding[1].modules())[2].weight.detach().numpy()
+		color_proc2 = list(network2.chanells_encoding[1].modules())[2].weight.detach().numpy()
+		color_proc_distance = EfficientNetwork.vector_distance(color_proc1, color_proc2)
+
+		return {'odor_proc_distance': odor_proc_distance,
+				'color_proc_distance': color_proc_distance,
+				'dim_attn_distance': dim_attn_distance,
 				'door_attn_distance': door_attn_distance}
 
+	@staticmethod
+	def vector_distance(u,v):
+		return scipy.spatial.distance.correlation(u, v, centered=False)
+		#return scipy.spatial.distance.cosine(color_proc1, color_proc2)
 
 class SeparateMotivationAreasNetwork(AbstractNetwork):
 
@@ -171,27 +188,14 @@ class SeparateMotivationAreasNetwork(AbstractNetwork):
 		return torch.cat([self.model_water.dim_attn, self.model_food.dim_attn])
 
 	def get_network_metrics(self):
+		#return {**self.model_water.get_network_metrics(), **self.model_food.get_network_metrics()}
 		return {}
 
 	def network_diff(self, network2):
-		dim_attn_water1 = self.model_water.dim_attn.detach().numpy()
-		dim_attn_water2 = network2.model_water.dim_attn.detach().numpy()
-		dim_attn_water_distance = np.linalg.norm(dim_attn_water1 - dim_attn_water2, ord=norm)
+		water_diff = self.model_water.network_diff(network2.model_water)
+		water_diff = {'water_{}'.format(k): v for k, v in water_diff.items()}
 
-		door_attn_water1 = self.model_water.door_attn.detach().numpy()
-		door_attn_water2 = network2.model_water.door_attn.detach().numpy()
-		door_attn_water_distance = np.linalg.norm(door_attn_water1 - door_attn_water2, ord=norm)
+		food_dif = self.model_food.network_diff(network2.model_food)
+		food_dif = {'food_{}'.format(k): v for k, v in food_dif.items()}
 
-		dim_attn_food1 = self.model_food.dim_attn.detach().numpy()
-		dim_attn_food2 = network2.model_food.dim_attn.detach().numpy()
-		dim_attn_food_distance = np.linalg.norm(dim_attn_food1 - dim_attn_food2, ord=norm)
-
-		door_attn_food1 = self.model_food.door_attn.detach().numpy()
-		door_attn_food2 = network2.model_food.door_attn.detach().numpy()
-		door_attn_food_distance = np.linalg.norm(door_attn_food1 - door_attn_food2, ord=norm)
-
-		return {'dim_attn_water_distance': dim_attn_water_distance,
-				'door_attn_water_distance': door_attn_water_distance,
-				'dim_attn_food_distance': dim_attn_food_distance,
-				'door_attn_food_distance': door_attn_food_distance
-				}
+		return {**food_dif, **water_diff}

@@ -83,10 +83,14 @@ def plot_behavior_results(brain_type_stats):
 
 	formats = ['g+-', 'y-', '^-', 'bo-', 'ro-']
 	for signal in b_signals:
-		ax = axes_behavioral_graph.errorbar(X, np.nanmean(results_dict[signal], axis=0), yerr=sem(results_dict[signal], axis=0, nan_policy='omit'), fmt='o-', color=utils.colorify(signal), label=signal, alpha=0.6)
+		ax = axes_behavioral_graph.errorbar(X, np.nanmean(results_dict[signal], axis=0),
+											yerr=sem(results_dict[signal], axis=0, nan_policy='omit'), fmt='o-',
+											color=utils.colorify(signal), label=signal, alpha=0.6, markersize=2)
 
 	for n_sub_signal in n_signals:
-		ax = axes_neural_graph.errorbar(X, np.nanmean(results_dict[n_sub_signal], axis=0), yerr=sem(results_dict[n_sub_signal], axis=0, nan_policy='omit'), color=utils.colorify(n_sub_signal), fmt='^-', label=n_sub_signal, alpha=0.6)
+		ax = axes_neural_graph.errorbar(X, np.nanmean(results_dict[n_sub_signal], axis=0),
+										yerr=sem(results_dict[n_sub_signal], axis=0, nan_policy='omit'),
+										color=utils.colorify(n_sub_signal), fmt='^-', label=n_sub_signal, alpha=0.6, markersize=2)
 
 	for stage in stage_indices[1:]:
 		axes_behavioral_graph.axvline(x=stage + 0.5, alpha=0.5, dashes=(5, 2, 1, 2), lw=2)
@@ -98,9 +102,10 @@ def plot_behavior_results(brain_type_stats):
 	fig.suptitle("Behavioral Stats of {} individuals. brain:{}. #params:{}.".format(
 		len(brain_type_stats), brain_type_stats[0].metadata['brain'], brain_type_stats[0].metadata['brain_params']))
 
-	axes_behavioral_graph.legend(bbox_to_anchor=(1, 1.05), prop={'size': 5})
-	axes_neural_graph.legend(bbox_to_anchor=(1, 1.05), prop={'size': 5})
+	axes_behavioral_graph.legend(prop={'size': 7})
+	axes_neural_graph.legend(prop={'size': 7})
 	axes_behavioral_graph.set_ylim(0, 1)
-	#axes_neural_graph.set_ylim(0, 8)
+	#axes_neural_graph.set_ylim(0, 0.75)
+	#axes_neural_graph.set_yscale('log')
 
 	plt.savefig('Results/Behavioural_stats_{}-{}'.format(brain_type_stats[0].metadata['brain'], time.strftime("%Y%m%d-%H%M")))
