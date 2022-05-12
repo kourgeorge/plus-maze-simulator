@@ -48,8 +48,10 @@ class Stats:
             ('WaterPreference', water_preference),
             ('WaterCorrect', water_correct_percent),
             ('FoodCorrect', food_correct_percent),
-            ('AffineDim', utils.network_diff(self.reports[-1].brain, self.reports[-2].brain if len(self.reports) > 2 else self.reports[-1].brain)),
-            ('ControllerDim', report.controller_dim)])
+            ('BrainCompare', list(self.reports[-1].brain.get_network().network_diff(
+                self.reports[-2].brain.get_network() if len(self.reports) > 2 else self.reports[
+                    -1].brain.get_network()).values())),
+             ('BrainSignals', list(self.reports[-1].brain.get_network().get_network_metrics().values()))])
 
     @staticmethod
     def create_report_from_memory(experience: ReplayMemory, brain: TorchBrain, last):
@@ -68,5 +70,5 @@ class Stats:
         report_dict.correct = [1 if info.outcome != config.RewardType.NONE else 0 for info in infos]
         report_dict.stage = [info.stage for info in infos]
         report_dict.brain = copy.deepcopy(brain)
-        report_dict.affine_dim, report_dict.controller_dim = utils.electrophysiology_analysis(brain)
+        report_dict.affine_dim, report_dict.controller_dim = brain.electrophysiology_analysis()
         return report_dict

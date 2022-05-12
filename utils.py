@@ -1,8 +1,10 @@
 __author__ = 'gkour'
 
+import hashlib
+
 import numpy as np
+from matplotlib import cm
 from sklearn import decomposition
-from torchbrain import TorchBrain
 
 
 class Object(object):
@@ -10,6 +12,17 @@ class Object(object):
 
 def has_err(x):
     return bool(((x != x) | (x == float("inf")) | (x == float("-inf"))).any().item())
+
+def colorify(name):
+	h = int(hashlib.sha1(bytes(name, 'ascii')).hexdigest(), 16)
+	return [h % 100 / 100,
+			h / 100 % 100 / 100,
+			h / 10000 % 100 / 100]
+
+def colorify2(name):
+	colors = cm.rainbow(np.linspace(0, 1, 1000))
+	h = int(hashlib.sha1(bytes(name, 'ascii')).hexdigest(), 16)
+	return colors[h % 1000]
 
 def epsilon_greedy(eps, dist):
     p = np.random.rand()
@@ -47,7 +60,6 @@ def dot_lists(V1, V2):
     return sum([x * y for x, y in zip(V1, V2)])
 
 
-
 def episode_rollout(env, agent):
     total_reward = 0
 
@@ -76,14 +88,6 @@ def episode_rollout(env, agent):
     return steps, total_reward, act_dist
 
 
-def electrophysiology_analysis(brain: TorchBrain):
-    affine = brain.network.get_stimuli_layer().T.detach().numpy()
-    affine_dim = unsupervised_dimensionality(affine)
-    controller = brain.network.get_door_attention().T.detach().numpy()
-    controller_dim = unsupervised_dimensionality(controller)
-
-    return affine_dim, controller_dim
-
 
 def unsupervised_dimensionality(samples_embedding, explained_variance=0.95):
     num_pcs = min(len(samples_embedding), len(samples_embedding[0]))
@@ -91,10 +95,3 @@ def unsupervised_dimensionality(samples_embedding, explained_variance=0.95):
     dimensionality = np.cumsum(pca.explained_variance_ratio_)
     return (np.argmax(dimensionality > explained_variance) + 1)
 
-
-def network_diff(brain1: TorchBrain, brain2: TorchBrain):
-    affine1 = brain1.get_network().get_stimuli_layer().T.detach().numpy()
-    affine2 = brain2.get_network().get_stimuli_layer().T.detach().numpy()
-    distance = np.linalg.norm(affine1-affine2, ord='fro')
-
-    return distance

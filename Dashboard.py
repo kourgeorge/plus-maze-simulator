@@ -4,6 +4,10 @@ import numpy as np
 import matplotlib.pyplot as plt
 import os
 from pathlib import Path
+
+import pandas as pd
+
+import utils
 from environment import PlusMaze
 from torchbrain import TorchBrain
 
@@ -44,13 +48,15 @@ class Dashboard:
         self._axes_neural_graph = self.fig.add_subplot(313)
         self._axes_neural_graph.set_ylabel('Neural [%]')
         self._axes_neural_graph.set_ylim(0, 10)
-        self._line_affine_dimensionality, = self._axes_neural_graph.plot([], [], 'm^-', label='Affine Dim', markersize=3,
+        self._line_brain_signals = []
+        for signal_name in brain.get_network().get_network_metrics():
+            self._line_brain_signals += self._axes_neural_graph.plot([], [], 'o-', color=utils.colorify(signal_name), label=signal_name, markersize=3,
                                                                   alpha=0.4)
-        self._line_controller_dimensionality, = self._axes_neural_graph.plot([], [], 'g^-', label='Controller Dim', markersize=3,
+
+        self._line_brain_compare = []
+        for signal_name in brain.get_network().network_diff(brain.get_network()):
+            self._line_brain_compare += self._axes_neural_graph.plot([], [], '^-', color=utils.colorify(signal_name), label=signal_name, markersize=3,
                                                                   alpha=0.4)
-        self._line_controller_change, = self._axes_neural_graph.plot([], [], 'g^-', label='Controller Dim',
-                                                                             markersize=3,
-                                                                             alpha=0.4)
 
         self._axes_graph.legend(
             [self._line_correct, self._line_reward, self._line_water_correct, self._line_food_correct,
@@ -59,8 +65,9 @@ class Dashboard:
              self._line_food_correct.get_label(), self._line_water_preference.get_label()], loc=0)
 
         self._axes_neural_graph.legend(
-            [self._line_affine_dimensionality, self._line_controller_dimensionality],
-            [self._line_affine_dimensionality.get_label(), self._line_controller_dimensionality.get_label()], loc=0)
+             self._line_brain_signals + self._line_brain_compare,
+             [signal_line.get_label() for signal_line in self._line_brain_signals] +
+            [signal_line.get_label() for signal_line in self._line_brain_compare], loc=0)
 
     def update(self, stats_df, env: PlusMaze, brain:TorchBrain):
         textstr = self.text_curr_stage.format(
@@ -90,11 +97,17 @@ class Dashboard:
         self._line_water_preference.set_xdata(stats_df['Trial'])
         self._line_water_preference.set_ydata(stats_df['WaterPreference'])
 
-        self._line_affine_dimensionality.set_xdata(stats_df['Trial'])
-        self._line_affine_dimensionality.set_ydata(stats_df['AffineDim'])
+        for i in range(len(self._line_brain_signals)):
+            num_points = len(stats_df['Trial'])
+            self._line_brain_signals[i].set_xdata(stats_df['Trial'])
+            sig = pd.Series([stats_df['BrainSignals'][j][i] for j in range(num_points)], dtype=float)
+            self._line_brain_signals[i].set_ydata(sig)
 
-        self._line_controller_dimensionality.set_xdata(stats_df['Trial'])
-        self._line_controller_dimensionality.set_ydata(stats_df['ControllerDim'])
+        for i in range(len(self._line_brain_compare)):
+            num_points = len(stats_df['Trial'])
+            self._line_brain_compare[i].set_xdata(stats_df['Trial'])
+            sig = pd.Series([stats_df['BrainCompare'][j][i] for j in range(num_points)], dtype=float)
+            self._line_brain_compare[i].set_ydata(sig)
 
         if self.stage < env._stage:
             self.stage = env._stage

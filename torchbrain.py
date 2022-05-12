@@ -5,6 +5,7 @@ import torch
 from abstractbrain import AbstractBrain
 import os.path
 from standardbrainnetwork import AbstractNetwork
+import utils
 
 torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
@@ -60,3 +61,12 @@ class TorchBrain(AbstractBrain):
 
 	def get_network(self):
 		return self.network
+
+	def electrophysiology_analysis(brain):
+		affine = brain.network.get_stimuli_layer().T.detach().numpy()
+		affine_dim = utils.unsupervised_dimensionality(affine)
+		controller = brain.network.get_door_attention().T.detach().numpy()
+		controller_dim = utils.unsupervised_dimensionality(controller)
+
+		return affine_dim, controller_dim
+
