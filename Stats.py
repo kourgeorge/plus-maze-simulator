@@ -28,31 +28,27 @@ class Stats:
         self.epoch_stats_df = self.epoch_stats_df.append(temp_df, ignore_index=True)
 
     def dataframe_report(self, trial, report):
-        action_dist = np.mean(report.action_1hot, axis=0)
-        avg_correct = np.mean(report.correct)
-        avg_reward = round(np.mean(report.reward), 2)
-
-        water_preference = round(np.sum(report.arm_type_water) / len(report.arm_type_water), 2)
-        water_correct_percent = round(
-            np.sum(np.logical_and(report.arm_type_water, report.correct)) /
-            np.sum(report.arm_type_water), 2)
-        food_correct_percent = round(
-            np.sum(np.logical_and(np.logical_not(report.arm_type_water), report.correct)) /
-            np.sum(np.logical_not(report.arm_type_water)), 2)
 
         return OrderedDict([
                                ('Trial', trial),
-                               ('Stage', report.stage[-1]),
-                               ('ActionDist', action_dist),
-                               ('Correct', avg_correct),
-                               ('Reward', avg_reward),
-                               ('WaterPreference', water_preference),
-                               ('WaterCorrect', water_correct_percent),
-                               ('FoodCorrect', food_correct_percent)] +
+                               ('Stage', report.stage),
+                               ('ActionDist', report.action_1hot),
+                               ('Correct', report.correct),
+                               ('Reward', report.reward),
+                               ('WaterPreference', report.water_preference),
+                               ('WaterCorrect', report.water_correct_percent),
+                               ('FoodCorrect', report.food_correct_percent)] +
                            [(k, v) for k, v in self.reports[-1].brain.get_network().network_diff(
-                               self.reports[-2].brain.get_network() if len(self.reports) > 2 else self.reports[
-                                   -1].brain.get_network()).items()] +
+                               self.get_last_day_in_previous_stage().brain.get_network()).items()] +
                            [(k, v) for k, v in self.reports[-1].brain.get_network().get_network_metrics().items()])
+
+
+    def get_last_day_in_previous_stage(self):
+        current_stage = self.reports[-1].stage
+        if current_stage==0:
+            return self.reports[0]
+
+        return [report for report in self.reports if report.stage==current_stage-1][-1]
 
 
     @staticmethod
@@ -64,12 +60,19 @@ class Stats:
         rewards = [data[2] for data in last_exp]
         infos = [data[6] for data in last_exp]
 
+        action = np.argmax(actions, axis=1)
+        correct = [1 if info.outcome != config.RewardType.NONE else 0 for info in infos]
+        arm_type_water = [1 if action < 2 else 0 for action in action]
+
+
         report_dict = utils.Object()
-        report_dict.action_1hot = actions
-        report_dict.action = np.argmax(actions, axis=1)
-        report_dict.reward = rewards
-        report_dict.arm_type_water = [1 if action < 2 else 0 for action in report_dict.action]
-        report_dict.correct = [1 if info.outcome != config.RewardType.NONE else 0 for info in infos]
-        report_dict.stage = [info.stage for info in infos]
+        report_dict.action_1hot = np.mean(actions, axis=0)
+        report_dict.reward = round(np.mean(rewards), 2)
+        report_dict.water_preference = round(np.sum(arm_type_water) / len(arm_type_water), 2)
+        report_dict.correct = np.mean(correct)
+        report_dict.water_correct_percent = round(np.sum(np.logical_and(arm_type_water, correct))/np.sum(arm_type_water), 2)
+        report_dict.food_correct_percent = round(
+            np.sum(np.logical_and(np.logical_not(arm_type_water), correct)) / np.sum(np.logical_not(arm_type_water)), 2)
+        report_dict.stage = [info.stage for info in infos][-1]
         report_dict.brain = copy.deepcopy(brain)
         return report_dict
