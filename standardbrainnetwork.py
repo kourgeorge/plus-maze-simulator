@@ -58,8 +58,8 @@ class FullyConnectedNetwork(AbstractNetwork):
 	def network_diff(self, network2):
 		affine1 = self.get_stimuli_layer().T.detach().numpy()
 		affine2 = network2.get_stimuli_layer().T.detach().numpy()
-		distance = np.linalg.norm(affine1 - affine2, ord=norm)
-		return {'affine_distance': distance}
+		change = np.linalg.norm(affine1 - affine2, ord=norm)
+		return {'affine_change': change}
 
 
 class FullyConnectedNetwork2Layers(FullyConnectedNetwork):
@@ -84,19 +84,19 @@ class FullyConnectedNetwork2Layers(FullyConnectedNetwork):
 		return self.model[3].weight
 
 	def get_network_metrics(self):
-		return {'affine_dim':utils.unsupervised_dimensionality(self.affine.weight.detach()),
-				'controller_dim': utils.unsupervised_dimensionality(self.controller.weight.detach())}
+		return {'layer1_dim': utils.unsupervised_dimensionality(self.affine.weight.detach()),
+				'layer2_dim': utils.unsupervised_dimensionality(self.controller.weight.detach())}
 
 	def network_diff(self, network2):
 		affine1 = self.get_stimuli_layer().detach().numpy()
 		affine2 = network2.get_stimuli_layer().detach().numpy()
-		affine_distance = np.linalg.norm(affine1 - affine2, ord=norm)
+		affine_change = np.linalg.norm(affine1 - affine2, ord=norm)
 
 		controller1 = self.get_door_attention().detach().numpy()
 		controller2 = network2.get_door_attention().detach().numpy()
-		controller_distance = np.linalg.norm(controller1 - controller2, ord=norm)
-		return {'affine_distance': affine_distance,
-				'controller_distance':controller_distance}
+		controller_change = np.linalg.norm(controller1 - controller2, ord=norm)
+		return {'layer1_change': affine_change,
+				'layer2_change': controller_change}
 
 
 class EfficientNetwork(AbstractNetwork):
@@ -105,13 +105,13 @@ class EfficientNetwork(AbstractNetwork):
 
 	def __init__(self, encoding_size, num_channels, num_actions):
 		super().__init__()
-		self.chanells_encoding = nn.ModuleList([ChannelProccessor(encoding_size, 1) for _ in range(num_channels)])
+		self.channels_encoding = nn.ModuleList([ChannelProccessor(encoding_size, 1) for _ in range(num_channels)])
 		self.dim_attn = nn.Parameter(nn.init.xavier_uniform_(torch.empty(size=(1, num_channels))), requires_grad=True)
 		self.door_attn = nn.Parameter(nn.init.xavier_uniform_(torch.empty(size=(1, num_actions))), requires_grad=True)
 
 	def forward(self, x, door_attention=None):
 		channels = [torch.select(x, dim=1, index=t) for t in range(x.shape[1])]  # the +1 is for the batch dimension
-		processed_channels = torch.cat([self.chanells_encoding[i](channel) for i, channel in enumerate(channels)], dim=-1)
+		processed_channels = torch.cat([self.channels_encoding[i](channel) for i, channel in enumerate(channels)], dim=-1)
 		processed_channels_t = torch.transpose(processed_channels, dim0=-1, dim1=-2)
 		dimension_attended = torch.matmul(torch.softmax(self.dim_attn, dim=-1), processed_channels_t.squeeze())
 		if door_attention is None:
@@ -124,7 +124,7 @@ class EfficientNetwork(AbstractNetwork):
 		return door_attended
 
 	def get_stimuli_layer(self):
-		return torch.stack([channel_porc.model[0].weight.squeeze() for channel_porc in self.chanells_encoding])
+		return torch.stack([channel_porc.model[0].weight.squeeze() for channel_porc in self.channels_encoding])
 
 	def get_door_attention(self):
 		return self.door_attn
@@ -133,34 +133,37 @@ class EfficientNetwork(AbstractNetwork):
 		return self.dim_attn
 
 	def get_network_metrics(self):
-		return {'odor_encoding':utils.unsupervised_dimensionality(self.chanells_encoding[0].model[0].weight.detach()),
-				'color_encoding': utils.unsupervised_dimensionality(self.chanells_encoding[1].model[0].weight.detach())}
+		return {'odor_enc_norm':np.linalg.norm(self.channels_encoding[0].model[0].weight.detach()),
+				'color_enc_norm': np.linalg.norm(self.channels_encoding[1].model[0].weight.detach()),
+				'dim_attn_norm': np.linalg.norm(self.dim_attn.detach()),
+				'door_attn_norm': np.linalg.norm(self.channels_encoding[1].model[0].weight.detach())
+				}
 
 	def network_diff(self, network2):
 		dim_attn1 = self.dim_attn.detach().numpy()
 		dim_attn2 = network2.dim_attn.detach().numpy()
-		dim_attn_distance = EfficientNetwork.vector_distance(dim_attn1,dim_attn2)
+		dim_attn_change = EfficientNetwork.vector_change(dim_attn1,dim_attn2)
 
 		door_attn1 = self.door_attn.detach().numpy()
 		door_attn2 = network2.door_attn.detach().numpy()
-		door_attn_distance = EfficientNetwork.vector_distance(door_attn1, door_attn2)
+		door_attn_change = EfficientNetwork.vector_change(door_attn1, door_attn2)
 
-		odor_proc1 = list(self.chanells_encoding[0].modules())[2].weight.detach().numpy()
-		odor_proc2 = list(network2.chanells_encoding[0].modules())[2].weight.detach().numpy()
-		odor_proc_distance = EfficientNetwork.vector_distance(odor_proc1, odor_proc2)
+		odor_proc1 = list(self.channels_encoding[0].modules())[2].weight.detach().numpy()
+		odor_proc2 = list(network2.channels_encoding[0].modules())[2].weight.detach().numpy()
+		odor_proc_change = EfficientNetwork.vector_change(odor_proc1, odor_proc2)
 
 
-		color_proc1 = list(self.chanells_encoding[1].modules())[2].weight.detach().numpy()
-		color_proc2 = list(network2.chanells_encoding[1].modules())[2].weight.detach().numpy()
-		color_proc_distance = EfficientNetwork.vector_distance(color_proc1, color_proc2)
+		color_proc1 = list(self.channels_encoding[1].modules())[2].weight.detach().numpy()
+		color_proc2 = list(network2.channels_encoding[1].modules())[2].weight.detach().numpy()
+		color_proc_change = EfficientNetwork.vector_change(color_proc1, color_proc2)
 
-		return {'odor_proc_distance': odor_proc_distance,
-				'color_proc_distance': color_proc_distance,
-				'dim_attn_distance': dim_attn_distance,
-				'door_attn_distance': door_attn_distance}
+		return {'odor_enc_change': odor_proc_change,
+				'color_enc_change': color_proc_change,
+				'dim_attn_change': dim_attn_change,
+				'door_attn_change': door_attn_change}
 
 	@staticmethod
-	def vector_distance(u,v):
+	def vector_change(u,v):
 		return scipy.spatial.distance.correlation(u, v, centered=False)
 		#return scipy.spatial.distance.cosine(color_proc1, color_proc2)
 
@@ -178,8 +181,8 @@ class SeparateMotivationAreasNetwork(AbstractNetwork):
 			return self.model_food(x)
 
 	def get_stimuli_layer(self):
-		return torch.stack([channel_porc.model[0].weight.squeeze() for channel_porc in self.model_water.chanells_encoding] + [
-			channel_porc.model[0].weight.squeeze() for channel_porc in self.model_food.chanells_encoding])
+		return torch.stack([channel_porc.model[0].weight.squeeze() for channel_porc in self.model_water.channels_encoding] + [
+			channel_porc.model[0].weight.squeeze() for channel_porc in self.model_food.channels_encoding])
 
 	def get_door_attention(self):
 		return torch.cat([self.model_water.door_attn, self.model_food.door_attn])
