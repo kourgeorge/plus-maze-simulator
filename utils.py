@@ -95,3 +95,7 @@ def unsupervised_dimensionality(samples_embedding, explained_variance=0.95):
     dimensionality = np.cumsum(pca.explained_variance_ratio_)
     return (np.argmax(dimensionality > explained_variance) + 1)
 
+
+def normalized_norm(u, ord=None):
+    u = np.asarray(u)
+    return np.linalg.norm(u, ord=ord)/u.size

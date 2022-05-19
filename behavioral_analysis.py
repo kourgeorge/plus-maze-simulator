@@ -97,10 +97,13 @@ def plot_behavior_results(brain_type_stats):
 		axes_neural_graph.axvline(x=stage + 0.5, alpha=0.5, dashes=(5, 2, 1, 2), lw=2)
 
 	plt.xlabel('Days')
-	plt.ylabel('Percent')
+	#plt.ylabel('Percent')
 
-	fig.suptitle("Behavioral Stats of {} individuals. brain:{}. #params:{}.".format(
-		len(brain_type_stats), brain_type_stats[0].metadata['brain'], brain_type_stats[0].metadata['brain_params']))
+	fig.suptitle("Stats of {} individuals.\nbrain:{}. network:{}({})".format(
+		len(brain_type_stats),
+		brain_type_stats[0].metadata['brain'], brain_type_stats[0].metadata['network'],
+		brain_type_stats[0].metadata['brain_params']
+		),fontsize=8)
 
 	axes_behavioral_graph.legend(prop={'size': 7})
 	axes_neural_graph.legend(prop={'size': 7})
@@ -108,4 +111,4 @@ def plot_behavior_results(brain_type_stats):
 	#axes_neural_graph.set_ylim(0, 0.75)
 	#axes_neural_graph.set_yscale('log')
 
-	plt.savefig('Results/Behavioural_stats_{}-{}'.format(brain_type_stats[0].metadata['brain'], time.strftime("%Y%m%d-%H%M")))
+	plt.savefig('Results/Stats_{}-{}-{}'.format(brain_type_stats[0].metadata['brain'],brain_type_stats[0].metadata['network'], time.strftime("%Y%m%d-%H%M")))

@@ -29,7 +29,7 @@ class AbstractNetwork(nn.Module):
 		raise NotImplementedError()
 
 
-norm = 1
+norm = 'fro'
 
 class FullyConnectedNetwork(AbstractNetwork):
 	def __init__(self, encoding_size, num_channels, num_actions):
@@ -53,13 +53,13 @@ class FullyConnectedNetwork(AbstractNetwork):
 		return torch.tensor([[0, 0, 0, 0], [0, 0, 0, 0]])
 
 	def get_network_metrics(self):
-		return {'affine_dim': utils.unsupervised_dimensionality(self.affine.weight.detach().numpy())}
+		return {'layer1_dim': utils.unsupervised_dimensionality(self.affine.weight.detach().numpy())}
 
 	def network_diff(self, network2):
-		affine1 = self.get_stimuli_layer().T.detach().numpy()
-		affine2 = network2.get_stimuli_layer().T.detach().numpy()
+		affine1 = self.affine.weight.detach()
+		affine2 = network2.affine.weight.detach()
 		change = np.linalg.norm(affine1 - affine2, ord=norm)
-		return {'affine_change': change}
+		return {'layer1_dim_change': change}
 
 
 class FullyConnectedNetwork2Layers(FullyConnectedNetwork):
@@ -88,12 +88,12 @@ class FullyConnectedNetwork2Layers(FullyConnectedNetwork):
 				'layer2_dim': utils.unsupervised_dimensionality(self.controller.weight.detach())}
 
 	def network_diff(self, network2):
-		affine1 = self.get_stimuli_layer().detach().numpy()
-		affine2 = network2.get_stimuli_layer().detach().numpy()
+		affine1 = self.affine.weight.detach()
+		affine2 = network2.affine.weight.detach()
 		affine_change = np.linalg.norm(affine1 - affine2, ord=norm)
 
-		controller1 = self.get_door_attention().detach().numpy()
-		controller2 = network2.get_door_attention().detach().numpy()
+		controller1 = self.controller.weight.detach()
+		controller2 = network2.controller.weight.detach()
 		controller_change = np.linalg.norm(controller1 - controller2, ord=norm)
 		return {'layer1_change': affine_change,
 				'layer2_change': controller_change}
@@ -133,11 +133,12 @@ class EfficientNetwork(AbstractNetwork):
 		return self.dim_attn
 
 	def get_network_metrics(self):
-		return {'odor_enc_norm':np.linalg.norm(self.channels_encoding[0].model[0].weight.detach()),
-				'color_enc_norm': np.linalg.norm(self.channels_encoding[1].model[0].weight.detach()),
-				'dim_attn_norm': np.linalg.norm(self.dim_attn.detach()),
-				'door_attn_norm': np.linalg.norm(self.channels_encoding[1].model[0].weight.detach())
-				}
+		# return {'odor_enc_norm': utils.normalized_norm(self.channels_encoding[0].model[0].weight.detach(),ord=norm),
+		# 		'color_enc_norm': utils.normalized_norm(self.channels_encoding[1].model[0].weight.detach(),ord=norm),
+		# 		'dim_attn_norm': utils.normalized_norm(self.dim_attn.detach(),ord=norm),
+		# 		'door_attn_norm': utils.normalized_norm(self.door_attn.detach(),ord=norm)
+		# 		}
+		return {}
 
 	def network_diff(self, network2):
 		dim_attn1 = self.dim_attn.detach().numpy()
@@ -164,7 +165,8 @@ class EfficientNetwork(AbstractNetwork):
 
 	@staticmethod
 	def vector_change(u,v):
-		return scipy.spatial.distance.correlation(u, v, centered=False)
+		#return scipy.spatial.distance.correlation(u, v, centered=False)
+		return utils.normalized_norm(u-v)
 		#return scipy.spatial.distance.cosine(color_proc1, color_proc2)
 
 class SeparateMotivationAreasNetwork(AbstractNetwork):
