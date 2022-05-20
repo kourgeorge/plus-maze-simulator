@@ -15,14 +15,10 @@ class BrainDQN(TorchBrain):
 		super().__init__(network, optim.Adam(network.parameters(), lr=learning_rate), reward_discount)
 
 	def optimize(self, state_batch, action_batch, reward_batch, action_values, nextstate_batch):
-		state_action_values, _ = torch.max(action_values * action_batch, dim=1)
-
-		expected_state_action_values = []
-		for i in range(0, len(reward_batch)):
-			expected_state_action_values.append(reward_batch[i])
+		selected_action_value, _ = torch.max(action_values * action_batch, dim=1)
 
 		# Compute Huber loss
-		loss = F.mse_loss(state_action_values, torch.stack(expected_state_action_values).detach())
+		loss = F.mse_loss(selected_action_value, reward_batch.detach())
 
 		# Optimize the model
 		self.optimizer.zero_grad()
