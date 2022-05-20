@@ -1,36 +1,38 @@
 __author__ = 'gkour'
 
 from collections import Counter
-import config
 import matplotlib.pyplot as plt
 import numpy as np
 from scipy.stats import sem
 import time
+from PlusMazeExperiment import stage_names
 
 import utils
 
 
 def plot_days_per_stage(all_brains_types_stats):
-	stages = list(range(0, 5))
+	stages = list(range(len(stage_names)))
 	width = 0.7/len(all_brains_types_stats)
 	fig, ax = plt.subplots(figsize=(10, 6))
 	brain_names = []
+	stats_all_brains = {}
 	for i, brain_type_stats in enumerate(all_brains_types_stats):
 		repetitions = len(brain_type_stats)
-		days_per_stage_pg = []
+		days_per_stage_brain_type = []
 		brain_names+=[brain_type_stats[0].metadata['brain']]
 		for experiment_stats in brain_type_stats:
 			c = Counter(list(experiment_stats.epoch_stats_df['Stage']))
-			days_per_stage_pg.append([c[i] for i in stages])
+			days_per_stage_brain_type.append([c[i] for i in stages])
 
-		days_per_stage_pg = np.stack(days_per_stage_pg)
+		days_per_stage_brain_type = np.stack(days_per_stage_brain_type)
 
-		ax.bar(np.array(stages) + width*i, np.mean(days_per_stage_pg, axis=0), yerr=sem(days_per_stage_pg, axis=0, nan_policy='omit'),
+		ax.bar(np.array(stages) + width*i, np.mean(days_per_stage_brain_type, axis=0), yerr=sem(days_per_stage_brain_type, axis=0, nan_policy='omit'),
 			width=width, label="{}:{}({})".format(brain_type_stats[0].metadata['brain'],
 												 brain_type_stats[0].metadata['network'],
 												 brain_type_stats[0].metadata['brain_params']), capsize=2)
+		stats_all_brains[i] = days_per_stage_brain_type
 
-	plt.xticks(np.array(stages) + width / 2 * len(all_brains_types_stats), config.stage_names, rotation=0, fontsize='10', horizontalalignment='center')
+	plt.xticks(np.array(stages) + width / 2 * len(all_brains_types_stats), stage_names, rotation=0, fontsize='10', horizontalalignment='center')
 
 	plt.title("Days Per stage. #reps={}".format(repetitions))
 	plt.legend()
@@ -39,7 +41,7 @@ def plot_days_per_stage(all_brains_types_stats):
 
 
 def days_to_consider_in_each_stage(subject_reports, q=75):
-	stages = list(range(0, 5))
+	stages = list(range(len(stage_names)))
 	days_per_stage = []
 	for experiment_report_df in subject_reports:
 		c = Counter(list(experiment_report_df.epoch_stats_df['Stage']))
@@ -54,7 +56,7 @@ def days_to_consider_in_each_stage(subject_reports, q=75):
 
 
 def plot_behavior_results(brain_type_stats):
-	stages = list(range(0, 5))
+	stages = list(range(len(stage_names)))
 	days_each_stage = days_to_consider_in_each_stage(brain_type_stats)
 	b_signals = ['Correct', 'Reward', 'WaterPreference', 'WaterCorrect', 'FoodCorrect']
 	n_signals = list(brain_type_stats[0].reports[0].brain.get_network().get_network_metrics().keys())+\

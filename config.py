@@ -26,5 +26,4 @@ class RewardType(Enum):
 class CueType(Enum):
     ODOR = 0
     LIGHT = 1
-
-stage_names = ['Baseline', 'IDshift', 'Mshift(Food)', 'MShift(Water)+IDshift', 'EDShift(Light)']
+    SPATIAL = 2

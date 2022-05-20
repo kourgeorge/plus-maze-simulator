@@ -11,6 +11,8 @@ import os
 import time
 from enum import Enum
 
+stage_names = ['Baseline', 'IDshift', 'Mshift(Food)', 'MShift(Water)+IDshift', 'EDShift(Light)', 'EDshift(Spatial)']
+
 trials_in_day = 100
 max_experiment_length = 50 #days
 
@@ -41,10 +43,10 @@ def PlusMazeExperiment(agent:MotivatedAgent, dashboard=False):
 
     trial = 0
     print('============================ Brain:{} ======================='.format(str(agent.get_brain())))
-    print("Stage {}: {} - Water Motivated, odor relevant. (Odors: {}, Correct: {})".format(env._stage, config.stage_names[env._stage], [np.argmax(encoding) for encoding in env.get_odor_cues()],
+    print("Stage {}: {} - Water Motivated, odor relevant. (Odors: {}, Correct: {})".format(env._stage, stage_names[env._stage], [np.argmax(encoding) for encoding in env.get_odor_cues()],
                                                                                              np.argmax(env.get_correct_cue_value())))
 
-    while env._stage < 5:
+    while env._stage < len(stage_names):
 
         if trial>trials_in_day*max_experiment_length:
             print("Agent failed to learn.")
@@ -84,17 +86,21 @@ def set_next_stage(env:PlusMaze, agent:MotivatedAgent):
     if env._stage==1:
         env.set_random_odor_set()
         #env.set_relevant_cue(config.CueType.LIGHT)
-        print("Stage {}: {} (Odors: {}, Correct:{})".format(env._stage, config.stage_names[env._stage], [np.argmax(encoding) for encoding in env.get_odor_cues()],np.argmax(env.get_correct_cue_value())))
+        print("Stage {}: {} (Odors: {}, Correct:{})".format(env._stage, stage_names[env._stage], [np.argmax(encoding) for encoding in env.get_odor_cues()],np.argmax(env.get_correct_cue_value())))
     elif env._stage==2:
         agent.set_motivation(config.RewardType.FOOD)
-        print("Stage {}: {}".format(env._stage, config.stage_names[env._stage]))
+        print("Stage {}: {}".format(env._stage, stage_names[env._stage]))
 
     elif env._stage==3:
         agent.set_motivation(config.RewardType.WATER)
         env.set_random_odor_set()
-        print("Stage {}: {} (Odors: {}. Correct {})".format(env._stage, config.stage_names[env._stage], [np.argmax(encoding) for encoding in env.get_odor_cues()],
+        print("Stage {}: {} (Odors: {}. Correct {})".format(env._stage, stage_names[env._stage], [np.argmax(encoding) for encoding in env.get_odor_cues()],
                                                                                  np.argmax(env.get_correct_cue_value())))
     elif env._stage==4:
         env.set_relevant_cue(config.CueType.LIGHT)
-        print("Stage {}: {} (Lights: {}. Correct {})".format(env._stage, config.stage_names[env._stage], [np.argmax(encoding) for encoding in env.get_light_cues()],
+        print("Stage {}: {} (Lights: {}. Correct {})".format(env._stage, stage_names[env._stage], [np.argmax(encoding) for encoding in env.get_light_cues()],
                                                                                  np.argmax(env.get_correct_cue_value())))
+
+    elif env._stage==5:
+        env._relevant_cue = config.CueType.SPATIAL
+        print("Stage {}: {} (Correct Doors: {})".format(env._stage, stage_names[env._stage], env.get_correct_cue_value()))
