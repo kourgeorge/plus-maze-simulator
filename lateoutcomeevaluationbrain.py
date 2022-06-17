@@ -12,12 +12,12 @@ class LateOutcomeEvaluationBrain(AbstractBrain):
 	def __init__(self, *args, **kwargs):
 		super().__init__(*args, **kwargs)
 
-	def consolidate(self, memory, agent, batch_size=BATCH_SIZE, iterations=100):
+	def consolidate(self, memory, agent, batch_size=BATCH_SIZE, replays=100):
 		minibatch_size = min(batch_size, len(memory))
 		if minibatch_size == 0:
 			return
 		losses = []
-		for _ in range(iterations):
+		for _ in range(replays):
 			minibatch = memory.sample(minibatch_size)
 			state_batch = torch.from_numpy(np.stack([np.stack(data[0]) for data in minibatch])).float()
 			action_batch = torch.FloatTensor([data[1] for data in minibatch])
