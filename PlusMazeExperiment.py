@@ -14,7 +14,7 @@ from enum import Enum
 stage_names = ['Baseline', 'IDshift', 'Mshift(Food)', 'MShift(Water)+IDshift', 'EDShift(Light)', 'EDshift(Spatial)']
 
 trials_in_day = 100
-max_experiment_length = 50 #days
+max_experiment_length = len(stage_names)*10 #days
 
 class EperimentStatus(Enum):
     COMPLETED = 'completed'
@@ -42,7 +42,7 @@ def PlusMazeExperiment(agent:MotivatedAgent, dashboard=False):
     dashboard_screenshots_path = os.path.join('/Users/gkour/repositories/plusmaze/Results', '{}-{}'.format(agent.get_brain(),time.strftime("%Y%m%d-%H%M")))
 
     trial = 0
-    print('============================ Brain:{} ======================='.format(str(agent.get_brain())))
+    print('============================ Brain:{}, Network:{} ======================='.format(str(agent.get_brain()),str(agent.get_brain().get_network())))
     print("Stage {}: {} - Water Motivated, odor relevant. (Odors: {}, Correct: {})".format(env._stage, stage_names[env._stage], [np.argmax(encoding) for encoding in env.get_odor_cues()],
                                                                                              np.argmax(env.get_correct_cue_value())))
 
