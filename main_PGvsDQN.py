@@ -7,7 +7,7 @@ from environment import PlusMazeOneHotCues
 
 import config
 from motivationdependantbrain import MotivationDependantBrainDQN, MotivationDependantBrainPG
-from standardbrainnetwork import FullyConnectedNetwork, DoorAttentionAttention, SeparateMotivationAreasNetwork, \
+from standardbrainnetwork import FullyConnectedNetwork, EfficientNetwork, SeparateMotivationAreasNetwork, \
     FullyConnectedNetwork2Layers
 from braindqn import BrainDQN
 from brainpg import BrainPG
@@ -19,23 +19,28 @@ if __name__ == '__main__':
     env = PlusMazeOneHotCues(relevant_cue=config.CueType.ODOR)
     observation_size = env.state_shape()
 
-    repetitions = 10
-    agents_DQN_spec=[]
-    agents_PG_spec= []
+    repetitions = 2
+    agents_DQN_spec = []
+    agents_PG_spec = []
 
     agents_DQN_spec.append([BrainDQN, FullyConnectedNetwork, config.MOTIVATED_REWARD, config.NON_MOTIVATED_REWARD])
     agents_PG_spec.append([BrainPG, FullyConnectedNetwork, config.MOTIVATED_REWARD, config.NON_MOTIVATED_REWARD])
 
+    agents_DQN_spec.append([BrainDQN, FullyConnectedNetwork2Layers, config.MOTIVATED_REWARD, config.NON_MOTIVATED_REWARD])
+    agents_PG_spec.append([BrainPG, FullyConnectedNetwork2Layers, config.MOTIVATED_REWARD, config.NON_MOTIVATED_REWARD])
+
+    agents_DQN_spec.append([BrainDQN, EfficientNetwork, config.MOTIVATED_REWARD, config.NON_MOTIVATED_REWARD])
+    agents_PG_spec.append([BrainDQN, EfficientNetwork, config.MOTIVATED_REWARD, config.NON_MOTIVATED_REWARD])
+
+    agents_DQN_spec.append([BrainDQNFixedDoorAttention, EfficientNetwork, config.MOTIVATED_REWARD, config.NON_MOTIVATED_REWARD])
+    agents_PG_spec.append([BrainPGFixedDoorAttention, EfficientNetwork, config.MOTIVATED_REWARD, config.NON_MOTIVATED_REWARD])
+
     agents_DQN_spec.append([MotivationDependantBrainDQN, SeparateMotivationAreasNetwork, config.MOTIVATED_REWARD, config.NON_MOTIVATED_REWARD])
     agents_PG_spec.append([MotivationDependantBrainPG, SeparateMotivationAreasNetwork, config.MOTIVATED_REWARD, config.NON_MOTIVATED_REWARD])
 
-    agents_DQN_spec.append([BrainDQNFixedDoorAttention, DoorAttentionAttention, config.MOTIVATED_REWARD, config.NON_MOTIVATED_REWARD])
-    agents_PG_spec.append([BrainPGFixedDoorAttention, DoorAttentionAttention, config.MOTIVATED_REWARD, config.NON_MOTIVATED_REWARD])
-    #
     agents_DQN_spec.append([MotivationDependantBrainDQNLateOutcomeEvaluation, SeparateMotivationAreasNetwork, config.MOTIVATED_REWARD, config.NON_MOTIVATED_REWARD])
     agents_PG_spec.append([MotivationDependantBrainPGLateOutcomeEvaluation, SeparateMotivationAreasNetwork, config.MOTIVATED_REWARD, config.NON_MOTIVATED_REWARD])
 
-    agent_specs = [x for y in zip(agents_DQN_spec, agents_PG_spec) for x in y]
 
     brains_reports = []
     for agent_spec in agents_DQN_spec+agents_PG_spec:
@@ -46,7 +51,7 @@ if __name__ == '__main__':
             agent = MotivatedAgent(agent_spec[0](agent_spec[1](env.stimuli_encoding_size(), 2, env.num_actions())),
                                    motivation=config.RewardType.WATER,
                                    motivated_reward_value=agent_spec[2], non_motivated_reward_value=agent_spec[3])
-            experiment_stats = PlusMazeExperiment(agent, dashboard=True)
+            experiment_stats = PlusMazeExperiment(agent, dashboard=False)
             if experiment_stats.metadata['experiment_status'] == EperimentStatus.COMPLETED:
                 brain_repetition_reports[completed_experiments] = experiment_stats
                 completed_experiments += 1
