@@ -108,6 +108,7 @@ class EfficientNetwork(AbstractNetwork):
 		self.channels_encoding = nn.ModuleList([ChannelProccessor(encoding_size, 1) for _ in range(num_channels)])
 		self.dim_attn = nn.Parameter(nn.init.xavier_uniform_(torch.empty(size=(1, num_channels))), requires_grad=True)
 		self.door_attn = nn.Parameter(nn.init.xavier_uniform_(torch.empty(size=(1, num_actions))), requires_grad=True)
+		self.door_attn_bias = nn.Parameter(nn.init.xavier_uniform_(torch.empty(size=(1, num_actions))), requires_grad=True)
 
 	def forward(self, x, door_attention=None):
 		channels = [torch.select(x, dim=1, index=t) for t in range(x.shape[1])]  # the +1 is for the batch dimension
@@ -115,10 +116,10 @@ class EfficientNetwork(AbstractNetwork):
 		processed_channels_t = torch.transpose(processed_channels, dim0=-1, dim1=-2)
 		dimension_attended = torch.matmul(torch.softmax(self.dim_attn, dim=-1), processed_channels_t.squeeze())
 		if door_attention is None:
-			door_attended = torch.softmax(torch.mul(torch.softmax(self.door_attn, dim=-1), dimension_attended),
-										  dim=-1).squeeze()
+			door_attended = torch.softmax(self.door_attn_bias + torch.mul(torch.softmax(self.door_attn, dim=-1),
+																		  dimension_attended), dim=-1).squeeze()
 		else:
-			door_attended = torch.softmax(
+			door_attended = torch.softmax(self.door_attn_bias +
 				torch.mul(torch.softmax(torch.tensor(door_attention).float(), dim=-1), dimension_attended),
 				dim=-1).squeeze()
 		return door_attended
@@ -149,6 +150,10 @@ class EfficientNetwork(AbstractNetwork):
 		door_attn2 = network2.door_attn.detach().numpy()
 		door_attn_change = EfficientNetwork.vector_change(door_attn1, door_attn2)
 
+		door_attn_bias1 = self.door_attn_bias.detach().numpy()
+		door_attn_bias2 = network2.door_attn_bias.detach().numpy()
+		door_attn_bias_change = EfficientNetwork.vector_change(door_attn_bias1, door_attn_bias2)
+
 		odor_proc1 = list(self.channels_encoding[0].modules())[2].weight.detach().numpy()
 		odor_proc2 = list(network2.channels_encoding[0].modules())[2].weight.detach().numpy()
 		odor_proc_change = EfficientNetwork.vector_change(odor_proc1, odor_proc2)
@@ -161,7 +166,8 @@ class EfficientNetwork(AbstractNetwork):
 		return {'odor_enc_change': odor_proc_change,
 				'color_enc_change': color_proc_change,
 				'dim_attn_change': dim_attn_change,
-				'door_attn_change': door_attn_change}
+				'door_attn_change': door_attn_change,
+				'door_attn_bias_change': door_attn_bias_change}
 
 	@staticmethod
 	def vector_change(u,v):
