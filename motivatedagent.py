@@ -1,6 +1,8 @@
 __author__ = 'gkour'
 
-import config
+#import config
+from config import get_config
+config = get_config()
 from utils import epsilon_greedy
 from ReplayMemory import ReplayMemory
 from abstractbrain import AbstractBrain

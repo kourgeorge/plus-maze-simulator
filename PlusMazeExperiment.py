@@ -3,7 +3,9 @@ __author__ = 'gkour'
 from environment import PlusMaze, PlusMazeOneHotCues
 from motivatedagent import MotivatedAgent
 import numpy as np
-import config
+#import config
+from config import get_config
+config = get_config()
 import utils
 from Dashboard import Dashboard
 from Stats import Stats

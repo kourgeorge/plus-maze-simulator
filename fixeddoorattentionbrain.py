@@ -1,7 +1,9 @@
 __author__ = 'gkour'
 
 import torch
-import config
+#import config
+from config import get_config
+config = get_config()
 from braindqn import BrainDQN
 from brainpg import BrainPG
 from motivatedagent import MotivatedAgent

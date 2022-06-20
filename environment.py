@@ -2,7 +2,9 @@ __author__ = 'gkour'
 
 import random
 import numpy as np
-import config
+# import config
+from config import get_config
+config = get_config()
 import utils
 
 #np.random.seed(seed=1234)

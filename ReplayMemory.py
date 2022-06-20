@@ -1,8 +1,9 @@
 __author__ = 'gkour'
 
 import numpy as np
-import config
-
+#import config
+from config import get_config
+config = get_config()
 class ReplayMemory:
 
     def __init__(self, capacity):

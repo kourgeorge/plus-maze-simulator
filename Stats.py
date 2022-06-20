@@ -4,7 +4,9 @@ import numpy as np
 import pandas as pd
 from collections import OrderedDict
 import utils
-import config
+#import config
+from config import get_config
+config = get_config()
 from ReplayMemory import ReplayMemory
 from torchbrain import TorchBrain
 import copy
