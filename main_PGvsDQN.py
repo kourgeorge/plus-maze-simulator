@@ -1,6 +1,7 @@
 __author__ = 'gkour'
 
 import os
+import random
 from config import MOTIVATED_REWARD
 from fixeddoorattentionbrain import BrainDQNFixedDoorAttention, BrainPGFixedDoorAttention
 from lateoutcomeevaluationbrain import MotivationDependantBrainDQNLateOutcomeEvaluation, MotivationDependantBrainPGLateOutcomeEvaluation
@@ -45,31 +46,36 @@ def main(config, dir_name):
     agents_DQN_spec.append([MotivationDependantBrainDQNLateOutcomeEvaluation, SeparateMotivationAreasNetwork, config.MOTIVATED_REWARD, config.NON_MOTIVATED_REWARD])
     agents_PG_spec.append([MotivationDependantBrainPGLateOutcomeEvaluation, SeparateMotivationAreasNetwork, config.MOTIVATED_REWARD, config.NON_MOTIVATED_REWARD])
 
+    agent = MotivatedAgent(BrainDQN(FullyConnectedNetwork(env.stimuli_encoding_size(), 2, env.num_actions())),
+                                   motivation=config.RewardType.WATER,
+                                   motivated_reward_value=config.MOTIVATED_REWARD, non_motivated_reward_value=config.NON_MOTIVATED_REWARD)
 
-    brains_reports = []
-    for agent_spec in agents_DQN_spec+agents_PG_spec:
-        completed_experiments = 0
-        aborted_experiments = 0
-        brain_repetition_reports = [None] * repetitions
-        while completed_experiments < repetitions:
-            agent = MotivatedAgent(agent_spec[0](agent_spec[1](env.stimuli_encoding_size(), 2, env.num_actions())),
-                                motivation=config.RewardType.WATER,
-                                motivated_reward_value=agent_spec[2], non_motivated_reward_value=agent_spec[3])
-            experiment_stats = PlusMazeExperiment(agent, dashboard=False)
-            if experiment_stats.metadata['experiment_status'] == EperimentStatus.COMPLETED:
-                brain_repetition_reports[completed_experiments] = experiment_stats
-                completed_experiments += 1
-            else:
-                aborted_experiments += 1
-        brains_reports.append(brain_repetition_reports)
-        print("{} out of {} experiments were aborted".format(aborted_experiments,
-                                                            aborted_experiments + completed_experiments))
+    experiment_stats = PlusMazeExperiment(agent, dashboard=False, rat_data_file = './output1.csv')
 
-    plot_days_per_stage(brains_reports, dir_name)
-    for brain_report in brains_reports:
-        plot_behavior_results(brain_report, dir_name)
+    # brains_reports = []
+    # for agent_spec in agents_DQN_spec+agents_PG_spec:
+    #     completed_experiments = 0
+    #     aborted_experiments = 0
+    #     brain_repetition_reports = [None] * repetitions
+    #     while completed_experiments < repetitions:
+    #         agent = MotivatedAgent(agent_spec[0](agent_spec[1](env.stimuli_encoding_size(), 2, env.num_actions())),
+    #                             motivation=config.RewardType.WATER,
+    #                             motivated_reward_value=agent_spec[2], non_motivated_reward_value=agent_spec[3])
+    #         experiment_stats = PlusMazeExperiment(agent, dashboard=False)
+    #         if experiment_stats.metadata['experiment_status'] == EperimentStatus.COMPLETED:
+    #             brain_repetition_reports[completed_experiments] = experiment_stats
+    #             completed_experiments += 1
+    #         else:
+    #             aborted_experiments += 1
+    #     brains_reports.append(brain_repetition_reports)
+    #     print("{} out of {} experiments were aborted".format(aborted_experiments,
+    #                                                         aborted_experiments + completed_experiments))
 
-    x=1
+    # plot_days_per_stage(brains_reports, dir_name)
+    # for brain_report in brains_reports:
+    #     plot_behavior_results(brain_report, dir_name)
+
+    # x=1
 
 
 # class dotdict(dict):
@@ -79,8 +85,12 @@ def main(config, dir_name):
 
 from config import gen_get_config
 
+def get_time_YYYY_MM_DD_HH_MM():
+    import datetime
+    return datetime.datetime.now().strftime("%Y_%m_%d_%H_%M")
+
 if __name__ == '__main__':
     for config, dirname in gen_get_config():
-        os.mkdir('Results/' + dirname)
+        os.mkdir('Results/' + str(get_time_YYYY_MM_DD_HH_MM())+ dirname)
         main(config, dirname)
         print("Done with {}".format(dirname))

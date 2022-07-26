@@ -87,6 +87,33 @@ def episode_rollout(env, agent):
 
     return steps, total_reward, act_dist
 
+def episode_rollout_on_real_data(env, agent, current_trial):
+    total_reward = 0
+
+    num_actions = env.num_actions()
+
+    act_dist = np.zeros(num_actions)
+
+    env_state = env.reset()
+    terminated = False
+    steps = 0
+    likelihood = 0
+    while not terminated:
+        steps += 1
+        state = env.set_state(current_trial)
+        action = int(current_trial['action']) - 1
+        dec_1hot = np.zeros(num_actions)
+        dec_1hot[action] = 1
+        act_dist += dec_1hot
+        new_state, outcome, terminated, info = env.step(action)
+        reward = agent.evaluate_outcome(outcome)
+        total_reward += reward
+        agent.add_experience(state, dec_1hot, reward, outcome, new_state, terminated, info)
+        state = new_state
+        likelihood += -1 * np.log(agent._brain.think(np.expand_dims(state,0), agent).squeeze().detach().numpy()[action])
+
+    return steps, total_reward, act_dist, likelihood
+
 
 
 def unsupervised_dimensionality(samples_embedding, explained_variance=0.95):
