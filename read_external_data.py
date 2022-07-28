@@ -75,5 +75,5 @@ def reward_type(row):
 def save_pd_to_csv(df, file_name):
     df.to_csv(file_name, index=False)
 
-# save_pd_to_csv(get_all_data_from_csv_for_agent(1,1), './output1.csv')
+# save_pd_to_csv(get_all_data_from_csv_for_agent(1,2), './output2.csv')
 # print(get_all_data_from_csv_for_agent(1, 1))

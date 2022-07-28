@@ -9,12 +9,12 @@ EXPLORATION_EPSILON = 0.2
 BATCH_SIZE = 20
 
 SUCCESS_CRITERION_THRESHOLD = 0.80
-MEMORY_SIZE = [10000, 20000, 40000]
+MEMORY_SIZE = [10000]
 STIMULIENCODINGSIZE = 6
 FORGETTING = [0.05, 0.1, 0.2]
 
-MOTIVATED_REWARD = [0.9, 1, 1.1]
-NON_MOTIVATED_REWARD = [0.2, 0.3, 0.4]
+MOTIVATED_REWARD = [1]
+NON_MOTIVATED_REWARD = [0, 0.3]
 
 
 class RewardType(Enum):
@@ -68,22 +68,23 @@ def gen_get_config():
     for MEMORY_SIZEi in range(len(MEMORY_SIZE)):
         for FORGETTINGi in range(len(FORGETTING)):
             for MOTIVATED_REWARDi in range(len(MOTIVATED_REWARD)):
-                current_config = dotdict({
-                    'REPORTING_INTERVAL': REPORTING_INTERVAL,
-                    'BATCH_SIZE': BATCH_SIZE,
-                    'LEARNING_RATE': LEARNING_RATE,
-                    'EXPLORATION_EPSILON': EXPLORATION_EPSILON,
-                    'SUCCESS_CRITERION_THRESHOLD': SUCCESS_CRITERION_THRESHOLD,
-                    'MEMORY_SIZE': MEMORY_SIZE[MEMORY_SIZEi],
-                    'STIMULIENCODINGSIZE': STIMULIENCODINGSIZE,
-                    'FORGETTING': FORGETTING[FORGETTINGi],
-                    'MOTIVATED_REWARD': MOTIVATED_REWARD[MOTIVATED_REWARDi],
-                    'NON_MOTIVATED_REWARD': NON_MOTIVATED_REWARD[MOTIVATED_REWARDi],
-                    'CueType': CueType,
-                    'RewardType': RewardType
-                })
-                dirname = create_dir_name(current_config)
-                yield current_config, dirname
+                for NON_MOTIVATED_REWARDi in range(len(NON_MOTIVATED_REWARD)):
+                    current_config = dotdict({
+                        'REPORTING_INTERVAL': REPORTING_INTERVAL,
+                        'BATCH_SIZE': BATCH_SIZE,
+                        'LEARNING_RATE': LEARNING_RATE,
+                        'EXPLORATION_EPSILON': EXPLORATION_EPSILON,
+                        'SUCCESS_CRITERION_THRESHOLD': SUCCESS_CRITERION_THRESHOLD,
+                        'MEMORY_SIZE': MEMORY_SIZE[MEMORY_SIZEi],
+                        'STIMULIENCODINGSIZE': STIMULIENCODINGSIZE,
+                        'FORGETTING': FORGETTING[FORGETTINGi],
+                        'MOTIVATED_REWARD': MOTIVATED_REWARD[MOTIVATED_REWARDi],
+                        'NON_MOTIVATED_REWARD': NON_MOTIVATED_REWARD[NON_MOTIVATED_REWARDi],
+                        'CueType': CueType,
+                        'RewardType': RewardType
+                    })
+                    dirname = create_dir_name(current_config)
+                    yield current_config, dirname
 
 
 def get_config():

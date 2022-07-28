@@ -99,13 +99,17 @@ def episode_rollout_on_real_data(env, agent, current_trial):
     steps = 0
     likelihood = 0
     while not terminated:
+        # print("trial: {}".format(current_trial['trial']))
+        # print("rewarded in real data: {}, from type: {}".format(current_trial['reward'], current_trial['reward_type']))
         steps += 1
         state = env.set_state(current_trial)
         action = int(current_trial['action']) - 1
         dec_1hot = np.zeros(num_actions)
         dec_1hot[action] = 1
         act_dist += dec_1hot
+        # print_state(state, action, env)
         new_state, outcome, terminated, info = env.step(action)
+        # print ("outcome: ", outcome)
         reward = agent.evaluate_outcome(outcome)
         total_reward += reward
         agent.add_experience(state, dec_1hot, reward, outcome, new_state, terminated, info)
@@ -126,3 +130,12 @@ def unsupervised_dimensionality(samples_embedding, explained_variance=0.95):
 def normalized_norm(u, ord=None):
     u = np.asarray(u)
     return np.linalg.norm(u, ord=ord)/u.size
+
+def print_state(state, action, env):
+    odors = state[0, :, :]
+    lights = state[1, :, :]
+    print ("correct odor: {}".format(np.argmax(env.get_correct_cue_value())))
+    for i in range(len(odors)):
+        print(i, np.argmax(odors[i]), np.argmax(lights[i]))
+    print ("action: {}".format(action))
+    # print ("rewarded in simulation: {}".format(outcome))
