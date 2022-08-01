@@ -48,11 +48,6 @@ class ConsolidationBrain(AbstractBrain):
 
 		return np.mean(losses)
 
-	# def optimize(self, state_batch, action_batch, reward_batch, action_values, nextstate_batch):
-	# 	'''Given a set of states (s), actions (a), and obtained rewards (r) and  state-action values under current
-	# 	policy pi_t(s,a), improve the policy.'''
-	# 	raise NotImplementedError()
-
 	def save_model(self, path):
 		torch.save(self.network().state_dict(), path)
 
@@ -65,12 +60,3 @@ class ConsolidationBrain(AbstractBrain):
 
 	def get_network(self):
 		return self.network()
-
-	def electrophysiology_analysis(brain):
-		affine = brain.network().get_stimuli_layer().T.detach().numpy()
-		affine_dim = utils.unsupervised_dimensionality(affine)
-		controller = brain.network().get_door_attention().T.detach().numpy()
-		controller_dim = utils.unsupervised_dimensionality(controller)
-
-		return affine_dim, controller_dim
-
