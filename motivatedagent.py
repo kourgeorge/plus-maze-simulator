@@ -1,9 +1,9 @@
 __author__ = 'gkour'
 
-import config
 from utils import epsilon_greedy
 from ReplayMemory import ReplayMemory
 from abstractbrain import AbstractBrain
+from rewardtype import RewardType
 import numpy as np
 
 
@@ -28,7 +28,7 @@ class MotivatedAgent:
         return action
 
     def evaluate_outcome(self, outcome):
-        if outcome == config.RewardType.NONE:
+        if outcome == RewardType.NONE:
             return 0
         return self._motivated_reward_value if outcome == self._motivation else self._non_motivated_reward_value
 
@@ -51,7 +51,7 @@ class MotivatedAgent:
         self._memory = ReplayMemory(self._memory_size)
 
     def get_internal_state(self):
-        if self._motivation == config.RewardType.WATER:
+        if self._motivation == RewardType.WATER:
             return [-1]
         else:
             return [1]

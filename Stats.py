@@ -4,7 +4,7 @@ import numpy as np
 import pandas as pd
 from collections import OrderedDict
 import utils
-import config
+from rewardtype import RewardType
 from ReplayMemory import ReplayMemory
 from consolidationbrain import ConsolidationBrain
 import copy
@@ -61,7 +61,7 @@ class Stats:
         infos = [data[6] for data in last_exp]
 
         action = np.argmax(actions, axis=1)
-        correct = [1 if info.outcome != config.RewardType.NONE else 0 for info in infos]
+        correct = [1 if info.outcome != RewardType.NONE else 0 for info in infos]
         arm_type_water = [1 if action < 2 else 0 for action in action]
 
 

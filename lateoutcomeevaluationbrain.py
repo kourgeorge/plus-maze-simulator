@@ -3,15 +3,14 @@ __author__ = 'gkour'
 import numpy as np
 import torch
 from motivationdependantbrain import MotivationDependantBrain
-
+import config
 
 class LateOutcomeEvaluationBrain(MotivationDependantBrain):
-	BATCH_SIZE = 20
 
 	def __init__(self, *args, **kwargs):
 		super().__init__(*args, **kwargs)
 
-	def consolidate(self, memory, agent, batch_size=BATCH_SIZE, replays=100):
+	def consolidate(self, memory, agent, batch_size=config.BATCH_SIZE, replays=config.CONSOLIDATION_REPLAYS):
 		minibatch_size = min(batch_size, len(memory))
 		if minibatch_size == 0:
 			return

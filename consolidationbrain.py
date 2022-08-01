@@ -5,7 +5,6 @@ import torch
 from abstractbrain import AbstractBrain
 import os.path
 from standardbrainnetwork import AbstractNetwork
-import utils
 from learner import AbstractLearner
 import config
 
@@ -13,7 +12,6 @@ torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 
 class ConsolidationBrain(AbstractBrain):
-	BATCH_SIZE = 20
 
 	def __init__(self, learner: AbstractLearner, reward_discount=1):
 		super().__init__(reward_discount)
@@ -28,7 +26,7 @@ class ConsolidationBrain(AbstractBrain):
 		action_probs = self.learner.get_model()(torch.FloatTensor(obs))
 		return action_probs
 
-	def consolidate(self, memory, agent, batch_size=config.BATCH_SIZE, iterations=config.CONSOLIDATION_ITERATIONS):
+	def consolidate(self, memory, agent, batch_size=config.BATCH_SIZE, iterations=config.CONSOLIDATION_REPLAYS):
 		minibatch_size = min(batch_size, len(memory))
 		if minibatch_size == 0:
 			return

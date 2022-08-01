@@ -2,7 +2,7 @@ __author__ = 'gkour'
 
 from lateoutcomeevaluationbrain import LateOutcomeEvaluationBrain
 from motivatedagent import MotivatedAgent
-from environment import PlusMazeOneHotCues
+from environment import PlusMazeOneHotCues, CueType
 
 import config
 from standardbrainnetwork import FullyConnectedNetwork, EfficientNetwork, SeparateMotivationAreasNetwork, \
@@ -13,9 +13,10 @@ from motivationdependantbrain import MotivationDependantBrain
 from PlusMazeExperiment import PlusMazeExperiment, EperimentStatus
 from behavioral_analysis import plot_days_per_stage, plot_behavior_results
 from consolidationbrain import ConsolidationBrain
+from rewardtype import RewardType
 
 if __name__ == '__main__':
-    env = PlusMazeOneHotCues(relevant_cue=config.CueType.ODOR)
+    env = PlusMazeOneHotCues(relevant_cue=CueType.ODOR)
     observation_size = env.state_shape()
 
     repetitions = 2
@@ -48,7 +49,7 @@ if __name__ == '__main__':
         while completed_experiments < repetitions:
             (brain, learner, network, motivated_reward_value, non_motivated_reward_value) = agent_spec
             agent = MotivatedAgent(brain(learner(network(env.stimuli_encoding_size(), 2, env.num_actions()), learning_rate=config.LEARNING_RATE)),
-                                   motivation=config.RewardType.WATER,
+                                   motivation=RewardType.WATER,
                                    motivated_reward_value=motivated_reward_value, non_motivated_reward_value=non_motivated_reward_value)
             experiment_stats = PlusMazeExperiment(agent, dashboard=False)
             if experiment_stats.metadata['experiment_status'] == EperimentStatus.COMPLETED:

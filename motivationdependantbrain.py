@@ -5,7 +5,6 @@ from consolidationbrain import ConsolidationBrain
 
 
 class MotivationDependantBrain(ConsolidationBrain):
-	BATCH_SIZE = 20
 
 	def __init__(self, *args, **kwargs):
 		super().__init__(*args, **kwargs)

@@ -1,7 +1,8 @@
 __author__ = 'gkour'
 
-from environment import PlusMaze, PlusMazeOneHotCues
+from environment import PlusMaze, PlusMazeOneHotCues, CueType
 from motivatedagent import MotivatedAgent
+from rewardtype import RewardType
 import numpy as np
 import config
 import utils
@@ -22,7 +23,7 @@ class EperimentStatus(Enum):
 
 def PlusMazeExperiment(agent:MotivatedAgent, dashboard=False):
 
-    env = PlusMazeOneHotCues(relevant_cue=config.CueType.ODOR)
+    env = PlusMazeOneHotCues(relevant_cue=CueType.ODOR)
     env.reset()
     stats = Stats(metadata={'brain': str(agent.get_brain()),
                                 'network': str(agent.get_brain().get_network()),
@@ -85,22 +86,21 @@ def set_next_stage(env:PlusMaze, agent:MotivatedAgent):
     print('---------------------------------------------------------------------')
     if env._stage==1:
         env.set_random_odor_set()
-        #env.set_relevant_cue(config.CueType.LIGHT)
+        #env.set_relevant_cue(CueType.LIGHT)
         print("Stage {}: {} (Odors: {}, Correct:{})".format(env._stage, stage_names[env._stage], [np.argmax(encoding) for encoding in env.get_odor_cues()],np.argmax(env.get_correct_cue_value())))
     elif env._stage==2:
-        agent.set_motivation(config.RewardType.FOOD)
+        agent.set_motivation(RewardType.FOOD)
         print("Stage {}: {}".format(env._stage, stage_names[env._stage]))
 
     elif env._stage==3:
-        agent.set_motivation(config.RewardType.WATER)
+        agent.set_motivation(RewardType.WATER)
         env.set_random_odor_set()
         print("Stage {}: {} (Odors: {}. Correct {})".format(env._stage, stage_names[env._stage], [np.argmax(encoding) for encoding in env.get_odor_cues()],
                                                                                  np.argmax(env.get_correct_cue_value())))
     elif env._stage==4:
-        env.set_relevant_cue(config.CueType.LIGHT)
+        env.set_relevant_cue(CueType.LIGHT)
         print("Stage {}: {} (Lights: {}. Correct {})".format(env._stage, stage_names[env._stage], [np.argmax(encoding) for encoding in env.get_light_cues()],
                                                                                  np.argmax(env.get_correct_cue_value())))
-
     elif env._stage==5:
-        env._relevant_cue = config.CueType.SPATIAL
+        env._relevant_cue = CueType.SPATIAL
         print("Stage {}: {} (Correct Doors: {})".format(env._stage, stage_names[env._stage], env.get_correct_cue_value()))

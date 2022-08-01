@@ -4,17 +4,24 @@ import random
 import numpy as np
 import config
 import utils
+from rewardtype import RewardType
+from enum import Enum
 
 #np.random.seed(seed=1234)
+class CueType(Enum):
+    ODOR = 0
+    LIGHT = 1
+    SPATIAL = 2
+
 
 class PlusMaze:
-    def __init__(self, relevant_cue: config.CueType):
+    def __init__(self, relevant_cue: CueType):
         # relevant_cue: 0 is odor, 1 is light
         # correct_value: 1/-1 the identity of the correct cue
 
         self._state = None
         self._stimuli_encoding_size = 2
-        self._relevant_cue:config.CueType = relevant_cue
+        self._relevant_cue:CueType = relevant_cue
         self._odor_cues = None
         self._light_cues = None
         self._correct_spatial_cues = [1,3]
@@ -37,12 +44,12 @@ class PlusMaze:
         selected_cues_items = [selected_cues[0:self.stimuli_encoding_size()]] + \
                               [selected_cues[self.stimuli_encoding_size():2*self.stimuli_encoding_size()]]
 
-        if (self._relevant_cue == config.CueType.SPATIAL and action in self._correct_spatial_cues) or\
-                (self._relevant_cue != config.CueType.SPATIAL and
+        if (self._relevant_cue == CueType.SPATIAL and action in self._correct_spatial_cues) or\
+                (self._relevant_cue != CueType.SPATIAL and
                  np.array_equal(selected_cues_items[self._relevant_cue.value], self.get_correct_cue_value())):
-            outcome = config.RewardType.WATER if action in [0, 1] else config.RewardType.FOOD
+            outcome = RewardType.WATER if action in [0, 1] else RewardType.FOOD
             return self._state, outcome, 1, self._get_step_info(outcome)
-        return self._state, config.RewardType.NONE, 1, self._get_step_info(config.RewardType.NONE)
+        return self._state, RewardType.NONE, 1, self._get_step_info(RewardType.NONE)
 
     def state(self):
         # Odor Arm 1, Light Arm 1,Odor Arm 2, Light Arm 2,Odor Arm 3, Light Arm 3,Odor Arm 4, Light Arm 4
@@ -109,15 +116,15 @@ class PlusMaze:
     def set_light_cues(self, options):
         self._light_cues = options
 
-    def set_relevant_cue(self, relevant_cue:config.CueType):
+    def set_relevant_cue(self, relevant_cue:CueType):
         self._relevant_cue = relevant_cue
 
     def get_correct_cue_value(self):
-        if self._relevant_cue == config.CueType.ODOR:
+        if self._relevant_cue == CueType.ODOR:
             return self.get_odor_cues()[0]
-        if self._relevant_cue == config.CueType.LIGHT:
+        if self._relevant_cue == CueType.LIGHT:
             return self.get_light_cues()[0]
-        if self._relevant_cue == config.CueType.SPATIAL:
+        if self._relevant_cue == CueType.SPATIAL:
             return self._correct_spatial_cues
 
     def random_state(self):
@@ -154,11 +161,11 @@ class PlusMazeOneHotCues(PlusMaze):
                               [selected_cues[
                                self.stimuli_encoding_size():2*self.stimuli_encoding_size() ]]
 
-        if (self._relevant_cue == config.CueType.SPATIAL and action in self._correct_spatial_cues) or \
-                (self._relevant_cue != config.CueType.SPATIAL and np.array_equal(selected_cues[self._relevant_cue.value, :], self.get_correct_cue_value())):
-            outcome = config.RewardType.WATER if action in [0, 1] else config.RewardType.FOOD
+        if (self._relevant_cue == CueType.SPATIAL and action in self._correct_spatial_cues) or \
+                (self._relevant_cue != CueType.SPATIAL and np.array_equal(selected_cues[self._relevant_cue.value, :], self.get_correct_cue_value())):
+            outcome = RewardType.WATER if action in [0, 1] else RewardType.FOOD
             return self._state, outcome, 1, self._get_step_info(outcome)
-        return self._state, config.RewardType.NONE, 1, self._get_step_info(config.RewardType.NONE)
+        return self._state, RewardType.NONE, 1, self._get_step_info(RewardType.NONE)
 
     def state_shape(self):
         return (self.num_actions(), self.stimuli_encoding_size(), 2)

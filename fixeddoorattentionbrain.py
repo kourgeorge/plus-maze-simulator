@@ -1,9 +1,9 @@
 __author__ = 'gkour'
 
 import torch
-import config
 from motivatedagent import MotivatedAgent
 from motivationdependantbrain import MotivationDependantBrain
+from rewardtype import RewardType
 
 
 class FixedDoorAttentionBrain(MotivationDependantBrain):
