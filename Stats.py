@@ -6,7 +6,7 @@ from collections import OrderedDict
 import utils
 import config
 from ReplayMemory import ReplayMemory
-from torchbrain import TorchBrain
+from consolidationbrain import ConsolidationBrain
 import copy
 from motivatedagent import MotivatedAgent
 
@@ -52,7 +52,7 @@ class Stats:
 
 
     @staticmethod
-    def _create_report_from_memory(experience: ReplayMemory, brain: TorchBrain, last):
+    def _create_report_from_memory(experience: ReplayMemory, brain: ConsolidationBrain, last):
         if last == -1:
             pass
         last_exp = experience.last(last)

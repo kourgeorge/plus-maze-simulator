@@ -9,13 +9,13 @@ import pandas as pd
 
 import utils
 from environment import PlusMaze
-from torchbrain import TorchBrain
+from consolidationbrain import ConsolidationBrain
 
 plt.ion()
 
 
 class Dashboard:
-    def __init__(self, brain:TorchBrain):
+    def __init__(self, brain:ConsolidationBrain):
         self.stage = 0
         self.stage_initial_brain = brain
         self.fig = plt.figure(figsize=(9, 7), dpi=120, facecolor='w')
@@ -70,7 +70,7 @@ class Dashboard:
              [signal_line.get_label() for signal_line in self._line_brain_signals] +
             [signal_line.get_label() for signal_line in self._line_brain_compare], loc=0, prop={'size': 5})
 
-    def update(self, stats_df, env: PlusMaze, brain:TorchBrain):
+    def update(self, stats_df, env: PlusMaze, brain:ConsolidationBrain):
         textstr = self.text_curr_stage.format(
             env._stage, stats_df['Trial'].to_numpy()[-1], [np.argmax(encoding) for encoding in env.get_odor_cues()],
             [np.argmax(encoding) for encoding in env.get_light_cues()], np.argmax(env.get_correct_cue_value()),

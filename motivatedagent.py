@@ -8,8 +8,8 @@ import numpy as np
 
 
 class MotivatedAgent:
-    def __init__(self, brain: AbstractBrain, memory_size=config.MEMORY_SIZE, motivation=config.RewardType.WATER,
-                 motivated_reward_value=1, non_motivated_reward_value=0.3):
+    def __init__(self, brain: AbstractBrain, memory_size=10000, motivation=1,
+                 motivated_reward_value=1, non_motivated_reward_value=0.3, exploration_param=0.2):
 
         self._brain = brain
         self._memory_size = memory_size
@@ -17,13 +17,14 @@ class MotivatedAgent:
         self._motivation = motivation
         self._motivated_reward_value = motivated_reward_value
         self._non_motivated_reward_value = non_motivated_reward_value
+        self._exploration_param = exploration_param
 
     def get_brain(self) -> AbstractBrain:
         return self._brain
 
     def decide(self, state):
         decision = self._brain.think(np.expand_dims(state,0), self).squeeze().detach().numpy()
-        action = epsilon_greedy(config.EXPLORATION_EPSILON, decision)
+        action = epsilon_greedy(self._exploration_param, decision)
         return action
 
     def evaluate_outcome(self, outcome):

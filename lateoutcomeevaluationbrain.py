@@ -2,11 +2,10 @@ __author__ = 'gkour'
 
 import numpy as np
 import torch
-from abstractbrain import AbstractBrain
-from motivationdependantbrain import MotivationDependantBrainPG, MotivationDependantBrainDQN
+from motivationdependantbrain import MotivationDependantBrain
 
 
-class LateOutcomeEvaluationBrain(AbstractBrain):
+class LateOutcomeEvaluationBrain(MotivationDependantBrain):
 	BATCH_SIZE = 20
 
 	def __init__(self, *args, **kwargs):
@@ -27,16 +26,6 @@ class LateOutcomeEvaluationBrain(AbstractBrain):
 
 			action_values = self.think(state_batch, agent)
 
-			losses += [self.optimize(state_batch, action_batch, reward_batch, action_values, nextstate_batch)]
+			losses += [self.learner.learn(state_batch, action_batch, reward_batch, action_values, nextstate_batch)]
 
 		return np.mean(losses)
-
-
-class MotivationDependantBrainPGLateOutcomeEvaluation(LateOutcomeEvaluationBrain, MotivationDependantBrainPG):
-	def __init__(self, *args, **kwargs):
-		super().__init__(*args, **kwargs)
-
-
-class MotivationDependantBrainDQNLateOutcomeEvaluation(LateOutcomeEvaluationBrain, MotivationDependantBrainDQN):
-	def __init__(self, *args, **kwargs):
-		super().__init__(*args, **kwargs)
