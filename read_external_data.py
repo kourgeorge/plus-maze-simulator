@@ -22,7 +22,7 @@ def get_experiment_dir(experiment_num):
 def get_files_for_agent_in_stage_sorted(experiment_dir, stage, agent_num):
     files_for_agent_in_stage = []
     for file in glob(experiment_dir + '/' + stage + '/*'):
-        if f"Subject {agent_num}" in file:
+        if f"{agent_num}.csv" in file:
             files_for_agent_in_stage.append(file)
     return sort_files_by_date(files_for_agent_in_stage)
 
@@ -75,5 +75,9 @@ def reward_type(row):
 def save_pd_to_csv(df, file_name):
     df.to_csv(file_name, index=False)
 
-# save_pd_to_csv(get_all_data_from_csv_for_agent(1,2), './output2.csv')
-# print(get_all_data_from_csv_for_agent(1, 1))
+
+expr_data = {1: [1,2], 2: [1], 4: [6,7,8], 5: [1,2], 6: [10, 11]}
+for expr in expr_data:
+    for rat in expr_data[expr]:
+        save_pd_to_csv(get_all_data_from_csv_for_agent(expr,rat), './output_expr{}_rat{}.csv'.format(expr, rat))
+ 

@@ -48,23 +48,19 @@ def PlusMazeExperiment(agent:MotivatedAgent, dashboard=False, rat_data_file=None
     print('============================ Brain:{}, Network:{} ======================='.format(str(agent.get_brain()),str(agent.get_brain().get_network())))
     print("Stage {}: {} - Water Motivated, odor relevant. (Odors: {}, Correct: {})".format(env._stage, stage_names[env._stage], [np.argmax(encoding) for encoding in env.get_odor_cues()],
                                                                                              np.argmax(env.get_correct_cue_value())))
-    likelihood_list = []
+    likelihood_list = [] # only on real data
     while (experiment_not_finished(env, trial, rat_data)):
         if trial>trials_in_day*max_experiment_length:
             print("Agent failed to learn.")
             return stats
         
         trial += 1
-        
-        # utils.episode_rollout(env, agent) # utils.episode_rollout_on_real_data
-        
+                
         if (uncompleted_trial(rat_data, trial)):
             continue
-        # _,_,_, likelihood = utils.episode_rollout_on_real_data(env, agent, rat_data.iloc[trial - 1])
 
         likelihood = run_rollout(env, agent, rat_data, trial)
         likelihood_list.append(likelihood)
-        # if trial % trials_in_day == 0:
         if day_passed(trial, trials_in_day, rat_data):
             loss = agent.smarten()
             stats.update_stats_from_agent(agent, trial, trials_in_day)
@@ -93,7 +89,6 @@ def set_next_stage(env:PlusMaze, agent:MotivatedAgent):
     print('---------------------------------------------------------------------')
     if env._stage==1:
         env.set_random_odor_set()
-        #env.set_relevant_cue(config.CueType.LIGHT)
         print("Stage {}: {} (Odors: {}, Correct:{})".format(env._stage, stage_names[env._stage], [np.argmax(encoding) for encoding in env.get_odor_cues()],np.argmax(env.get_correct_cue_value())))
     elif env._stage==2:
         agent.set_motivation(config.RewardType.FOOD)

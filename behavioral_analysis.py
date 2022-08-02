@@ -10,7 +10,7 @@ from PlusMazeExperiment import stage_names
 import utils
 
 
-def plot_days_per_stage(all_brains_types_stats, dirname):
+def plot_days_per_stage(all_brains_types_stats, file_path):
 	stages = list(range(len(stage_names)))
 	width = 0.7/len(all_brains_types_stats)
 	fig, ax = plt.subplots(figsize=(10, 6))
@@ -37,7 +37,7 @@ def plot_days_per_stage(all_brains_types_stats, dirname):
 	plt.title("Days Per stage. #reps={}".format(repetitions))
 	plt.legend()
 
-	plt.savefig('Results/{}/days_in_stage_-{}'.format(dirname, time.strftime("%Y%m%d-%H%M")))
+	plt.savefig(file_path)
 
 
 def days_to_consider_in_each_stage(subject_reports, q=75):
