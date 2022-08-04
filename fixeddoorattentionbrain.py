@@ -17,6 +17,6 @@ class FixedDoorAttentionBrain(MotivationDependantBrain):
 			attention_vec = [1, 1, 0, 0]
 		else:
 			attention_vec = [0, 0, 1, 1]
-		action_probs = self.network(torch.FloatTensor(obs), attention_vec)
+		action_probs = self.network()(torch.FloatTensor(obs), attention_vec)
 
 		return action_probs

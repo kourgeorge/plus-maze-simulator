@@ -11,7 +11,6 @@ from motivatedagent import MotivatedAgent
 from environment import PlusMazeOneHotCues
 
 # import config
-from motivationdependantbrain import MotivationDependantBrainDQN, MotivationDependantBrainPG
 from standardbrainnetwork import FullyConnectedNetwork, EfficientNetwork, SeparateMotivationAreasNetwork, \
     FullyConnectedNetwork2Layers
 from learner import DQN, PG
@@ -60,9 +59,9 @@ def main(config, dir_name, rat_data_file = None, rat_id = None, df = None):
                                    motivated_reward_value=motivated_reward_value, non_motivated_reward_value=non_motivated_reward_value)
             experiment_stats, likelihood = PlusMazeExperiment(agent, dashboard=False, rat_data_file=rat_data_file)
             
-            dict = {'rat': rat_id, 'brain': agent_spec[0].__name__, 'network': agent_spec[1].__name__, 'memory_size': config.MEMORY_SIZE,
-                     'forgetting': config.FORGETTING, 'motivated_reward': config.MOTIVATED_REWARD, 'non_motivated_reward': config.NON_MOTIVATED_REWARD, 'likelihood': likelihood, 'trials': num_trials,
-                     'param_number': agent.get_brain().num_trainable_parameters(), 'repetition': completed_experiments}
+            dict = {'rat': rat_id, 'brain': agent_spec[0].__name__, 'network': agent_spec[1].__name__,
+                     'forgetting': config.FORGETTING, 'motivated_reward': config.MOTIVATED_REWARD, 'non_motivated_reward': config.NON_MOTIVATED_REWARD, 'memory_size': config.MEMORY_SIZE, 'learning_rate': config.LEARNING_RATE, 'likelihood': likelihood, 'trials': int(num_trials),
+                     'param_number': agent.get_brain().num_trainable_parameters(), 'repetition': int(completed_experiments)}
             df = df.append(dict, ignore_index=True)
             if experiment_stats.metadata['experiment_status'] == EperimentStatus.COMPLETED:
                 brain_repetition_reports[completed_experiments] = experiment_stats
@@ -84,18 +83,21 @@ def get_time_YYYY_MM_DD_HH_MM():
     return datetime.datetime.now().strftime("%Y_%m_%d_%H_%M")
 
 def init_df():
-    df = pd.DataFrame(columns=['rat', 'brain', 'network', 'memory_size', 'forgetting', 'motivated_reward', 'non_motivated_reward', 'likelihood', 'trials', 'param_number'])
+    df = pd.DataFrame(columns=['rat', 'brain', 'network', 'forgetting', 'motivated_reward', 'non_motivated_reward', 'memory_size', 'learning_rate', 'likelihood', 'trials', 'param_number'])
     return df
 
-expr_data = {1: [1,2], 2: [1], 4: [6,7,8], 5: [1,2], 6: [10, 11]}
+# expr_data = {1: [1,2], 2: [1], 4: [6,7,8], 5: [1,2], 6: [10, 11]}
+expr_data = {1: [1,2], 2: [1], 4: [6,7]}
+
 
 if __name__ == '__main__':
     df = init_df()
-    for config, dirname in gen_get_config():
-        os.mkdir('Results/' + dirname)
+    for config_index,(config, dirname) in enumerate(gen_get_config()):
+        if not os.path.exists('Results/' + dirname):
+            os.makedirs('Results/' + dirname)
         for expr in expr_data:
             for rat in expr_data[expr]:
                 df = main(config, dirname, './output_expr{}_rat{}.csv'.format(expr, rat), '{}_{}'.format(expr, rat), df)
-                df.to_csv('output_until_expr{}_rat{}.csv'.format(expr, rat))
+                df.to_csv('Rats-Results/output_until_expr{}_rat{}_config_{}.csv'.format(expr, rat, config_index))
         print("Done with {}".format(dirname))
     df.to_csv('outputForAll.csv')
