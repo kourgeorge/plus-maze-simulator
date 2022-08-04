@@ -113,10 +113,10 @@ def episode_rollout_on_real_data(env, agent, current_trial):
         reward = agent.evaluate_outcome(outcome)
         total_reward += reward
         agent.add_experience(state, dec_1hot, reward, outcome, new_state, terminated, info)
+        model_action_dist=agent._brain.think(np.expand_dims(state,0), agent).squeeze().detach().numpy()
+        likelihood += -1 * np.log(model_action_dist[action])
         state = new_state
-        likelihood += -1 * np.log(agent._brain.think(np.expand_dims(state,0), agent).squeeze().detach().numpy()[action])
-
-    return steps, total_reward, act_dist, likelihood
+    return steps, total_reward, act_dist, model_action_dist, likelihood
 
 
 

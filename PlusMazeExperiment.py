@@ -49,6 +49,7 @@ def PlusMazeExperiment(agent:MotivatedAgent, dashboard=False, rat_data_file=None
     print("Stage {}: {} - Water Motivated, odor relevant. (Odors: {}, Correct: {})".format(env._stage, stage_names[env._stage], [np.argmax(encoding) for encoding in env.get_odor_cues()],
                                                                                              np.argmax(env.get_correct_cue_value())))
     likelihood_list = [] # only on real data
+    model_action_dists = np.empty([1, env.num_actions()])
     while (experiment_not_finished(env, trial, rat_data)):
         if trial>trials_in_day*max_experiment_length:
             print("Agent failed to learn.")
@@ -59,16 +60,18 @@ def PlusMazeExperiment(agent:MotivatedAgent, dashboard=False, rat_data_file=None
         if (uncompleted_trial(rat_data, trial)):
             continue
 
-        likelihood = run_rollout(env, agent, rat_data, trial)
+        model_action_dist, likelihood = run_rollout(env, agent, rat_data, trial)
         likelihood_list.append(likelihood)
+        model_action_dists = np.append(model_action_dists, np.expand_dims(model_action_dist, axis=0), axis=0)
         if day_passed(trial, trials_in_day, rat_data):
             loss = agent.smarten()
             stats.update_stats_from_agent(agent, trial, trials_in_day)
             pre_stage_transition_update()
 
             print(
-                'Trial: {}, Action Dist:{}, Corr.:{}, Rew.:{}, loss={};'.format(stats.epoch_stats_df['Trial'].to_numpy()[-1],
+                'Trial: {}, Action Dist:{}, Model Dist:{}, Corr.:{}, Rew.:{}, loss={};'.format(stats.epoch_stats_df['Trial'].to_numpy()[-1],
                                                                                 stats.epoch_stats_df['ActionDist'].to_numpy()[-1],
+                                                                                np.round(np.mean(model_action_dists, axis=0),2),
                                                                                 stats.epoch_stats_df['Correct'].to_numpy()[-1],
                                                                                 stats.epoch_stats_df['Reward'].to_numpy()[-1],
                                                                                 round(loss, 2)))
@@ -76,6 +79,7 @@ def PlusMazeExperiment(agent:MotivatedAgent, dashboard=False, rat_data_file=None
             print(
                 'WPI:{}, WC: {}, FC:{}'.format(stats.epoch_stats_df['WaterPreference'].to_numpy()[-1], stats.epoch_stats_df['WaterCorrect'].to_numpy()[-1],
                                                 stats.epoch_stats_df['FoodCorrect'].to_numpy()[-1]))
+            model_action_dists = np.empty([1, env.num_actions()])
 
         if should_pass_to_next_stage(stats, rat_data, trial): #not on real data should be only when day passed?
             set_next_stage(env, agent)
@@ -138,7 +142,7 @@ def uncompleted_trial(rat_data, trial):
 
 def run_rollout(env, agent, rat_data, trial):
     if rat_data is not None:
-        _,_,_, likelihood =  utils.episode_rollout_on_real_data(env, agent, rat_data.iloc[trial - 1])
-        return likelihood
+        _,_,_, model_action_dist,likelihood =  utils.episode_rollout_on_real_data(env, agent, rat_data.iloc[trial - 1])
+        return model_action_dist, likelihood
     else:
         utils.episode_rollout(env, agent)
