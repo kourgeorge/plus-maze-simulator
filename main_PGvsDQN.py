@@ -59,18 +59,20 @@ def main(config, dir_name, rat_data_file = None, rat_id = None, df = None):
                                    motivated_reward_value=motivated_reward_value, non_motivated_reward_value=non_motivated_reward_value)
             experiment_stats, likelihood = PlusMazeExperiment(agent, dashboard=False, rat_data_file=rat_data_file)
             
-            dict = {'rat': rat_id, 'brain': agent_spec[0].__name__, 'network': agent_spec[1].__name__,
-                     'forgetting': config.FORGETTING, 'motivated_reward': config.MOTIVATED_REWARD, 'non_motivated_reward': config.NON_MOTIVATED_REWARD, 'memory_size': config.MEMORY_SIZE, 'learning_rate': config.LEARNING_RATE, 'likelihood': likelihood, 'trials': int(num_trials),
-                     'param_number': agent.get_brain().num_trainable_parameters(), 'repetition': int(completed_experiments)}
+            dict = {'rat': rat_id,  'brain': agent_spec[0].__name__, 'algorithm': agent_spec[1].__name__, 'network': agent_spec[2].__name__,
+                     'forgetting': config.FORGETTING, 'motivated_reward': config.MOTIVATED_REWARD, 'non_motivated_reward': config.NON_MOTIVATED_REWARD,
+                    'memory_size': config.MEMORY_SIZE, 'learning_rate': config.LEARNING_RATE, 'likelihood': likelihood, 'trials': int(num_trials),
+                    'normalized_likelihood':likelihood/int(num_trials),
+                    'param_number': agent.get_brain().num_trainable_parameters(), 'repetition': int(completed_experiments)}
             df = df.append(dict, ignore_index=True)
             if experiment_stats.metadata['experiment_status'] == EperimentStatus.COMPLETED:
                 brain_repetition_reports[completed_experiments] = experiment_stats
         brains_reports.append(brain_repetition_reports)
 
     
-    plot_days_per_stage(brains_reports, file_path = 'Results/{}/days_in_stage_{}'.format(dir_name, time.strftime("%Y%m%d-%H%M")))
-    for brain_report in brains_reports:
-        plot_behavior_results(brain_report, dir_name)
+    # plot_days_per_stage(brains_reports, file_path = 'Results/{}/days_in_stage_{}'.format(dir_name, time.strftime("%Y%m%d-%H%M")))
+    # for brain_report in brains_reports:
+    #     plot_behavior_results(brain_report, dir_name)
 
     x=1
     return df
@@ -98,6 +100,7 @@ if __name__ == '__main__':
         for expr in expr_data:
             for rat in expr_data[expr]:
                 df = main(config, dirname, './output_expr{}_rat{}.csv'.format(expr, rat), '{}_{}'.format(expr, rat), df)
-                df.to_csv('Rats-Results/output_until_expr{}_rat{}_config_{}.csv'.format(expr, rat, config_index))
+                csv_file_path = os.path.join('Results','Rats-Results','output_until_expr{}_rat{}_config_{}.csv'.format(expr, rat, config_index))
+                df.to_csv(csv_file_path, index=False)
         print("Done with {}".format(dirname))
-    df.to_csv('outputForAll.csv')
+    df.to_csv(os.path.join('Results','Rats-Results','outputForAll.csv'))
