@@ -63,6 +63,7 @@ def PlusMazeExperiment(agent:MotivatedAgent, dashboard=False, rat_data_file=None
         model_action_dist, likelihood = run_rollout(env, agent, rat_data, trial)
         likelihood_list.append(likelihood)
         model_action_dists = np.append(model_action_dists, np.expand_dims(model_action_dist, axis=0), axis=0)
+        loss = agent.smarten()
         if day_passed(trial, trials_in_day, rat_data):
             loss = agent.smarten()
             stats.update_stats_from_agent(agent, trial, trials_in_day)
