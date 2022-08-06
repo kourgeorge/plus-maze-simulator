@@ -133,7 +133,9 @@ def should_pass_to_next_stage(stats, rat_data, trial):
 
 def day_passed(trial, trials_in_day, rat_data):
     if rat_data is not None:
-        return (trial < len(rat_data) and rat_data.iloc[trial]['day in stage'] != rat_data.iloc[trial-1]['day in stage']) #change to day_in_stage
+        return (trial < len(rat_data) and
+                (rat_data.iloc[trial]['day in stage'] != rat_data.iloc[trial - 1]['day in stage'] or # day change
+                 rat_data.iloc[trial]['stage'] != rat_data.iloc[trial - 1]['stage'])) #stage change
     else:
         return (trial % trials_in_day == 0)
 
