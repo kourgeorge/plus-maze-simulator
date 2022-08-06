@@ -74,3 +74,33 @@ class ConsolidationBrain(AbstractBrain):
 
 		return affine_dim, controller_dim
 
+
+class RandomBrain(AbstractBrain):
+
+	def __init__(self, learner: AbstractLearner, reward_discount=1):
+		super().__init__(reward_discount)
+		self.learner = learner
+		self.consolidation_counter = 0
+		print("{}. Num parameters: {}".format(str(self), self.num_trainable_parameters()))
+
+	def network(self) -> AbstractNetwork:
+		return self.learner.get_model()
+
+	def think(self, obs, agent):
+		return torch.softmax(torch.rand(1,4),  dim=1)
+
+	def consolidate(self, memory, agent, batch_size=config.BATCH_SIZE, iterations=config.CONSOLIDATION_ITERATIONS):
+		return 0
+
+	def save_model(self, path):
+		torch.save(self.network().state_dict(), path)
+
+	def load_model(self, path):
+		if os.path.exists(path):
+			self.network().load_state_dict(torch.load(path))
+
+	def num_trainable_parameters(self):
+		return sum(p.numel() for p in self.network().parameters())
+
+	def get_network(self):
+		return self.network()
