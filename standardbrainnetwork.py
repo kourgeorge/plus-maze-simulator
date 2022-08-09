@@ -115,13 +115,11 @@ class EfficientNetwork(AbstractNetwork):
 		processed_channels = torch.cat([self.channels_encoding[i](channel) for i, channel in enumerate(channels)], dim=-1)
 		processed_channels_t = torch.transpose(processed_channels, dim0=-1, dim1=-2)
 		dimension_attended = torch.matmul(torch.softmax(self.dim_attn, dim=-1), processed_channels_t.squeeze())
+		doors_processed = torch.mul(torch.softmax(self.door_attn, dim=-1), dimension_attended)
 		if door_attention is None:
-			door_attended = torch.softmax(self.door_attn_bias + torch.mul(torch.softmax(self.door_attn, dim=-1),
-																		  dimension_attended), dim=-1).squeeze()
+			door_attended = torch.softmax(self.door_attn_bias + doors_processed, dim=-1).squeeze()
 		else:
-			door_attended = torch.softmax(self.door_attn_bias +
-				torch.mul(torch.softmax(torch.tensor(door_attention).float(), dim=-1), dimension_attended),
-				dim=-1).squeeze()
+			door_attended = torch.softmax(torch.tensor(door_attention).float() + doors_processed, dim=-1).squeeze()
 		return door_attended
 
 	def get_stimuli_layer(self):
