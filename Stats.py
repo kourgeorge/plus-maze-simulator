@@ -39,7 +39,9 @@ class Stats:
                                ('Reward', report.reward),
                                ('WaterPreference', report.water_preference),
                                ('WaterCorrect', report.water_correct_percent),
-                               ('FoodCorrect', report.food_correct_percent)] +
+                               ('FoodCorrect', report.food_correct_percent),
+                               ('Likelihood', report.likelihood),
+                                ('CorrectNetwork', report.correct_network)] +
                            [(k, v) for k, v in self.reports[-1].brain.get_network().network_diff(
                                self.get_last_day_in_previous_stage().brain.get_network()).items()] +
                            [(k, v) for k, v in self.reports[-1].brain.get_network().get_network_metrics().items()])
@@ -65,16 +67,18 @@ class Stats:
         action = np.argmax(actions, axis=1)
         correct = [1 if info.outcome != config.RewardType.NONE else 0 for info in infos]
         arm_type_water = [1 if action < 2 else 0 for action in action]
-
+        correct_network = [1 if info.network_outcome != config.RewardType.NONE else 0 for info in infos]
 
         report_dict = utils.Object()
         report_dict.action_1hot = np.mean(actions, axis=0)
         report_dict.reward = round(np.mean(rewards), 2)
         report_dict.water_preference = round(np.sum(arm_type_water) / len(arm_type_water), 2)
         report_dict.correct = np.mean(correct)
+        report_dict.correct_network = np.mean(correct_network)
         report_dict.water_correct_percent = round(np.sum(np.logical_and(arm_type_water, correct))/np.sum(arm_type_water), 2)
         report_dict.food_correct_percent = round(
             np.sum(np.logical_and(np.logical_not(arm_type_water), correct)) / np.sum(np.logical_not(arm_type_water)), 2)
         report_dict.stage = [info.stage for info in infos][-1]
         report_dict.brain = copy.deepcopy(brain)
+        report_dict.likelihood = np.median([info.likelihood for info in infos])
         return report_dict

@@ -65,17 +65,17 @@ def PlusMazeExperiment(agent:MotivatedAgent, dashboard=False, rat_data_file=None
         model_action_dists = np.append(model_action_dists, np.expand_dims(model_action_dist, axis=0), axis=0)
         loss = agent.smarten()
         if day_passed(trial, trials_in_day, rat_data):
-            loss = agent.smarten()
             stats.update_stats_from_agent(agent, trial, trials_in_day)
             pre_stage_transition_update()
 
             print(
-                'Trial: {}, Action Dist:{}, Model Dist:{}, Corr.:{}, Rew.:{}, loss={};'.format(stats.epoch_stats_df['Trial'].to_numpy()[-1],
+                'Trial: {}, Action Dist:{}, Model Dist:{}, Corr.:{}, Rew.:{}, loss={}, likelihod:{}'.format(stats.epoch_stats_df['Trial'].to_numpy()[-1],
                                                                                 stats.epoch_stats_df['ActionDist'].to_numpy()[-1],
                                                                                 np.round(np.mean(model_action_dists, axis=0),2),
                                                                                 stats.epoch_stats_df['Correct'].to_numpy()[-1],
                                                                                 stats.epoch_stats_df['Reward'].to_numpy()[-1],
-                                                                                round(loss, 2)))
+                                                                                round(loss, 2),
+                                                                                round(stats.epoch_stats_df['Likelihood'].to_numpy()[-1],3)))
 
             print(
                 'WPI:{}, WC: {}, FC:{}'.format(stats.epoch_stats_df['WaterPreference'].to_numpy()[-1], stats.epoch_stats_df['WaterCorrect'].to_numpy()[-1],
@@ -85,8 +85,9 @@ def PlusMazeExperiment(agent:MotivatedAgent, dashboard=False, rat_data_file=None
         if should_pass_to_next_stage(stats, rat_data, trial): #not on real data should be only when day passed?
             set_next_stage(env, agent)
 
+    print("Likelihood - Average:{}, Median:{}".format(np.mean(likelihood_list), np.median(likelihood_list)))
     stats.metadata['experiment_status'] = EperimentStatus.COMPLETED
-    return stats, np.sum(likelihood_list)
+    return stats, likelihood_list
 
 
 def set_next_stage(env:PlusMaze, agent:MotivatedAgent):
