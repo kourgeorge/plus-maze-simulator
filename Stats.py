@@ -21,7 +21,7 @@ class Stats:
         self.metadata = metadata
 
     def update_stats_from_agent(self, agent:MotivatedAgent, trial, last):
-        report = Stats._create_report_from_memory(agent.get_memory(), agent.get_brain(), last)
+        report = self._create_report_from_memory(agent.get_memory(), agent.get_brain(), last)
         self.reports += [report]
         stats = self.dataframe_report(trial, report)
         temp_df = pd.DataFrame([stats], columns=stats.keys())
@@ -51,8 +51,7 @@ class Stats:
         return [report for report in self.reports if report.stage==current_stage-1][-1]
 
 
-    @staticmethod
-    def _create_report_from_memory(experience: ReplayMemory, brain: ConsolidationBrain, last):
+    def _create_report_from_memory(self, experience: ReplayMemory, brain: ConsolidationBrain, last):
         if last == -1:
             pass
         last_exp = experience.last(last)
