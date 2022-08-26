@@ -17,7 +17,7 @@ stage_names = ['Baseline', 'IDshift', 'Mshift(Food)', 'MShift(Water)+IDshift', '
 trials_in_day = 100
 max_experiment_length = len(stage_names)*10 #days
 
-class EperimentStatus(Enum):
+class ExperimentStatus(Enum):
     COMPLETED = 'completed'
     RUNNING = 'running'
 
@@ -30,7 +30,7 @@ def PlusMazeExperiment(agent:MotivatedAgent, dashboard=False):
                                 'brain_params': agent.get_brain().num_trainable_parameters(),
                                 'motivated_reward': agent._motivated_reward_value,
                                 'non_motivated_reward': agent._non_motivated_reward_value,
-                                'experiment_status': EperimentStatus.RUNNING})
+                                'experiment_status': ExperimentStatus.RUNNING})
 
     if dashboard:
         dash = Dashboard(agent.get_brain())
@@ -77,7 +77,7 @@ def PlusMazeExperiment(agent:MotivatedAgent, dashboard=False):
             if current_criterion > config.SUCCESS_CRITERION_THRESHOLD and reward>0.6:
                 set_next_stage(env, agent)
 
-    stats.metadata['experiment_status'] = EperimentStatus.COMPLETED
+    stats.metadata['experiment_status'] = ExperimentStatus.COMPLETED
     return stats
 
 

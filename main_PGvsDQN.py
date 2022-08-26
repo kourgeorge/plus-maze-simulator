@@ -10,7 +10,7 @@ from standardbrainnetwork import FullyConnectedNetwork, EfficientNetwork, Separa
 from learner import DQN, PG
 from fixeddoorattentionbrain import FixedDoorAttentionBrain
 from motivationdependantbrain import MotivationDependantBrain
-from PlusMazeExperiment import PlusMazeExperiment, EperimentStatus
+from PlusMazeExperiment import PlusMazeExperiment, ExperimentStatus
 from behavioral_analysis import plot_days_per_stage, plot_behavior_results
 from consolidationbrain import ConsolidationBrain
 from rewardtype import RewardType
@@ -52,7 +52,7 @@ if __name__ == '__main__':
                                    motivation=RewardType.WATER,
                                    motivated_reward_value=motivated_reward_value, non_motivated_reward_value=non_motivated_reward_value)
             experiment_stats = PlusMazeExperiment(agent, dashboard=False)
-            if experiment_stats.metadata['experiment_status'] == EperimentStatus.COMPLETED:
+            if experiment_stats.metadata['experiment_status'] == ExperimentStatus.COMPLETED:
                 brain_repetition_reports[completed_experiments] = experiment_stats
                 completed_experiments += 1
             else:
