@@ -55,6 +55,27 @@ class PlusMaze:
         # Odor Arm 1, Light Arm 1,Odor Arm 2, Light Arm 2,Odor Arm 3, Light Arm 3,Odor Arm 4, Light Arm 4
         return self._state
 
+    def set_state(self, state):
+        arm1O = int(state['A1o'])
+        arm1L = int(state['A1c'])
+
+        # use the same combination for arms 3 and arms 4. select randomly.
+        arm3O = int(state['A3o'])
+        arm3L = int(state['A3c'])
+        state = np.ndarray(shape=[2, 4, self.stimuli_encoding_size()])
+        state[0, 0, :] = self._odor_cues[arm1O]
+        state[0, 1, :] = self._odor_cues[1 - arm1O]
+        state[0, 2, :] = self._odor_cues[arm3O]
+        state[0, 3, :] = self._odor_cues[1 - arm3O]
+
+        state[1, 0, :] = self._light_cues[arm1L]
+        state[1, 1, :] = self._light_cues[1 - arm1L]
+        state[1, 2, :] = self._light_cues[arm3L]
+        state[1, 3, :] = self._light_cues[1 - arm3L]
+
+        self._state = state
+        return state
+
     def set_stage(self, stage):
         self._stage = stage
 
