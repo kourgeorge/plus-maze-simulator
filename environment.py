@@ -76,6 +76,9 @@ class PlusMaze:
         self._state = state
         return state
 
+    def get_stage(self):
+        return self._stage
+
     def set_stage(self, stage):
         self._stage = stage
 
@@ -97,8 +100,7 @@ class PlusMaze:
         return len(self.action_space())
 
     def state_shape(self):
-        return (self.stimuli_encoding_size(), 8)
-
+        return self.stimuli_encoding_size(), 8
 
     def set_random_odor_set(self):
         new_odor1 = PlusMaze.random_stimuli_encoding(self.stimuli_encoding_size())
