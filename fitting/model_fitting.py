@@ -1,6 +1,7 @@
 import pandas as pd
 import numpy as np
 
+from fitting.PlusMazeExperimentFitting import PlusMazeExperimentFitting
 from standardbrainnetwork import FullyConnectedNetwork, EfficientNetwork, SeparateMotivationAreasNetwork, \
 	FullyConnectedNetwork2Layers
 from learner import DQN, PG
@@ -30,7 +31,7 @@ def llik_td(x, *args):
 							   motivated_reward_value=motivated_reward_value,
 							   non_motivated_reward_value=non_motivated_reward_value)
 
-		_, all_experiment_likelihoods = PlusMazeExperiment(agent, dashboard=False, rat_data_file=rat_data_file)
+		_, all_experiment_likelihoods = PlusMazeExperimentFitting(agent, dashboard=False, rat_data_file=rat_data_file)
 		results += [np.median(all_experiment_likelihoods)]
 
 	return np.mean(results)
