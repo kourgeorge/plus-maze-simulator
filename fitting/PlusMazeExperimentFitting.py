@@ -55,7 +55,7 @@ def PlusMazeExperimentFitting(agent: MotivatedAgent, rat_data, dashboard=False):
             pre_stage_transition_update()
 
             print(
-                'Trial: {}, Action Dist:{}, Model Dist:{}, Corr.:{}, Rew.:{}, loss={}, likelihod:{}'.format(stats.epoch_stats_df['Trial'].to_numpy()[-1],
+                'Trial: {}, Action Dist:{}, Model Dist:{}, Corr.:{}, Rew.:{}, loss={}, likelihood:{}'.format(stats.epoch_stats_df['Trial'].to_numpy()[-1],
                                                                                 stats.epoch_stats_df['ActionDist'].to_numpy()[-1],
                                                                                 np.round(np.mean(model_action_dists, axis=0),2),
                                                                                 stats.epoch_stats_df['Correct'].to_numpy()[-1],

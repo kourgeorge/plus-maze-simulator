@@ -67,7 +67,7 @@ def run_fitting(model_params, rat_data_file=None, rat_id=None, results_df=None, 
 				'average_likelihood_s3': likelihood_stage[2],
 				'average_likelihood_s4': likelihood_stage[3],
 				'average_likelihood_s5': likelihood_stage[4],
-				'param_number': agent.get_brain().num_trainable_parameters(), 'repetition': rep}
+				'param_number': agent.get_brain().num_trainable_parameters(), 'repetition': int(rep)}
 		results_df = results_df.append(dict, ignore_index=True)
 	return results_df
 
@@ -97,6 +97,6 @@ if __name__ == '__main__':
 	for config_index, params in enumerate(params_list):
 		for expr in expr_data:
 			for rat in expr_data[expr]:
-				run_df = run_fitting(params, os.path.join(behavioral_data_path,'output_expr{}_rat{}.csv'.format(expr, rat)),
-									 '{}_{}'.format(expr, rat), df, repetitions=3)
+				rat_data_path = os.path.join(behavioral_data_path,'output_expr{}_rat{}.csv'.format(expr, rat))
+				df = run_fitting(params, rat_data_path, '{}_{}'.format(expr, rat), df, repetitions=3)
 	df.to_csv(os.path.join(results_path, 'outputForAll.csv'), index=False)
