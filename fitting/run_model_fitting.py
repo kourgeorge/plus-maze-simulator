@@ -4,27 +4,17 @@ import os
 import numpy as np
 
 import pandas as pd
+
+from fitting.fitting_config import configs, extract_configuration_params, REPETITIONS, ANIMAL_DATA_PATH, ANIMAL_BATCHES
 from fitting.fitting_utils import get_timestamp
 from motivatedagent import MotivatedAgent
 from environment import PlusMazeOneHotCues, CueType
 from rewardtype import RewardType
-
 import config
-from standardbrainnetwork import FullyConnectedNetwork, EfficientNetwork, SeparateMotivationAreasNetwork, \
-	FullyConnectedNetwork2Layers
-from learner import DQN
 from PlusMazeExperimentFitting import PlusMazeExperimentFitting
-from behavioral_analysis import plot_days_per_stage, plot_behavior_results
-from consolidationbrain import ConsolidationBrain
-
-expr_data = {1: [1, 2], 2: [1], 4: [6, 7, 8], 5: [1, 2], 6: [10, 11]}
 
 
-def override_params(params):
-	return params['brain'], params['learner'], params['network'], params['nonmotivated_reward'], params['learning_rate']
-
-
-def run_fitting(model_params, rat_data_file=None, rat_id=None, results_df=None, repetitions=3):
+def run_fitting(model_params, rat_data_file=None, rat_id=None, repetitions=3):
 
 	# Read behavioral data
 	rat_data = pd.read_csv(rat_data_file)
@@ -33,8 +23,9 @@ def run_fitting(model_params, rat_data_file=None, rat_id=None, results_df=None, 
 	env = PlusMazeOneHotCues(relevant_cue=CueType.ODOR)
 
 	# Initialize agents
-	(brain, learner, network, non_motivated_reward_value, learning_rate) = override_params(model_params)
+	(brain, learner, network, non_motivated_reward_value, learning_rate) = extract_configuration_params(model_params)
 
+	results_df = pd.DataFrame()
 	for rep in range(repetitions):
 		agent = MotivatedAgent(
 			brain(learner(network(env.stimuli_encoding_size(), 2, env.num_actions()), learning_rate=learning_rate)),
@@ -57,9 +48,11 @@ def run_fitting(model_params, rat_data_file=None, rat_id=None, results_df=None, 
 
 		dict = {'rat': rat_id, 'brain': brain.__name__, 'learner': learner.__name__,
 				'network': network.__name__,
-				'forgetting': config.FORGETTING, 'motivated_reward': config.MOTIVATED_REWARD,
-				'non_motivated_reward': config.NON_MOTIVATED_REWARD,
-				'memory_size': config.MEMORY_SIZE, 'learning_rate': config.LEARNING_RATE, 'trials': len(rat_data),
+				'forgetting': config.FORGETTING,
+				'motivated_reward': config.MOTIVATED_REWARD,
+				'non_motivated_reward': non_motivated_reward_value,
+				'memory_size': config.MEMORY_SIZE, 'learning_rate': learning_rate,
+				'trials': len(rat_data),
 				'median_full_likelihood': np.median(all_experiment_likelihoods),
 				'average_full_likelihood': np.mean(all_experiment_likelihoods),
 				'average_likelihood_s1': likelihood_stage[0],
@@ -74,29 +67,18 @@ def run_fitting(model_params, rat_data_file=None, rat_id=None, results_df=None, 
 
 if __name__ == '__main__':
 
-	behavioral_data_path = './behavioral_data'
-	params = {
-		'brain': ConsolidationBrain,
-		'network': EfficientNetwork,
-		'learner': DQN,
-		'nonmotivated_reward': 0.3,
-		'learning_rate': 0.01,
-		'forgetting': 0.1
-	}
-
-	params_list = [params]
-
 	# create results folder and dataframe
 	results_path = os.path.join('Results', 'Rats-Results', get_timestamp())
 	if not os.path.exists(results_path):
 		os.makedirs(results_path)
-	df = pd.DataFrame(columns=['rat', 'brain', 'network', 'forgetting', 'motivated_reward', 'non_motivated_reward',
-							   'memory_size', 'learning_rate', 'likelihood', 'trials', 'param_number'])
 
-	# go over all model_params and animal
-	for config_index, params in enumerate(params_list):
-		for expr in expr_data:
-			for rat in expr_data[expr]:
-				rat_data_path = os.path.join(behavioral_data_path,'output_expr{}_rat{}.csv'.format(expr, rat))
-				df = run_fitting(params, rat_data_path, '{}_{}'.format(expr, rat), df, repetitions=3)
+	df = pd.DataFrame()
+	# go over all model_params and all animals
+	for animal_batch in ANIMAL_BATCHES:
+		for rat in ANIMAL_BATCHES[animal_batch]:
+			rat_id = '{}_{}'.format(animal_batch, rat)
+			rat_data_path = os.path.join(ANIMAL_DATA_PATH, 'output_expr{}_rat{}.csv'.format(animal_batch, rat))
+			for config_index, params in enumerate(configs):
+				run_df = run_fitting(params, rat_data_path, rat_id, repetitions=REPETITIONS)
+				df = df.append(run_df, ignore_index=True)
 	df.to_csv(os.path.join(results_path, 'outputForAll.csv'), index=False)

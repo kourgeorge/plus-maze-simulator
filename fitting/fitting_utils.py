@@ -1,3 +1,5 @@
+__author__ = 'gkour'
+
 import numpy as np
 from motivatedagent import MotivatedAgent
 from environment import PlusMazeOneHotCues
