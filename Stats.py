@@ -7,6 +7,7 @@ import utils
 from rewardtype import RewardType
 from ReplayMemory import ReplayMemory
 from consolidationbrain import ConsolidationBrain
+from abstractbrain import AbstractBrain
 import copy
 from motivatedagent import MotivatedAgent
 
@@ -50,8 +51,7 @@ class Stats:
 
         return [report for report in self.reports if report.stage==current_stage-1][-1]
 
-
-    def _create_report_from_memory(self, experience: ReplayMemory, brain: ConsolidationBrain, last):
+    def _create_report_from_memory(self, experience: ReplayMemory, brain: AbstractBrain, last):
         if last == -1:
             pass
         last_exp = experience.last(last)
