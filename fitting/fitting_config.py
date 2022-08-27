@@ -1,7 +1,7 @@
 __author__ = 'gkour'
 
 import itertools
-from consolidationbrain import ConsolidationBrain
+from consolidationbrain import ConsolidationBrain, RandomBrain
 from fixeddoorattentionbrain import FixedDoorAttentionBrain
 from lateoutcomeevaluationbrain import LateOutcomeEvaluationBrain
 from learner import DQN
@@ -20,7 +20,7 @@ brains = [(ConsolidationBrain, DQN, FullyConnectedNetwork),
 		  (FixedDoorAttentionBrain, DQN, EfficientNetwork),
 		  (MotivationDependantBrain, DQN, SeparateMotivationAreasNetwork),
 		  (LateOutcomeEvaluationBrain, DQN, SeparateMotivationAreasNetwork),
-		  (Rab, DQN, SeparateMotivationAreasNetwork)]
+		  (RandomBrain, DQN, EfficientNetwork)]
 non_motivated_reward = [0, 0.3, 0.7]
 
 combinations = list(itertools.product(brains, learning_rates, non_motivated_reward))
