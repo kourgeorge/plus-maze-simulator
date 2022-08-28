@@ -10,7 +10,7 @@ from PlusMazeExperiment import stage_names
 import utils
 
 
-def plot_days_per_stage(all_brains_types_stats):
+def plot_days_per_stage(all_brains_types_stats, file_path):
 	stages = list(range(len(stage_names)))
 	width = 0.7/len(all_brains_types_stats)
 	fig, ax = plt.subplots(figsize=(10, 6))
@@ -37,7 +37,7 @@ def plot_days_per_stage(all_brains_types_stats):
 	plt.title("Days Per stage. #reps={}".format(repetitions))
 	plt.legend()
 
-	plt.savefig('Results/days_in_stage_-{}'.format(time.strftime("%Y%m%d-%H%M")))
+	plt.savefig(file_path)
 
 
 def days_to_consider_in_each_stage(subject_reports, q=75):
@@ -55,10 +55,11 @@ def days_to_consider_in_each_stage(subject_reports, q=75):
 	return considered_days_per_stage
 
 
-def plot_behavior_results(brain_type_stats):
+def plot_behavior_results(brain_type_stats, dirname=None):
 	stages = list(range(len(stage_names)))
 	days_each_stage = days_to_consider_in_each_stage(brain_type_stats)
-	b_signals = ['Correct', 'Reward', 'WaterPreference', 'WaterCorrect', 'FoodCorrect']
+	b_signals = ['Correct', 'Reward', 'WaterPreference', 'WaterCorrect', 'FoodCorrect', 'Likelihood']
+	b_signals = ['Correct', 'CorrectNetwork', 'Likelihood']
 	n_signals = list(brain_type_stats[0].reports[0].brain.get_network().get_network_metrics().keys())+\
 				list(brain_type_stats[0].reports[0].brain.get_network().network_diff(brain_type_stats[0].reports[0].brain.get_network()).keys())
 
@@ -88,6 +89,8 @@ def plot_behavior_results(brain_type_stats):
 		ax = axes_behavioral_graph.errorbar(X, np.nanmean(results_dict[signal], axis=0),
 											yerr=sem(results_dict[signal], axis=0, nan_policy='omit'), fmt='o-',
 											color=utils.colorify(signal), label=signal, alpha=0.6, markersize=2)
+		if signal=='CorrectNetwork':
+			axes_behavioral_graph = axes_behavioral_graph.twinx()
 
 	for n_sub_signal in n_signals:
 		ax = axes_neural_graph.errorbar(X, np.nanmean(results_dict[n_sub_signal], axis=0),
@@ -109,8 +112,9 @@ def plot_behavior_results(brain_type_stats):
 
 	axes_behavioral_graph.legend(prop={'size': 7})
 	axes_neural_graph.legend(prop={'size': 7})
-	axes_behavioral_graph.set_ylim(0, 1)
+	#axes_behavioral_graph.set_ylim(0, 1)
 	#axes_neural_graph.set_ylim(0, 0.75)
 	#axes_neural_graph.set_yscale('log')
 
-	plt.savefig('Results/Stats_{}-{}-{}'.format(brain_type_stats[0].metadata['brain'],brain_type_stats[0].metadata['network'], time.strftime("%Y%m%d-%H%M")))
+	if dirname is not None:
+		plt.savefig('Results/{}/Stats_{}-{}-{}'.format(dirname, brain_type_stats[0].metadata['brain'],brain_type_stats[0].metadata['network'], time.strftime("%Y%m%d-%H%M")))

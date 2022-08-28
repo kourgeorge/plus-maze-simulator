@@ -126,9 +126,9 @@ class PlusMaze:
 
     def get_correct_cue_value(self):
         if self._relevant_cue == CueType.ODOR:
-            return self.get_odor_cues()[0]
+            return self.get_odor_cues()[1]
         if self._relevant_cue == CueType.LIGHT:
-            return self.get_light_cues()[0]
+            return self.get_light_cues()[1]
         if self._relevant_cue == CueType.SPATIAL:
             return self._correct_spatial_cues
 
@@ -187,7 +187,8 @@ class PlusMazeOneHotCues(PlusMaze):
 
         self._state = np.ones(self.state_shape())
         if (self._relevant_cue == CueType.SPATIAL and action in self._correct_spatial_cues) or \
-                (self._relevant_cue != CueType.SPATIAL and np.array_equal(selected_cues[self._relevant_cue.value, :], self.get_correct_cue_value())):
+                (self._relevant_cue != CueType.SPATIAL and np.array_equal(selected_cues[self._relevant_cue.value, :],
+                                                                          self.get_correct_cue_value())):
             outcome = RewardType.FOOD if action in [0, 1] else RewardType.WATER
             return self._state, outcome, 1, self._get_step_info(outcome)
         return self._state, RewardType.NONE, 1, self._get_step_info(RewardType.NONE)

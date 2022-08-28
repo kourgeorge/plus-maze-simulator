@@ -5,6 +5,7 @@ import numpy as np
 
 import pandas as pd
 
+from behavioral_analysis import plot_behavior_results
 from fitting.fitting_config import configs, extract_configuration_params, REPETITIONS, ANIMAL_DATA_PATH, ANIMAL_BATCHES
 from fitting.fitting_utils import get_timestamp
 from motivatedagent import MotivatedAgent
@@ -36,6 +37,7 @@ def run_fitting(model_params, rat_data_file=None, rat_id=None, repetitions=3):
 		experiment_stats, all_experiment_likelihoods = PlusMazeExperimentFitting(agent, rat_data=rat_data)
 
 		# Report results
+		#plot_behavior_results([experiment_stats])
 		likelihoods = experiment_stats.epoch_stats_df.Likelihood
 		stages = experiment_stats.epoch_stats_df.Stage
 		likelihood_stage = np.zeros([5])
@@ -82,4 +84,5 @@ if __name__ == '__main__':
 				print (params)
 				run_df = run_fitting(params, rat_data_path, rat_id, repetitions=REPETITIONS)
 				df = df.append(run_df, ignore_index=True)
+		df.to_csv(os.path.join(results_path, 'results_until_batch_{}.csv'.format(animal_batch)), index=False)
 	df.to_csv(os.path.join(results_path, 'outputForAll.csv'), index=False)

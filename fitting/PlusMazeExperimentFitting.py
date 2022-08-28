@@ -1,15 +1,15 @@
 __author__ = 'gkour'
 
+import numpy as np
+import os
+import time
+import config
 from environment import PlusMazeOneHotCues, CueType
 from PlusMazeExperiment import stage_names, ExperimentStatus, set_next_stage
 from motivatedagent import MotivatedAgent
-import numpy as np
-import config
 import fitting_utils as fitting_utils
 from Dashboard import Dashboard
 from FittingStats import FittingStats
-import os
-import time
 
 
 def PlusMazeExperimentFitting(agent: MotivatedAgent, rat_data, dashboard=False):
@@ -51,7 +51,7 @@ def PlusMazeExperimentFitting(agent: MotivatedAgent, rat_data, dashboard=False):
         model_action_dists = np.append(model_action_dists, np.expand_dims(model_action_dist, axis=0), axis=0)
         loss = agent.smarten()
         if day_passed(trial, rat_data):
-            stats.update_stats_from_agent(agent, trial, 100)
+            stats.update_stats_from_agent(agent, trial, config.REPORTING_INTERVAL)
             pre_stage_transition_update()
 
             print(

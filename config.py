@@ -1,7 +1,5 @@
 __author__ = 'gkour'
 
-from enum import Enum
-
 REPORTING_INTERVAL = 100
 
 # Brain Params
@@ -12,8 +10,8 @@ CONSOLIDATION_REPLAYS = 2
 # Agent Params
 MOTIVATED_REWARD = 1
 NON_MOTIVATED_REWARD = 0.3
-MEMORY_SIZE = 20000
-FORGETTING = 0.1
+MEMORY_SIZE = 10000
+FORGETTING = 0.2
 EXPLORATION_EPSILON = 0.2
 
 # Environment Params
