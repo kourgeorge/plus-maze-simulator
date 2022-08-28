@@ -23,7 +23,7 @@ def run_fitting(model_params, rat_data_file=None, rat_id=None, repetitions=3):
 	env = PlusMazeOneHotCues(relevant_cue=CueType.ODOR)
 
 	# Initialize agents
-	(brain, learner, network, non_motivated_reward_value, learning_rate) = extract_configuration_params(model_params)
+	(brain, learner, network, learning_rate, non_motivated_reward_value) = extract_configuration_params(model_params)
 
 	results_df = pd.DataFrame()
 	for rep in range(repetitions):
@@ -79,6 +79,7 @@ if __name__ == '__main__':
 			rat_id = '{}_{}'.format(animal_batch, rat)
 			rat_data_path = os.path.join(ANIMAL_DATA_PATH, 'output_expr{}_rat{}.csv'.format(animal_batch, rat))
 			for config_index, params in enumerate(configs):
+				print (params)
 				run_df = run_fitting(params, rat_data_path, rat_id, repetitions=REPETITIONS)
 				df = df.append(run_df, ignore_index=True)
 	df.to_csv(os.path.join(results_path, 'outputForAll.csv'), index=False)
