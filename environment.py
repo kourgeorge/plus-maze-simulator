@@ -7,7 +7,7 @@ import utils
 from rewardtype import RewardType
 from enum import Enum
 
-#np.random.seed(seed=1234)
+
 class CueType(Enum):
     ODOR = 0
     LIGHT = 1
@@ -50,7 +50,7 @@ class PlusMaze:
         if (self._relevant_cue == CueType.SPATIAL and action in self._correct_spatial_cues) or\
                 (self._relevant_cue != CueType.SPATIAL and
                  np.array_equal(selected_cues_items[self._relevant_cue.value], self.get_correct_cue_value())):
-            outcome = RewardType.WATER if action in [0, 1] else RewardType.FOOD
+            outcome = RewardType.FOOD if action in [0, 1] else RewardType.WATER
             return self._state, outcome, 1, self._get_step_info(outcome)
         return self._state, RewardType.NONE, 1, self._get_step_info(RewardType.NONE)
 
