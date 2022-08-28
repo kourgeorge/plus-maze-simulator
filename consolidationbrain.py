@@ -13,9 +13,10 @@ torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 class ConsolidationBrain(AbstractBrain):
 
-	def __init__(self, learner: AbstractLearner, reward_discount=1):
+	def __init__(self, learner: AbstractLearner, reward_discount=1, batch_size=config.BATCH_SIZE):
 		super().__init__(reward_discount)
 		self.learner = learner
+		self.batch_size = batch_size
 		self.consolidation_counter = 0
 		print("{}. Num parameters: {}".format(str(self),self.num_trainable_parameters()))
 
@@ -26,8 +27,8 @@ class ConsolidationBrain(AbstractBrain):
 		action_probs = self.learner.get_model()(torch.FloatTensor(obs))
 		return action_probs
 
-	def consolidate(self, memory, agent, batch_size=config.BATCH_SIZE, iterations=config.CONSOLIDATION_REPLAYS):
-		minibatch_size = min(batch_size, len(memory))
+	def consolidate(self, memory, agent, iterations=config.CONSOLIDATION_REPLAYS):
+		minibatch_size = min(self.batch_size, len(memory))
 		if minibatch_size == 0:
 			return
 		self.consolidation_counter += 1
