@@ -2,7 +2,6 @@ __author__ = 'gkour'
 
 import random
 import numpy as np
-import config
 import utils
 from rewardtype import RewardType
 from enum import Enum
@@ -15,7 +14,7 @@ class CueType(Enum):
 
 
 class PlusMaze:
-    def __init__(self, relevant_cue: CueType):
+    def __init__(self, relevant_cue: CueType=CueType.ODOR):
         # relevant_cue: 0 is odor, 1 is light
         # correct_value: 1/-1 the identity of the correct cue
 
