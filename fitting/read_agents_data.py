@@ -103,4 +103,4 @@ if __name__ == '__main__':
 
     for expr in expr_data:
         for rat in expr_data[expr]:
-            save_pd_to_csv(get_all_data_from_csv_for_agent(expr,rat), './output_expr{}_rat{}.csv'.format(expr, rat))
+            save_pd_to_csv(get_all_data_from_csv_for_agent(expr,rat), './fitting/behavioral_data/output_expr{}_rat{}.csv'.format(expr, rat))
