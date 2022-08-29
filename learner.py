@@ -22,7 +22,7 @@ class AbstractLearner:
 
 
 class DQN(AbstractLearner):
-	def __init__(self, network: AbstractNetwork, optimizer=optim.Adam, learning_rate=0.01):
+	def __init__(self, network: AbstractNetwork, optimizer=optim.SGD, learning_rate=0.01):
 		super().__init__(network, optimizer)
 		self.optimizer = optimizer(self.model.parameters(), lr=learning_rate)
 
