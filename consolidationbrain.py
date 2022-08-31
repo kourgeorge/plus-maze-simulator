@@ -37,8 +37,8 @@ class ConsolidationBrain(AbstractBrain):
 		for _ in range(iterations):
 			minibatch = memory.last(minibatch_size)
 			state_batch = torch.from_numpy(np.stack([np.stack(data[0]) for data in minibatch])).float()
-			action_batch = torch.FloatTensor([data[1] for data in minibatch])
-			reward_batch = torch.FloatTensor([data[2] for data in minibatch])
+			action_batch = torch.from_numpy(np.stack([data[1] for data in minibatch], axis=0)).float()
+			reward_batch = torch.from_numpy(np.stack([data[2] for data in minibatch])).float()
 			nextstate_batch = torch.from_numpy(np.stack([data[4] for data in minibatch])).float()
 
 			action_values = self.think(state_batch, agent)
