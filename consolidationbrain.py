@@ -18,7 +18,7 @@ class ConsolidationBrain(AbstractBrain):
 		self.learner = learner
 		self.batch_size = batch_size
 		self.consolidation_counter = 0
-		print("{}. Num parameters: {}".format(str(self),self.num_trainable_parameters()))
+		print("{}.{}: Num parameters: {}".format(str(self),str(learner.get_model()),self.num_trainable_parameters()))
 
 	def network(self) -> AbstractNetwork:
 		return self.learner.get_model()
@@ -35,7 +35,7 @@ class ConsolidationBrain(AbstractBrain):
 
 		losses = []
 		for _ in range(iterations):
-			minibatch = memory.sample(minibatch_size)
+			minibatch = memory.last(minibatch_size)
 			state_batch = torch.from_numpy(np.stack([np.stack(data[0]) for data in minibatch])).float()
 			action_batch = torch.FloatTensor([data[1] for data in minibatch])
 			reward_batch = torch.FloatTensor([data[2] for data in minibatch])
@@ -63,8 +63,9 @@ class ConsolidationBrain(AbstractBrain):
 
 class RandomBrain(AbstractBrain):
 
-	def __init__(self, learner: AbstractLearner, reward_discount=1):
+	def __init__(self, learner: AbstractLearner, reward_discount=1, batch_size=config.BATCH_SIZE):
 		super().__init__(reward_discount)
+		self.batch_size = batch_size
 		self.learner = learner
 		self.consolidation_counter = 0
 		print("{}. Num parameters: {}".format(str(self), self.num_trainable_parameters()))
