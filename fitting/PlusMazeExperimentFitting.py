@@ -40,16 +40,13 @@ def PlusMazeExperimentFitting(agent: MotivatedAgent, rat_data, dashboard=False):
     likelihood_list = []  # only on real data
     model_action_dists = np.empty([1, env.num_actions()])
     while trial < len(rat_data):
-        trial += 1
+        if completed_trial(rat_data, trial):
+            _, _, _, model_action_dist, likelihood = fitting_utils.episode_rollout_on_real_data(env, agent,
+                                                                                                rat_data.iloc[trial])
+            likelihood_list.append(likelihood)
+            model_action_dists = np.append(model_action_dists, np.expand_dims(model_action_dist, axis=0), axis=0)
+            loss = agent.smarten()
 
-        if uncompleted_trial(rat_data, trial):
-            continue
-
-        _, _, _, model_action_dist, likelihood = fitting_utils.episode_rollout_on_real_data(env, agent,
-                                                                                            rat_data.iloc[trial - 1])
-        likelihood_list.append(likelihood)
-        model_action_dists = np.append(model_action_dists, np.expand_dims(model_action_dist, axis=0), axis=0)
-        loss = agent.smarten()
         if day_passed(trial, rat_data):
             stats.update_stats_from_agent(agent, trial, config.REPORTING_INTERVAL)
             pre_stage_transition_update()
@@ -68,7 +65,8 @@ def PlusMazeExperimentFitting(agent: MotivatedAgent, rat_data, dashboard=False):
                                                 stats.epoch_stats_df['FoodCorrect'].to_numpy()[-1]))
             model_action_dists = np.empty([1, env.num_actions()])
 
-        if should_pass_to_next_stage(stats, rat_data, trial):
+        trial += 1
+        if should_pass_to_next_stage(rat_data, trial):
             set_next_stage(env, agent)
 
     print("Likelihood - Average:{}, Median:{}".format(np.mean(likelihood_list), np.median(likelihood_list)))
@@ -76,20 +74,15 @@ def PlusMazeExperimentFitting(agent: MotivatedAgent, rat_data, dashboard=False):
     return stats, likelihood_list
 
 
-def should_pass_to_next_stage(stats, rat_data, trial):
-    if rat_data is not None:
-        return trial < len(rat_data) and rat_data.iloc[trial]['stage'] > rat_data.iloc[trial - 1]['stage']
-    else:
-        current_criterion = np.mean(stats.reports[-1].correct)
-        reward = np.mean(stats.reports[-1].reward)
-        return current_criterion > config.SUCCESS_CRITERION_THRESHOLD and reward > 0.6
+def should_pass_to_next_stage(rat_data, trial):
+    return trial < len(rat_data) and rat_data.iloc[trial]['stage'] > rat_data.iloc[trial - 1]['stage']
 
 
 def day_passed(trial, rat_data):
-    return (trial < len(rat_data) and
-            (rat_data.iloc[trial]['day in stage'] != rat_data.iloc[trial - 1]['day in stage'] or  # day change
-             rat_data.iloc[trial]['stage'] != rat_data.iloc[trial - 1]['stage']))  # stage change
+    return 0 < trial < len(rat_data) and \
+           (rat_data.iloc[trial]['day in stage'] != rat_data.iloc[trial - 1]['day in stage'] or  # day change
+             rat_data.iloc[trial]['stage'] != rat_data.iloc[trial - 1]['stage'])  # stage change
 
 
-def uncompleted_trial(rat_data, trial):
-    return rat_data.iloc[trial - 1].reward_type == 0
+def completed_trial(rat_data, trial):
+    return rat_data.iloc[trial].reward_type != 0
