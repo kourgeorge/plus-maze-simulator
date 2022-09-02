@@ -62,7 +62,7 @@ class Stats:
 
         action = np.argmax(actions, axis=1)
         correct = [1 if info.outcome != RewardType.NONE else 0 for info in infos]
-        arm_type_water = [1 if action < 2 else 0 for action in action]
+        arm_type_water = [1 if action >= 2 else 0 for action in action]
 
 
         report_dict = utils.Object()
