@@ -2,10 +2,10 @@ __author__ = 'gkour'
 
 import os
 import numpy as np
-
 import pandas as pd
+import torch
+import random
 
-from behavioral_analysis import plot_behavior_results
 from fitting.fitting_config import configs, extract_configuration_params, REPETITIONS, ANIMAL_DATA_PATH, ANIMAL_BATCHES
 from fitting.fitting_utils import get_timestamp
 from motivatedagent import MotivatedAgent
@@ -14,14 +14,13 @@ from rewardtype import RewardType
 import config
 from PlusMazeExperimentFitting import PlusMazeExperimentFitting
 
+# Initialize environment
+env = PlusMazeOneHotCues(relevant_cue=CueType.ODOR)
 
 def run_fitting(model_params, rat_data_file=None, rat_id=None, repetitions=3):
 
 	# Read behavioral data
 	rat_data = pd.read_csv(rat_data_file)
-
-	# Initialize environment
-	env = PlusMazeOneHotCues(relevant_cue=CueType.ODOR)
 
 	# Initialize agents
 	(brain, learner, network, learning_rate, non_motivated_reward_value) = extract_configuration_params(model_params)
@@ -77,11 +76,11 @@ if __name__ == '__main__':
 	df = pd.DataFrame()
 	# go over all model_params and all animals
 	for animal_batch in ANIMAL_BATCHES:
-		for rat in ANIMAL_BATCHES[animal_batch]:
-			rat_id = '{}_{}'.format(animal_batch, rat)
-			rat_data_path = os.path.join(ANIMAL_DATA_PATH, 'output_expr{}_rat{}.csv'.format(animal_batch, rat))
+		for animal in ANIMAL_BATCHES[animal_batch]:
+			rat_id = '{}_{}'.format(animal_batch, animal)
+			rat_data_path = os.path.join(ANIMAL_DATA_PATH, 'output_expr{}_rat{}.csv'.format(animal_batch, animal))
 			for config_index, params in enumerate(configs):
-				print (params)
+				print("Batch:{}, Animal:{}.\nParameters:{}".format(animal_batch, animal, params))
 				run_df = run_fitting(params, rat_data_path, rat_id, repetitions=REPETITIONS)
 				df = df.append(run_df, ignore_index=True)
 		df.to_csv(os.path.join(results_path, 'results_until_batch_{}.csv'.format(animal_batch)), index=False)
