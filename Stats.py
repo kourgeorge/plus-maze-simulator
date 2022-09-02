@@ -39,7 +39,7 @@ class Stats:
                                ('WaterPreference', report.water_preference),
                                ('WaterCorrect', report.water_correct_percent),
                                ('FoodCorrect', report.food_correct_percent)])
-        if isinstance(self.reports[-1].brain, ConsolidationBrain):
+        if isinstance(self.reports[-1].brain, AbstractBrain):
             dict.update([(k, v) for k, v in self.reports[-1].brain.get_model().network_diff(
                                    self.get_last_day_in_previous_stage().brain.get_model()).items()] +
                                [(k, v) for k, v in self.reports[-1].brain.get_model().get_network_metrics().items()])

@@ -5,7 +5,6 @@ import torch
 import numpy as np
 import utils
 from Modules import ChannelProccessor
-import scipy
 
 
 class AbstractNetwork(nn.Module):
@@ -60,10 +59,13 @@ class TabularQ():
 		raise NotImplementedError()
 
 	def get_network_metrics(self):
-		raise NotImplementedError()
+		return {'num_entries': len(self.Q.keys())}
 
 	def network_diff(self, brain2):
-		raise NotImplementedError()
+		diff = 0
+		for state in self.Q.keys():
+			diff += np.sum((self.Q[state]-brain2.Q[state])**2) if state in brain2.Q else np.sum(self.Q[state]**2)
+		return {'table_change': diff}
 
 norm = 'fro'
 
