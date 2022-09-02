@@ -1,4 +1,3 @@
-from abc import ABC
 
 import numpy as np
 import config
@@ -42,6 +41,9 @@ class TDBrain(AbstractBrain):
             losses += [self.learner.learn(state_batch, action_batch, reward_batch, action_values, nextstate_batch)]
 
         return np.mean(losses)
+
+    def num_trainable_parameters(self):
+        return 0
 
 
 
