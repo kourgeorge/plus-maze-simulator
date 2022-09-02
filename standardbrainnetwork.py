@@ -29,6 +29,42 @@ class AbstractNetwork(nn.Module):
 		raise NotImplementedError()
 
 
+class TabularQ():
+	def __str__(self):
+		return self.__class__.__name__
+
+	def __init__(self, encoding_size, num_channels, num_actions):
+		self._num_actions = num_actions
+		self.Q = dict()
+
+	def __call__(self, *args, **kwargs):
+		state = args[0]
+		state_actions_value = []
+		for obs in np.argmax(state, axis=-1):
+			if obs.tostring() not in self.Q.keys():
+				self.Q[obs.tostring()] = 0.5 * np.ones(self._num_actions)
+			state_actions_value.append(self.Q[obs.tostring()])
+		return state_actions_value
+
+	def set_state_action_value(self, state, action, value):
+		obs = np.argmax(state, axis=-1)
+		self.Q[obs.tostring()][action] = value
+
+	def get_stimuli_layer(self):
+		raise NotImplementedError()
+
+	def get_door_attention(self):
+		raise NotImplementedError()
+
+	def get_dimension_attention(self):
+		raise NotImplementedError()
+
+	def get_network_metrics(self):
+		raise NotImplementedError()
+
+	def network_diff(self, brain2):
+		raise NotImplementedError()
+
 norm = 'fro'
 
 class FullyConnectedNetwork(AbstractNetwork):
