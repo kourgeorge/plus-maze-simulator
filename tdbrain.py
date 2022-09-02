@@ -4,7 +4,7 @@ import config
 from abstractbrain import AbstractBrain
 from learner import TD
 import torch
-
+import utils
 
 class TDBrain(AbstractBrain):
 
@@ -15,9 +15,10 @@ class TDBrain(AbstractBrain):
         self._reward_discount = reward_discount
         self.num_optimizations = 0
 
-    def think(self, state, agent):
-        state_actions_value = self.get_model()(state)
-        return torch.from_numpy(np.stack(state_actions_value))
+    def think(self, obs, agent):
+        action_value = np.stack(self.get_model()(obs))
+        action_dist = torch.softmax(torch.from_numpy(action_value), axis=-1)
+        return action_dist
 
     def get_model(self):
         return self.learner.model

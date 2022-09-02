@@ -15,6 +15,6 @@ class FixedDoorAttentionBrain(MotivationDependantBrain):
 			attention_vec = [0, 0, 1, 1]
 		else:
 			attention_vec = [1, 1, 0, 0]
-		action_probs = self.get_model()(torch.FloatTensor(obs), attention_vec)
+		action_probs = torch.softmax(self.get_model()(torch.FloatTensor(obs), attention_vec), dim=-1)
 
 		return action_probs

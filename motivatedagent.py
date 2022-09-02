@@ -1,10 +1,11 @@
 __author__ = 'gkour'
 
-from utils import epsilon_greedy
+from utils import epsilon_greedy, dist_selection
 from ReplayMemory import ReplayMemory
 from abstractbrain import AbstractBrain
 from rewardtype import RewardType
 import numpy as np
+import torch
 
 
 class MotivatedAgent:
@@ -23,7 +24,8 @@ class MotivatedAgent:
         return self._brain
 
     def decide(self, state):
-        decision = self._brain.think(np.expand_dims(state,0), self).squeeze().detach().numpy()
+        decision = torch.softmax(self._brain.think(np.expand_dims(state, 0), self).squeeze().detach(),
+                                 dim=-1).numpy()
         action = epsilon_greedy(self._exploration_param, decision)
         return action
 

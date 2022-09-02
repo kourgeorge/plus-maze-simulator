@@ -21,8 +21,9 @@ class ConsolidationBrain(AbstractBrain):
 		print("{}.{}: Num parameters: {}".format(str(self),str(learner.get_model()),self.num_trainable_parameters()))
 
 	def think(self, obs, agent):
-		action_probs = self.learner.get_model()(torch.FloatTensor(obs))
-		return action_probs
+		action_value = self.get_model()(torch.FloatTensor(obs))
+		action_dist = torch.softmax(action_value, axis=-1)
+		return action_dist
 
 	def consolidate(self, memory, agent, iterations=config.CONSOLIDATION_REPLAYS):
 		minibatch_size = min(self.batch_size, len(memory))

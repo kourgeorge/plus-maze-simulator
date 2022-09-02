@@ -74,7 +74,7 @@ class FullyConnectedNetwork(AbstractNetwork):
 		self.affine = nn.Linear(num_channels * num_actions * encoding_size, num_actions, bias=True)
 		self.model = torch.nn.Sequential(
 			self.affine,
-			nn.Softmax(dim=-1)
+			#nn.Softmax(dim=-1)
 		)
 
 	def forward(self, x):
@@ -108,7 +108,6 @@ class FullyConnectedNetwork2Layers(FullyConnectedNetwork):
 			nn.Dropout(p=0.6),
 			nn.Sigmoid(),
 			self.controller,
-			nn.Softmax(dim=-1)
 		)
 
 	def forward(self, x):
@@ -153,12 +152,11 @@ class EfficientNetwork(AbstractNetwork):
 		processed_channels_t = torch.transpose(processed_channels, dim0=-1, dim1=-2)
 		dimension_attended = torch.matmul(torch.softmax(self.dim_attn, dim=-1), processed_channels_t.squeeze())
 		if door_attention is None:
-			door_attended = torch.softmax(self.door_attn_bias + torch.mul(torch.softmax(self.door_attn, dim=-1),
-																		  dimension_attended), dim=-1).squeeze()
+			door_attended = self.door_attn_bias + torch.mul(torch.softmax(self.door_attn, dim=-1),
+																		  dimension_attended).squeeze()
 		else:
-			door_attended = torch.softmax(self.door_attn_bias +
-				torch.mul(torch.softmax(torch.tensor(door_attention).float(), dim=-1), dimension_attended),
-				dim=-1).squeeze()
+			door_attended = self.door_attn_bias + \
+							torch.mul(torch.softmax(torch.tensor(door_attention).float(), dim=-1), dimension_attended).squeeze()
 		return door_attended
 
 	def get_stimuli_layer(self):
