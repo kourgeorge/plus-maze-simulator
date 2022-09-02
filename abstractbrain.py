@@ -16,7 +16,7 @@ class AbstractBrain:
     def num_trainable_parameters(self):
         raise NotImplementedError()
 
-    def get_network(self):
+    def get_model(self):
         raise NotImplementedError()
 
     def save_model(self, path):

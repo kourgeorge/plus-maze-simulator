@@ -27,12 +27,12 @@ class Dashboard:
         axis_door_attn.title.set_text('Door Attention')
         axis_dim_attn.title.set_text('Dimension Attention')
         axis_dim_attn.set_axis_off()
-        self.im1_obj = axis_stimuli.imshow(np.transpose(brain.get_network().get_stimuli_layer().data.numpy()), cmap='RdBu', vmin=-2, vmax=2)
-        self.im2_obj = axis_door_attn.imshow(brain.get_network().get_door_attention().data.numpy().T, cmap='RdBu', vmin=-2, vmax=2)
-        self.im3_obj = axis_dim_attn.imshow(brain.get_network().get_dimension_attention().data.numpy(), cmap='RdBu', vmin=-2, vmax=2)
+        self.im1_obj = axis_stimuli.imshow(np.transpose(brain.get_model().get_stimuli_layer().data.numpy()), cmap='RdBu', vmin=-2, vmax=2)
+        self.im2_obj = axis_door_attn.imshow(brain.get_model().get_door_attention().data.numpy().T, cmap='RdBu', vmin=-2, vmax=2)
+        self.im3_obj = axis_dim_attn.imshow(brain.get_model().get_dimension_attention().data.numpy(), cmap='RdBu', vmin=-2, vmax=2)
 
         props = dict(boxstyle='round', facecolor='wheat')
-        self.figtxtbrain = plt.figtext(0.1, 0.98, "Brain - {}:{}({})".format(str(brain), str(brain.get_network()), str(brain.num_trainable_parameters())), fontsize=8, verticalalignment='top', bbox=props)
+        self.figtxtbrain = plt.figtext(0.1, 0.98, "Brain - {}:{}({})".format(str(brain), str(brain.get_model()), str(brain.num_trainable_parameters())), fontsize=8, verticalalignment='top', bbox=props)
         self.figtxt = plt.figtext(0.1, 0.95, 'Start', fontsize=8, verticalalignment='top', bbox=props)
         self.fig.colorbar(self.im1_obj, ax=axis_stimuli)
 
@@ -49,13 +49,13 @@ class Dashboard:
         self._axes_neural_graph.set_ylabel('Neural [%]')
         #self._axes_neural_graph.set_ylim(0, 10)
         self._line_brain_signals = []
-        all_brain_signals = list(brain.get_network().get_network_metrics().keys())+list(brain.get_network().network_diff(brain.get_network()).keys())
+        all_brain_signals = list(brain.get_model().get_network_metrics().keys()) + list(brain.get_model().network_diff(brain.get_model()).keys())
         for signal_name in all_brain_signals:
             self._line_brain_signals += self._axes_neural_graph.plot([], [], 'o-', color=utils.colorify(signal_name), label=signal_name, markersize=3,
                                                                   alpha=0.4)
 
         self._line_brain_compare = []
-        for signal_name in brain.get_network().network_diff(brain.get_network()):
+        for signal_name in brain.get_model().network_diff(brain.get_model()):
             self._line_brain_compare += self._axes_neural_graph.plot([], [], '^-', color=utils.colorify(signal_name), label=signal_name, markersize=3,
                                                                   alpha=0.4)
 

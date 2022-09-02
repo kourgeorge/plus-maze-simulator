@@ -30,7 +30,7 @@ class Stats:
 
     def dataframe_report(self, trial, report):
 
-        return OrderedDict([
+        dict=OrderedDict([
                                ('Trial', trial),
                                ('Stage', report.stage),
                                ('ActionDist', report.action_1hot),
@@ -38,11 +38,12 @@ class Stats:
                                ('Reward', report.reward),
                                ('WaterPreference', report.water_preference),
                                ('WaterCorrect', report.water_correct_percent),
-                               ('FoodCorrect', report.food_correct_percent)] +
-                           [(k, v) for k, v in self.reports[-1].brain.get_network().network_diff(
-                               self.get_last_day_in_previous_stage().brain.get_network()).items()] +
-                           [(k, v) for k, v in self.reports[-1].brain.get_network().get_network_metrics().items()])
-
+                               ('FoodCorrect', report.food_correct_percent)])
+        if isinstance(self.reports[-1].brain, ConsolidationBrain):
+            dict.update([(k, v) for k, v in self.reports[-1].brain.get_model().network_diff(
+                                   self.get_last_day_in_previous_stage().brain.get_model()).items()] +
+                               [(k, v) for k, v in self.reports[-1].brain.get_model().get_network_metrics().items()])
+        return dict
 
     def get_last_day_in_previous_stage(self):
         current_stage = self.reports[-1].stage

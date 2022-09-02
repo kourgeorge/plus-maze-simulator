@@ -10,7 +10,7 @@ class MotivationDependantBrain(ConsolidationBrain):
 		super().__init__(*args, **kwargs)
 
 	def think(self, obs, agent):
-		action_probs = self.network()(torch.FloatTensor(obs), agent.get_motivation().value)
+		action_probs = self.get_model()(torch.FloatTensor(obs), agent.get_motivation().value)
 		return action_probs
 
 

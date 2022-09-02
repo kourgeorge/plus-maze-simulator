@@ -20,9 +20,6 @@ class ConsolidationBrain(AbstractBrain):
 		self.consolidation_counter = 0
 		print("{}.{}: Num parameters: {}".format(str(self),str(learner.get_model()),self.num_trainable_parameters()))
 
-	def network(self) -> AbstractNetwork:
-		return self.learner.get_model()
-
 	def think(self, obs, agent):
 		action_probs = self.learner.get_model()(torch.FloatTensor(obs))
 		return action_probs
@@ -48,17 +45,17 @@ class ConsolidationBrain(AbstractBrain):
 		return np.mean(losses)
 
 	def save_model(self, path):
-		torch.save(self.network().state_dict(), path)
+		torch.save(self.get_model().state_dict(), path)
 
 	def load_model(self, path):
 		if os.path.exists(path):
-			self.network().load_state_dict(torch.load(path))
+			self.get_model().load_state_dict(torch.load(path))
 
 	def num_trainable_parameters(self):
-		return sum(p.numel() for p in self.network().parameters())
+		return sum(p.numel() for p in self.get_model().parameters())
 
-	def get_network(self):
-		return self.network()
+	def get_model(self):
+		return self.learner.get_model()
 
 
 class RandomBrain(AbstractBrain):
@@ -89,5 +86,5 @@ class RandomBrain(AbstractBrain):
 	def num_trainable_parameters(self):
 		return sum(p.numel() for p in self.network().parameters())
 
-	def get_network(self):
-		return self.network()
+	def get_model(self):
+		return self.learner.get_model()
