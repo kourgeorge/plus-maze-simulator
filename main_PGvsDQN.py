@@ -6,17 +6,18 @@ from lateoutcomeevaluationbrain import LateOutcomeEvaluationBrain
 from motivatedagent import MotivatedAgent
 from environment import PlusMazeOneHotCues, CueType
 
+import os
 import config
 from standardbrainnetwork import FullyConnectedNetwork, EfficientNetwork, SeparateMotivationAreasNetwork, \
-    FullyConnectedNetwork2Layers
-from learner import DQN, PG
+    FullyConnectedNetwork2Layers, TabularQ
+from learner import TD, DQN, PG
 from fixeddoorattentionbrain import FixedDoorAttentionBrain
 from motivationdependantbrain import MotivationDependantBrain
 from PlusMazeExperiment import PlusMazeExperiment, ExperimentStatus
 from behavioral_analysis import plot_days_per_stage, plot_behavior_results
 from consolidationbrain import ConsolidationBrain
 from rewardtype import RewardType
-from table_dqn_brain import TableDQNBrain,TD
+from tdbrain import TDBrain
 
 if __name__ == '__main__':
     env = PlusMazeOneHotCues(relevant_cue=CueType.ODOR)
@@ -25,7 +26,7 @@ if __name__ == '__main__':
     repetitions = 2
     agents_DQN_spec = []
     agents_PG_spec = []
-    agents_DQN_spec.append([TableDQNBrain, TD, TabularQ, config.MOTIVATED_REWARD, config.NON_MOTIVATED_REWARD])
+    agents_DQN_spec.append([TDBrain, TD, TabularQ, config.MOTIVATED_REWARD, config.NON_MOTIVATED_REWARD])
 
     agents_DQN_spec.append([ConsolidationBrain, DQN, FullyConnectedNetwork, config.MOTIVATED_REWARD, config.NON_MOTIVATED_REWARD])
     agents_PG_spec.append([ConsolidationBrain, PG, FullyConnectedNetwork, config.MOTIVATED_REWARD, config.NON_MOTIVATED_REWARD])

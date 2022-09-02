@@ -1,5 +1,6 @@
 __author__ = 'gkour'
 
+import numpy as np
 import torch
 import torch.nn.functional as F
 import torch.optim as optim
@@ -22,7 +23,7 @@ class AbstractLearner:
 
 
 class DQN(AbstractLearner):
-	def __init__(self, network: AbstractNetwork, optimizer=optim.SGD, learning_rate=0.01):
+	def __init__(self, network: AbstractNetwork, optimizer=optim.Adam, learning_rate=0.01):
 		super().__init__(network, optimizer)
 		self.optimizer = optimizer(self.model.parameters(), lr=learning_rate)
 
@@ -61,3 +62,21 @@ class PG(AbstractLearner):
 
 		self.optimizer.step()
 		return loss.item()
+
+
+class TD(AbstractLearner):
+	def __init__(self, model, learning_rate=0.01):
+		super().__init__(model=model, optimizer={'learning_rate': learning_rate})
+
+	def learn(self, state_batch, action_batch, reward_batch, action_values, nextstate_batch):
+
+		learning_rate = self.optimizer['learning_rate']
+		actions = np.argmax(action_batch, axis=1)
+		q_values = np.max(np.multiply(self.model(state_batch), action_batch), axis=1)
+		deltas = (reward_batch - q_values)
+		updated_q_values = q_values + learning_rate * deltas
+
+		for state, action, update_q_value in zip(state_batch, actions, updated_q_values):
+			self.model.set_state_action_value(state, action, update_q_value)
+
+		return np.mean(deltas)
