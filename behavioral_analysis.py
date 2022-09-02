@@ -58,8 +58,8 @@ def days_to_consider_in_each_stage(subject_reports, q=75):
 def plot_behavior_results(brain_type_stats, dirname=None):
 	stages = list(range(len(stage_names)))
 	days_each_stage = days_to_consider_in_each_stage(brain_type_stats)
-	b_signals = ['Correct', 'Reward', 'WaterPreference', 'WaterCorrect', 'FoodCorrect', 'Likelihood']
-	b_signals = ['Correct', 'CorrectNetwork', 'Likelihood']
+	b_signals = ['Correct', 'Reward', 'WaterPreference', 'WaterCorrect', 'FoodCorrect']
+	#b_signals = ['Correct', 'CorrectNetwork', 'Likelihood']
 	n_signals = list(brain_type_stats[0].reports[0].brain.get_model().get_network_metrics().keys()) + \
 				list(brain_type_stats[0].reports[0].brain.get_model().network_diff(brain_type_stats[0].reports[0].brain.get_model()).keys())
 

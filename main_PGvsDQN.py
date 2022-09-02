@@ -1,5 +1,7 @@
 __author__ = 'gkour'
 
+import os.path
+
 from lateoutcomeevaluationbrain import LateOutcomeEvaluationBrain
 from motivatedagent import MotivatedAgent
 from environment import PlusMazeOneHotCues, CueType
@@ -61,7 +63,8 @@ if __name__ == '__main__':
         print("{} out of {} experiments were aborted".format(aborted_experiments,
                                                              aborted_experiments + completed_experiments))
 
-    plot_days_per_stage(brains_reports)
+    plot_days_per_stage(brains_reports, file_path=os.path.join('Results', 'days_per_stage.png'))
+
     for brain_report in brains_reports:
         plot_behavior_results(brain_report)
 
