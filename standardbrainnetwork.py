@@ -6,6 +6,7 @@ import numpy as np
 import utils
 from Modules import ChannelProccessor
 
+norm = 'fro'
 
 class AbstractNetwork(nn.Module):
 
@@ -62,12 +63,10 @@ class TabularQ():
 		return {'num_entries': len(self.Q.keys())}
 
 	def network_diff(self, brain2):
-		diff = 0
-		for state in self.Q.keys():
-			diff += np.sum((self.Q[state]-brain2.Q[state])**2) if state in brain2.Q else np.sum(self.Q[state]**2)
-		return {'table_change': diff}
+		diff = [np.linalg.norm(self.Q[state] - brain2.Q[state]) for state in
+				set(self.Q.keys()).intersection(brain2.Q.keys())]
+		return {'table_change': np.mean(diff)*100}
 
-norm = 'fro'
 
 class FullyConnectedNetwork(AbstractNetwork):
 	def __init__(self, encoding_size, num_channels, num_actions):
