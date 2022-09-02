@@ -56,9 +56,8 @@ def PlusMazeExperiment(agent:MotivatedAgent, dashboard=False):
 
         trial += 1
         utils.episode_rollout(env, agent)
-
+        loss = agent.smarten()
         if trial % trials_in_day == 0:
-            loss = agent.smarten()
             stats.update_stats_from_agent(agent, trial, trials_in_day)
             pre_stage_transition_update()
 
