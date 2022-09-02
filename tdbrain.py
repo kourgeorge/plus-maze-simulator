@@ -8,10 +8,10 @@ import torch
 
 class TDBrain(AbstractBrain):
 
-    def __init__(self, learner:TD, reward_discount=0):
+    def __init__(self, learner:TD, reward_discount=0, batch_size=config.BATCH_SIZE):
         super().__init__(reward_discount)
         self.learner = learner
-
+        self.batch_size = batch_size
         self._reward_discount = reward_discount
         self.num_optimizations = 0
 
@@ -22,8 +22,8 @@ class TDBrain(AbstractBrain):
     def get_model(self):
         return self.learner.model
 
-    def consolidate(self, memory, agent, batch_size=config.BATCH_SIZE, replays=config.CONSOLIDATION_REPLAYS):
-        minibatch_size = min(batch_size, len(memory))
+    def consolidate(self, memory, agent, replays=config.CONSOLIDATION_REPLAYS):
+        minibatch_size = min(self.batch_size, len(memory))
         if minibatch_size == 0:
             return
 

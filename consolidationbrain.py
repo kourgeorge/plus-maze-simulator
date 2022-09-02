@@ -73,7 +73,7 @@ class RandomBrain(AbstractBrain):
 	def think(self, obs, agent):
 		return torch.softmax(torch.rand(1,4),  dim=1)
 
-	def consolidate(self, memory, agent, batch_size=config.BATCH_SIZE, iterations=config.CONSOLIDATION_REPLAYS):
+	def consolidate(self, memory, agent, iterations=config.CONSOLIDATION_REPLAYS):
 		return 0
 
 	def save_model(self, path):

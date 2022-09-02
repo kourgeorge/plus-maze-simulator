@@ -10,8 +10,8 @@ class LateOutcomeEvaluationBrain(MotivationDependantBrain):
 	def __init__(self, *args, **kwargs):
 		super().__init__(*args, **kwargs)
 
-	def consolidate(self, memory, agent, batch_size=config.BATCH_SIZE, replays=config.CONSOLIDATION_REPLAYS):
-		minibatch_size = min(batch_size, len(memory))
+	def consolidate(self, memory, agent, replays=config.CONSOLIDATION_REPLAYS):
+		minibatch_size = min(self.batch_size, len(memory))
 		if minibatch_size == 0:
 			return
 		losses = []
