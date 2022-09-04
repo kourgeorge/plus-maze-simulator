@@ -28,7 +28,7 @@ animal_batch = None
 rat = None
 architecture = None
 
-results_file_name = 'results_mean_stage_likelihood.pkl'
+results_file_name = 'fitting_results_{}.pkl'.format(get_timestamp())
 
 env = PlusMazeOneHotCues(relevant_cue=CueType.ODOR)
 
@@ -50,6 +50,8 @@ def llik_td(x):
 	rat_data = pd.read_csv(rat_data_path)
 
 	brain, learner, network = architecture
+
+	blockPrint()
 	agent = MotivatedAgent(brain(
 		learner(network(env.stimuli_encoding_size(), 2, env.num_actions()), learning_rate=lr), batch_size=batch_size),
 		motivation=RewardType.WATER,
@@ -68,14 +70,15 @@ def llik_td(x):
 		if len(stage_likelihood) == 0:
 			likelihood_stage[stage] = None
 		else:
-			likelihood_stage[stage] = np.mean(stage_likelihood)
+			likelihood_stage[stage] = np.nanmean(stage_likelihood)
 	return likelihood_stage, all_experiment_likelihoods
 
 
 def fun(x):
 	likelihood_stage, all_experiment_likelihoods = llik_td(x)
 	y = np.nanmean(likelihood_stage)
-	print("x={} ,y={}, stages={}".format(x, y, likelihood_stage))
+	print("{}.\tx={},\t\ty={:.3f},\tstages={}".format(brain_name(architecture), list(np.round(x, 4)), y,
+													  np.round(likelihood_stage, 3)))
 	return y
 
 
