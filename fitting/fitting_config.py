@@ -8,7 +8,7 @@ from tdbrain import TDBrain
 from learner import DQN, TD
 from motivationdependantbrain import MotivationDependantBrain
 from standardbrainnetwork import SeparateMotivationAreasNetwork, EfficientNetwork, FullyConnectedNetwork, \
-	FullyConnectedNetwork2Layers, TabularQ
+	FullyConnectedNetwork2Layers, TabularQ, SeparateMotivationAreasFCNetwork
 
 REPETITIONS = 3
 ANIMAL_DATA_PATH = './behavioral_data'
@@ -20,7 +20,7 @@ brains = [(TDBrain, TD, TabularQ),
 		  (ConsolidationBrain, DQN, FullyConnectedNetwork),
 		  (ConsolidationBrain, DQN, FullyConnectedNetwork2Layers),
 		  (ConsolidationBrain, DQN, EfficientNetwork),
-		  (FixedDoorAttentionBrain, DQN, EfficientNetwork),
+		  #(FixedDoorAttentionBrain, DQN, EfficientNetwork),
 		  (MotivationDependantBrain, DQN, SeparateMotivationAreasNetwork),
 		  (MotivationDependantBrain, DQN, SeparateMotivationAreasFCNetwork),
 		  (LateOutcomeEvaluationBrain, DQN, SeparateMotivationAreasNetwork),
