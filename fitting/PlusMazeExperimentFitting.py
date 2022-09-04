@@ -17,7 +17,7 @@ def PlusMazeExperimentFitting(agent: MotivatedAgent, rat_data, dashboard=False):
     env = PlusMazeOneHotCues(relevant_cue=CueType.ODOR)
     env.reset()
     stats = FittingStats(metadata={'brain': str(agent.get_brain()),
-                                'network': str(agent.get_brain().get_network()),
+                                'network': str(agent.get_brain().get_model()),
                                 'brain_params': agent.get_brain().num_trainable_parameters(),
                                 'motivated_reward': agent._motivated_reward_value,
                                 'non_motivated_reward': agent._non_motivated_reward_value,
@@ -34,7 +34,7 @@ def PlusMazeExperimentFitting(agent: MotivatedAgent, rat_data, dashboard=False):
     dashboard_screenshots_path = os.path.join('/Users/gkour/repositories/plusmaze/Results', '{}-{}'.format(agent.get_brain(),time.strftime("%Y%m%d-%H%M")))
 
     trial = 0
-    print('============================ Brain:{}, Network:{} ======================='.format(str(agent.get_brain()),str(agent.get_brain().get_network())))
+    print('============================ Brain:{}, Network:{} ======================='.format(str(agent.get_brain()), str(agent.get_brain().get_model())))
     print("Stage {}: {} - Water Motivated, odor relevant. (Odors: {}, Correct: {})".format(env._stage, stage_names[env._stage], [np.argmax(encoding) for encoding in env.get_odor_cues()],
                                                                                              np.argmax(env.get_correct_cue_value())))
     likelihood_list = []  # only on real data
