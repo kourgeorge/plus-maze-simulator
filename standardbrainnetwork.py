@@ -245,3 +245,35 @@ class SeparateMotivationAreasNetwork(AbstractNetwork):
 		food_dif = {'food_{}'.format(k): v for k, v in food_dif.items()}
 
 		return {**food_dif, **water_diff}
+
+
+class SeparateMotivationAreasFCNetwork(AbstractNetwork):
+
+	def __init__(self, encoding_size, num_channels, num_actions):
+		super().__init__()
+		self.model_food = FullyConnectedNetwork(encoding_size, num_channels, num_actions)
+		self.model_water = FullyConnectedNetwork(encoding_size, num_channels, num_actions)
+
+	def forward(self, x, motivation):
+		if motivation == 'water':
+			return self.model_water(x)
+		else:
+			return self.model_food(x)
+
+	def get_stimuli_layer(self):
+		return self.model_food[0].weight
+
+	def get_door_attention(self):
+		return torch.tensor([[0, 0, 0, 0], [0, 0, 0, 0]])
+
+	def get_dimension_attention(self):
+		return torch.tensor([[0, 0, 0, 0], [0, 0, 0, 0]])
+
+	def get_network_metrics(self):
+		return {'layer1_dim': utils.unsupervised_dimensionality(self.model_food.affine.weight.detach().numpy())}
+
+	def network_diff(self, network2):
+		affine1 = self.model_food.affine.weight.detach()
+		affine2 = network2.model_food.affine.weight.detach()
+		change = np.linalg.norm(affine1 - affine2, ord=norm)
+		return {'layer1_dim_change': change}

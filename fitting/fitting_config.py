@@ -22,6 +22,7 @@ brains = [(TDBrain, TD, TabularQ),
 		  (ConsolidationBrain, DQN, EfficientNetwork),
 		  (FixedDoorAttentionBrain, DQN, EfficientNetwork),
 		  (MotivationDependantBrain, DQN, SeparateMotivationAreasNetwork),
+		  (MotivationDependantBrain, DQN, SeparateMotivationAreasFCNetwork),
 		  (LateOutcomeEvaluationBrain, DQN, SeparateMotivationAreasNetwork),
 		  (RandomBrain, DQN, EfficientNetwork)
 		  ]
