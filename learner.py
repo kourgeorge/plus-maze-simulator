@@ -4,7 +4,7 @@ import numpy as np
 import torch
 import torch.nn.functional as F
 import torch.optim as optim
-from standardbrainnetwork import AbstractNetwork
+from standardbrainnetwork import AbstractNetwork, TabularQ, TabularAL
 
 torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
@@ -65,11 +65,10 @@ class PG(AbstractLearner):
 
 
 class TD(AbstractLearner):
-	def __init__(self, model, learning_rate=0.01):
+	def __init__(self, model: TabularQ, learning_rate=0.01):
 		super().__init__(model=model, optimizer={'learning_rate': learning_rate})
 
 	def learn(self, state_batch, action_batch, reward_batch, action_values, nextstate_batch):
-
 		learning_rate = self.optimizer['learning_rate']
 		actions = np.argmax(action_batch, axis=1)
 		q_values = np.max(np.multiply(self.model(state_batch), action_batch), axis=1)
@@ -78,5 +77,28 @@ class TD(AbstractLearner):
 
 		for state, action, update_q_value in zip(state_batch, actions, updated_q_values):
 			self.model.set_state_action_value(state, action, update_q_value)
+
+		return np.mean(deltas)
+
+
+class TDAL(AbstractLearner):
+	def __init__(self, model: TabularAL, learning_rate=0.01):
+		super().__init__(model=model, optimizer={'learning_rate': learning_rate})
+
+	def learn(self, state_batch, action_batch, reward_batch, action_values, nextstate_batch):
+		learning_rate = self.optimizer['learning_rate']
+		actions = np.argmax(action_batch, axis=1)
+		v_all_dims = np.max(np.multiply(self.model(state_batch), action_batch), axis=1)
+		deltas = (reward_batch - v_all_dims)
+		selected_odors, selected_colors = self.model.get_selected_door_stimuli(state_batch, actions)
+
+		#The update procedure
+		for selected_door, selected_odor, selected_color, delta in zip(actions, selected_odors, selected_colors, deltas):
+			self.model.V['odors'][selected_odor] = self.model.V['odors'][selected_odor] + \
+												   learning_rate * delta * self.model._phi_odor
+			self.model.V['colors'][selected_color] = self.model.V['colors'][selected_color] + \
+													learning_rate * delta * self.model._phi_color
+			self.model.V['spatial'][selected_door] = self.model.V['spatial'][selected_door] + \
+													learning_rate * delta * self.model._phi_spatial
 
 		return np.mean(deltas)

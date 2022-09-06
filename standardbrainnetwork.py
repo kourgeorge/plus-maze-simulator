@@ -30,8 +30,6 @@ class AbstractNetwork(nn.Module):
 
 
 class TabularQ():
-	def __str__(self):
-		return self.__class__.__name__
 
 	def __init__(self, encoding_size, num_channels, num_actions):
 		self._num_actions = num_actions
@@ -66,6 +64,71 @@ class TabularQ():
 		diff = [np.linalg.norm(self.Q[state] - brain2.Q[state]) for state in
 				set(self.Q.keys()).intersection(brain2.Q.keys())]
 		return {'table_change': np.mean(diff)*100}
+
+	def __str__(self):
+		return self.__class__.__name__
+
+
+class TabularAL():
+	def __str__(self):
+		return self.__class__.__name__
+
+	def __init__(self, encoding_size, num_channels, num_actions):
+		#encoding size is the number of different possible cue in each dimension
+		# num_channels is the number of doors
+		self._num_actions = num_actions
+		self.V = dict()
+		self.V['odors'] = np.zeros([encoding_size])
+		self.V['colors'] = np.zeros([encoding_size])
+		self.V['spatial'] = np.zeros([4])
+		self._phi_color = 0.3
+		self._phi_odor = 0.3
+		self._phi_spatial = 0.3
+
+	def __call__(self, *args, **kwargs):
+		states = args[0]
+		odor, color = self.get_selected_door_stimuli(states, range(4))
+		doors_value = self.odor_value(odor) + self.color_value(color) + self.spatial_value(range(4))
+		return doors_value
+
+	def odor_value(self, odors):
+		return self._phi_odor*self.V['odors'][odors]
+
+	def color_value(self, colors):
+		return self._phi_color * np.array(self.V['colors'])[colors]
+
+	def spatial_value(self, doors):
+		return self._phi_spatial * np.array(self.V['spatial'])[doors]
+
+	def get_selected_door_stimuli(self, states, doors):
+		cues = np.argmax(states[:, :, doors], axis=-1)
+		return cues[:,0], cues[:,1]
+
+	def set_state_action_value(self, state, action, value):
+		color = np.argmax(state[:, 1, action])
+		self.V['colors'][color] = value[0]
+		odor = np.argmax(state[:, 0, action])
+		self.V['odors'][odor] = value[1]
+
+	def get_stimuli_layer(self):
+		raise NotImplementedError()
+
+	def get_door_attention(self):
+		raise NotImplementedError()
+
+	def get_dimension_attention(self):
+		raise NotImplementedError()
+
+	def get_network_metrics(self):
+		return {'color': np.linalg.norm(self.V['colors'] ),
+				'odor':  np.linalg.norm(self.V['odors'] ),
+				'spatial':  np.linalg.norm(self.V['spatial'])}
+
+	def network_diff(self, brain2):
+		return {'color_change': np.linalg.norm(self.V['colors'] - brain2.V['colors']),
+				'odor_change':  np.linalg.norm(self.V['odors'] - brain2.V['odors']),
+				'spatial_change':  np.linalg.norm(self.V['spatial'] - brain2.V['spatial'])}
+
 
 
 class FullyConnectedNetwork(AbstractNetwork):
