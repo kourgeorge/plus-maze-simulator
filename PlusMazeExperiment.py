@@ -50,7 +50,7 @@ def PlusMazeExperiment(agent:MotivatedAgent, dashboard=False):
     print("Stage {}: {} - Water Motivated, odor relevant. (Odors: {}, Correct: {})".format(env._stage, stage_names[env._stage], [np.argmax(encoding) for encoding in env.get_odor_cues()],
                                                                                              np.argmax(env.get_correct_cue_value())))
 
-    while env._stage < len(stage_names):
+    while env.get_stage() < len(stage_names):
 
         if trial>trials_in_day*max_experiment_length:
             print("Agent failed to learn.")
@@ -76,7 +76,7 @@ def PlusMazeExperiment(agent:MotivatedAgent, dashboard=False):
 
             current_criterion = np.mean(stats.reports[-1].correct)
             reward = np.mean(stats.reports[-1].reward)
-            if current_criterion > config.SUCCESS_CRITERION_THRESHOLD and reward>0.6:
+            if current_criterion > config.SUCCESS_CRITERION_THRESHOLD:# and reward > 0.6:
                 #print(agent.get_brain().get_model().V)
                 set_next_stage(env, agent)
 
