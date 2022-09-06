@@ -18,9 +18,11 @@ stage_names = ['Baseline', 'IDshift', 'Mshift(Food)', 'MShift(Water)+IDshift', '
 trials_in_day = 100
 max_experiment_length = len(stage_names)*10 #days
 
+
 class ExperimentStatus(Enum):
     COMPLETED = 'completed'
     RUNNING = 'running'
+
 
 def PlusMazeExperiment(agent:MotivatedAgent, dashboard=False):
 
@@ -75,6 +77,7 @@ def PlusMazeExperiment(agent:MotivatedAgent, dashboard=False):
             current_criterion = np.mean(stats.reports[-1].correct)
             reward = np.mean(stats.reports[-1].reward)
             if current_criterion > config.SUCCESS_CRITERION_THRESHOLD and reward>0.6:
+                #print(agent.get_brain().get_model().V)
                 set_next_stage(env, agent)
 
     stats.metadata['experiment_status'] = ExperimentStatus.COMPLETED
@@ -100,8 +103,10 @@ def set_next_stage(env: PlusMaze, agent: MotivatedAgent):
                                                                                  np.argmax(env.get_correct_cue_value())))
     elif env.get_stage() == 4:
         env.set_relevant_cue(CueType.LIGHT)
+        env.set_random_odor_set()
         print("Stage {}: {} (Lights: {}. Correct {})".format(env._stage, stage_names[env._stage], [np.argmax(encoding) for encoding in env.get_light_cues()],
                                                                                  np.argmax(env.get_correct_cue_value())))
     elif env.get_stage() == 5:
         env._relevant_cue = CueType.SPATIAL
+        env.set_random_odor_set()
         print("Stage {}: {} (Correct Doors: {})".format(env._stage, stage_names[env._stage], env.get_correct_cue_value()))
