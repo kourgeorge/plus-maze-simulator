@@ -29,7 +29,7 @@ class AbstractNetwork(nn.Module):
 		raise NotImplementedError()
 
 
-class TabularQ():
+class TabularQ:
 
 	def __init__(self, encoding_size, num_channels, num_actions):
 		self._num_actions = num_actions
@@ -69,7 +69,12 @@ class TabularQ():
 		return self.__class__.__name__
 
 
-class TabularAL():
+def get_selected_door_stimuli(states, doors):
+	cues = np.argmax(states[:, :, doors], axis=-1)
+	return cues[:,0], cues[:,1]
+
+
+class TabularAL:
 	def __str__(self):
 		return self.__class__.__name__
 
@@ -81,34 +86,26 @@ class TabularAL():
 		self.V['odors'] = np.zeros([encoding_size])
 		self.V['colors'] = np.zeros([encoding_size])
 		self.V['spatial'] = np.zeros([4])
-		self._phi_color = 0.3
-		self._phi_odor = 0.3
-		self._phi_spatial = 0.3
+		self._phi = np.ones([3]) * 0.3
 
 	def __call__(self, *args, **kwargs):
 		states = args[0]
-		odor, color = self.get_selected_door_stimuli(states, range(4))
-		doors_value = self.odor_value(odor) + self.color_value(color) + self.spatial_value(range(4))
-		return doors_value
+		batch = states.shape[0]
+		odor, color = get_selected_door_stimuli(states, range(4))
+		data = np.stack([self.odor_value(odor), self.color_value(color),
+						 np.repeat(np.expand_dims(self.spatial_value(np.array(range(4))), axis=0), repeats=batch,
+								   axis=0)])
+		doors_value = np.matmul(np.expand_dims(utils.softmax(self._phi), axis=0), np.transpose(data, axes=(1, 0, 2)))
+		return np.squeeze(doors_value, axis=1)
 
 	def odor_value(self, odors):
-		return self._phi_odor*self.V['odors'][odors]
+		return self.V['odors'][odors]
 
 	def color_value(self, colors):
-		return self._phi_color * np.array(self.V['colors'])[colors]
+		return np.array(self.V['colors'])[colors]
 
 	def spatial_value(self, doors):
-		return self._phi_spatial * np.array(self.V['spatial'])[doors]
-
-	def get_selected_door_stimuli(self, states, doors):
-		cues = np.argmax(states[:, :, doors], axis=-1)
-		return cues[:,0], cues[:,1]
-
-	def set_state_action_value(self, state, action, value):
-		color = np.argmax(state[:, 1, action])
-		self.V['colors'][color] = value[0]
-		odor = np.argmax(state[:, 0, action])
-		self.V['odors'][odor] = value[1]
+		return np.array(self.V['spatial'])[doors]
 
 	def get_stimuli_layer(self):
 		raise NotImplementedError()
@@ -196,7 +193,6 @@ class FullyConnectedNetwork2Layers(FullyConnectedNetwork):
 		controller_change = np.linalg.norm(controller1 - controller2, ord=norm)
 		return {'layer1_change': affine_change,
 				'layer2_change': controller_change}
-
 
 class EfficientNetwork(AbstractNetwork):
 	"""This network handles the stimuli from each door similarly and separately. It first encodes each stimuli (channel)
@@ -308,7 +304,6 @@ class SeparateMotivationAreasNetwork(AbstractNetwork):
 		food_dif = {'food_{}'.format(k): v for k, v in food_dif.items()}
 
 		return {**food_dif, **water_diff}
-
 
 class SeparateMotivationAreasFCNetwork(AbstractNetwork):
 

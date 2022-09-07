@@ -88,17 +88,20 @@ class TDAL(AbstractLearner):
 	def learn(self, state_batch, action_batch, reward_batch, action_values, nextstate_batch):
 		learning_rate = self.optimizer['learning_rate']
 		actions = np.argmax(action_batch, axis=1)
-		v_all_dims = np.max(np.multiply(self.model(state_batch), action_batch), axis=1)
+
+		a = self.model(state_batch)
+		v_all_dims = a[np.arange(len(a)), actions]
+
 		deltas = (reward_batch - v_all_dims)
 		selected_odors, selected_colors = self.model.get_selected_door_stimuli(state_batch, actions)
 
 		#The update procedure
 		for selected_door, selected_odor, selected_color, delta in zip(actions, selected_odors, selected_colors, deltas):
 			self.model.V['odors'][selected_odor] = self.model.V['odors'][selected_odor] + \
-												   learning_rate * delta * self.model._phi_odor
+													learning_rate * delta * self.model._phi[0]
 			self.model.V['colors'][selected_color] = self.model.V['colors'][selected_color] + \
-													learning_rate * delta * self.model._phi_color
+													learning_rate * delta * self.model._phi[1]
 			self.model.V['spatial'][selected_door] = self.model.V['spatial'][selected_door] + \
-													learning_rate * delta * self.model._phi_spatial
+													learning_rate * delta * self.model._phi[2]
 
 		return np.mean(deltas)
