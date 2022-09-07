@@ -3,9 +3,9 @@ __author__ = 'gkour'
 from environment import PlusMazeOneHotCues, CueType
 from rewardtype import RewardType
 from standardbrainnetwork import FullyConnectedNetwork, EfficientNetwork, SeparateMotivationAreasNetwork, \
-    FullyConnectedNetwork2Layers, TabularQ, TabularAL
+    FullyConnectedNetwork2Layers, TabularQ, UniformAttentionTabular
 from fixeddoorattentionbrain import FixedDoorAttentionBrain
-from learner import DQN, TDAL, TD
+from learner import DQN, TDUniformAttention, TD
 from consolidationbrain import ConsolidationBrain
 from motivatedagent import MotivatedAgent
 from PlusMazeExperiment import PlusMazeExperiment
@@ -52,10 +52,9 @@ def test_tabularBrain():
 
 def test_tabularBrainNiv():
     env = PlusMazeOneHotCues(relevant_cue=CueType.ODOR)
-    learner = TDAL(learning_rate=0.01, model=TabularAL(env.stimuli_encoding_size(), 2, env.num_actions()))
-    brain = TDBrain(learner, env.num_actions(), batch_size=1)
-
-    agent = MotivatedAgent(brain,motivation=RewardType.WATER,
+    learner = TDUniformAttention(learning_rate=0.01, model=UniformAttentionTabular(env.stimuli_encoding_size(), 2, env.num_actions()))
+    brain = TDBrain(learner, env.num_actions(), batch_size=10)
+    agent = MotivatedAgent(brain, motivation=RewardType.WATER,
                                        motivated_reward_value=1, non_motivated_reward_value=0.3)
     experiment_stats = PlusMazeExperiment(agent, dashboard=False)
 
@@ -63,6 +62,6 @@ def test_tabularBrainNiv():
 
 
 if __name__ == '__main__':
-    test_FixedDoorAttentionBrain()
-    test_tabularBrain()
+    # test_FixedDoorAttentionBrain()
+    #test_tabularBrain()
     test_tabularBrainNiv()

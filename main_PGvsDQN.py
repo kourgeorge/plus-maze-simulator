@@ -9,8 +9,8 @@ from environment import PlusMazeOneHotCues, CueType
 import os
 import config
 from standardbrainnetwork import FullyConnectedNetwork, EfficientNetwork, SeparateMotivationAreasNetwork, \
-    FullyConnectedNetwork2Layers, TabularQ
-from learner import TD, DQN, PG
+    FullyConnectedNetwork2Layers, TabularQ, UniformAttentionTabular
+from learner import TD, DQN, PG, TDUniformAttention
 from fixeddoorattentionbrain import FixedDoorAttentionBrain
 from motivationdependantbrain import MotivationDependantBrain
 from PlusMazeExperiment import PlusMazeExperiment, ExperimentStatus
@@ -26,7 +26,9 @@ if __name__ == '__main__':
     repetitions = 2
     agents_DQN_spec = []
     agents_PG_spec = []
+
     agents_DQN_spec.append([TDBrain, TD, TabularQ, config.MOTIVATED_REWARD, config.NON_MOTIVATED_REWARD])
+    agents_DQN_spec.append([TDBrain, TDUniformAttention, UniformAttentionTabular, config.MOTIVATED_REWARD, config.NON_MOTIVATED_REWARD])
 
     agents_DQN_spec.append([ConsolidationBrain, DQN, FullyConnectedNetwork, config.MOTIVATED_REWARD, config.NON_MOTIVATED_REWARD])
     agents_PG_spec.append([ConsolidationBrain, PG, FullyConnectedNetwork, config.MOTIVATED_REWARD, config.NON_MOTIVATED_REWARD])

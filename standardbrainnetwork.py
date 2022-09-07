@@ -69,7 +69,7 @@ class TabularQ:
 		return self.__class__.__name__
 
 
-class TabularAL:
+class UniformAttentionTabular:
 	def __str__(self):
 		return self.__class__.__name__
 

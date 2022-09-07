@@ -4,7 +4,7 @@ import numpy as np
 import torch
 import torch.nn.functional as F
 import torch.optim as optim
-from standardbrainnetwork import AbstractNetwork, TabularQ, TabularAL
+from standardbrainnetwork import AbstractNetwork, TabularQ, UniformAttentionTabular
 
 torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
@@ -28,7 +28,8 @@ class DQN(AbstractLearner):
 		self.optimizer = optimizer(self.model.parameters(), lr=learning_rate)
 
 	def learn(self, state_batch, action_batch, reward_batch, action_values, nextstate_batch):
-		selected_action_value, _ = torch.max(action_values * action_batch, dim=1)
+		actions = torch.unsqueeze(torch.argmax(action_batch,dim=-1), dim=1)
+		selected_action_value = torch.squeeze(action_values.gather(1, actions))
 
 		# Compute Huber loss
 		loss = F.mse_loss(selected_action_value, reward_batch.detach())
@@ -81,8 +82,8 @@ class TD(AbstractLearner):
 		return np.mean(deltas)
 
 
-class TDAL(AbstractLearner):
-	def __init__(self, model: TabularAL, learning_rate=0.01):
+class TDUniformAttention(AbstractLearner):
+	def __init__(self, model: UniformAttentionTabular, learning_rate=0.01):
 		super().__init__(model=model, optimizer={'learning_rate': learning_rate})
 
 	def learn(self, state_batch, action_batch, reward_batch, action_values, nextstate_batch):

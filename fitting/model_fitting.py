@@ -23,7 +23,7 @@ import seaborn as sns
 import warnings
 warnings.filterwarnings("ignore")
 
-n_calls = 50
+n_calls = 30
 
 animal_batch = None
 rat = None
@@ -93,7 +93,7 @@ def run_all_data():
 	x0_lr = 0.15
 	x0_batch_size = 10
 
-	nmr = Real(name='nmr', low=0.0, high=1)
+	nmr = Real(name='nmr', low=-1, high=1)
 	lr = Real(name='lr', low=0.0001, high=0.2, prior='log-uniform')
 	batch_size = Integer(name='batch_size', low=1, high=20)
 	space = [nmr, lr, batch_size]
@@ -168,4 +168,4 @@ def plot_results(results_file_path):
 
 if __name__ == '__main__':
 	#run_all_data()
-	plot_results('fitting/fitting_results_2022_09_03_03_43.pkl')
+	plot_results('fitting/fitting_results_2022_09_07_10_17.pkl')
