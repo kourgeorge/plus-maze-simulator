@@ -2,7 +2,7 @@ __author__ = 'gkour'
 
 from utils import epsilon_greedy, dist_selection
 from ReplayMemory import ReplayMemory
-from abstractbrain import AbstractBrain
+from brains.abstractbrain import AbstractBrain
 from rewardtype import RewardType
 import numpy as np
 import torch

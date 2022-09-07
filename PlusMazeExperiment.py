@@ -1,6 +1,6 @@
 __author__ = 'gkour'
 
-from consolidationbrain import ConsolidationBrain
+from brains.consolidationbrain import ConsolidationBrain
 from environment import PlusMaze, PlusMazeOneHotCues, CueType
 from motivatedagent import MotivatedAgent
 from rewardtype import RewardType

@@ -2,13 +2,12 @@ __author__ = 'gkour'
 
 import numpy as np
 import config
-from abstractbrain import AbstractBrain
-from networklearners import TD
+from brains.abstractbrain import AbstractBrain
 import torch
 
-class MotivatedTDBrain(AbstractBrain):
+class TDBrain(AbstractBrain):
 
-    def __init__(self, learner:TD, reward_discount=0, batch_size=config.BATCH_SIZE):
+    def __init__(self, learner, reward_discount=0, batch_size=config.BATCH_SIZE):
         super().__init__(reward_discount)
         self.learner = learner
         self.batch_size = batch_size

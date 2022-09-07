@@ -4,7 +4,7 @@ import numpy as np
 from Stats import Stats
 from rewardtype import RewardType
 from ReplayMemory import ReplayMemory
-from consolidationbrain import ConsolidationBrain
+from brains.consolidationbrain import ConsolidationBrain
 
 
 class FittingStats(Stats):

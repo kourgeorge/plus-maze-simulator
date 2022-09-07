@@ -4,8 +4,8 @@ import torch
 import torch.nn.functional as F
 import torch.optim as optim
 
-from abstractlearner import AbstractLearner
-from networkmodels import AbstractNetworkModel
+from learners.abstractlearner import AbstractLearner
+from models.networkmodels import AbstractNetworkModel
 
 torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 

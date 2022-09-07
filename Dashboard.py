@@ -9,7 +9,7 @@ import pandas as pd
 
 import utils
 from environment import PlusMaze
-from consolidationbrain import ConsolidationBrain
+from brains.consolidationbrain import ConsolidationBrain
 
 plt.ion()
 

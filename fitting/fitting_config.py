@@ -1,14 +1,14 @@
 __author__ = 'gkour'
 
 import itertools
-from consolidationbrain import ConsolidationBrain, RandomBrain
-from fixeddoorattentionbrain import FixedDoorAttentionBrain
-from lateoutcomeevaluationbrain import LateOutcomeEvaluationBrain
-from tdbrain import TDBrain
-from motivationdependantbrain import MotivationDependantBrain
-from networkmodels import *
-from networklearners import *
-from tabularlearners import *
+from brains.consolidationbrain import ConsolidationBrain, RandomBrain
+from brains.fixeddoorattentionbrain import FixedDoorAttentionBrain
+from brains.lateoutcomeevaluationbrain import LateOutcomeEvaluationBrain
+from brains.tdbrain import TDBrain
+from brains.motivationdependantbrain import MotivationDependantBrain
+from models.networkmodels import *
+from learners.networklearners import *
+from learners.tabularlearners import *
 
 REPETITIONS = 3
 ANIMAL_DATA_PATH = './fitting/behavioral_data'

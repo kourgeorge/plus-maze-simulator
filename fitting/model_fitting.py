@@ -1,6 +1,5 @@
 import os
 import pickle
-import random
 import sys
 
 import pandas as pd

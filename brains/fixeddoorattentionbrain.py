@@ -2,7 +2,7 @@ __author__ = 'gkour'
 
 import torch
 from motivatedagent import MotivatedAgent
-from motivationdependantbrain import MotivationDependantBrain
+from brains.motivationdependantbrain import MotivationDependantBrain
 from rewardtype import RewardType
 
 

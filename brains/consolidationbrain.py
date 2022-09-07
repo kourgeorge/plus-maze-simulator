@@ -2,9 +2,9 @@ __author__ = 'gkour'
 
 import numpy as np
 import torch
-from abstractbrain import AbstractBrain
+from brains.abstractbrain import AbstractBrain
 import os.path
-from networklearners import AbstractLearner
+from learners.networklearners import AbstractLearner
 import config
 
 torch.device('cuda' if torch.cuda.is_available() else 'cpu')

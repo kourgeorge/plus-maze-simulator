@@ -1,21 +1,21 @@
 __author__ = 'gkour'
 
-from lateoutcomeevaluationbrain import LateOutcomeEvaluationBrain
+from brains.lateoutcomeevaluationbrain import LateOutcomeEvaluationBrain
 from motivatedagent import MotivatedAgent
 from environment import PlusMazeOneHotCues, CueType
 
 import os
 import config
-from networkmodels import *
-from networklearners import *
-from tabularlearners import *
-from fixeddoorattentionbrain import FixedDoorAttentionBrain
-from motivationdependantbrain import MotivationDependantBrain
+from models.networkmodels import *
+from learners.networklearners import *
+from learners.tabularlearners import *
+from brains.fixeddoorattentionbrain import FixedDoorAttentionBrain
+from brains.motivationdependantbrain import MotivationDependantBrain
 from PlusMazeExperiment import PlusMazeExperiment, ExperimentStatus
 from behavioral_analysis import plot_days_per_stage, plot_behavior_results
-from consolidationbrain import ConsolidationBrain, RandomBrain
+from brains.consolidationbrain import ConsolidationBrain, RandomBrain
 from rewardtype import RewardType
-from tdbrain import TDBrain
+from brains.tdbrain import TDBrain
 
 brains = [(TDBrain, TD, TabularQ),
           (TDBrain, TDUniformAttention, UniformAttentionTabular),
@@ -34,7 +34,7 @@ if __name__ == '__main__':
     env = PlusMazeOneHotCues(relevant_cue=CueType.ODOR)
     observation_size = env.state_shape()
 
-    repetitions = 1
+    repetitions = 2
 
     brains_reports = []
     for agent_spec in brains:

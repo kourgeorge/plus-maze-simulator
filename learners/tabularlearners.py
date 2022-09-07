@@ -2,8 +2,8 @@ __author__ = 'gkour'
 
 import torch
 
-from abstractlearner import AbstractLearner
-from tabularmodels import *
+from learners.abstractlearner import AbstractLearner
+from models.tabularmodels import *
 
 torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 

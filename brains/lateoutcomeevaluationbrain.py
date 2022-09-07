@@ -2,7 +2,7 @@ __author__ = 'gkour'
 
 import numpy as np
 import torch
-from motivationdependantbrain import MotivationDependantBrain
+from brains.motivationdependantbrain import MotivationDependantBrain
 import config
 
 class LateOutcomeEvaluationBrain(MotivationDependantBrain):

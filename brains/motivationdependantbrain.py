@@ -1,7 +1,7 @@
 __author__ = 'gkour'
 
 import torch
-from consolidationbrain import ConsolidationBrain
+from brains.consolidationbrain import ConsolidationBrain
 
 
 class MotivationDependantBrain(ConsolidationBrain):

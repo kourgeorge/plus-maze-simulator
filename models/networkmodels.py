@@ -4,7 +4,7 @@ import torch.nn as nn
 import torch
 import numpy as np
 import utils
-from Modules import ChannelProccessor
+from models.Modules import ChannelProccessor
 
 norm = 'fro'
 

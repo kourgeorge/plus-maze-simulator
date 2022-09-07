@@ -4,11 +4,11 @@ import numpy as np
 import pandas as pd
 from collections import OrderedDict
 import utils
+import copy
 from rewardtype import RewardType
 from ReplayMemory import ReplayMemory
-from consolidationbrain import ConsolidationBrain
-from abstractbrain import AbstractBrain
-import copy
+from brains.consolidationbrain import ConsolidationBrain
+from brains.abstractbrain import AbstractBrain
 from motivatedagent import MotivatedAgent
 
 
