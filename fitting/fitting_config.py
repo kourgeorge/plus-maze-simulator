@@ -9,7 +9,7 @@ from tdbrain import TDBrain
 from learner import DQN, TD, TDUniformAttention
 from motivationdependantbrain import MotivationDependantBrain
 from standardbrainnetwork import SeparateMotivationAreasNetwork, EfficientNetwork, FullyConnectedNetwork, \
-	FullyConnectedNetwork2Layers, TabularQ, SeparateMotivationAreasFCNetwork, UniformAttentionTabular
+	FullyConnectedNetwork2Layers, SeparateMotivationAreasFCNetwork, UniformAttentionNetwork
 
 REPETITIONS = 3
 ANIMAL_DATA_PATH = './fitting/behavioral_data'
