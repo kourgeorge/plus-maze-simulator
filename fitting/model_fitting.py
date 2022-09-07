@@ -23,7 +23,7 @@ import seaborn as sns
 import warnings
 warnings.filterwarnings("ignore")
 
-n_calls = 30
+n_calls = 20
 
 animal_batch = None
 rat = None
@@ -168,4 +168,4 @@ def plot_results(results_file_path):
 
 if __name__ == '__main__':
 	#run_all_data()
-	plot_results('fitting/fitting_results_2022_09_07_10_17.pkl')
+	plot_results('fitting/fitting_results_2022_09_07_15_23.pkl')

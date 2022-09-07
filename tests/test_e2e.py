@@ -2,10 +2,10 @@ __author__ = 'gkour'
 
 from environment import PlusMazeOneHotCues, CueType
 from rewardtype import RewardType
-from standardbrainnetwork import FullyConnectedNetwork, EfficientNetwork, SeparateMotivationAreasNetwork, \
-    FullyConnectedNetwork2Layers, UniformAttentionNetwork
+from networkmodels import *
 from fixeddoorattentionbrain import FixedDoorAttentionBrain
-from learner import DQN, TDUniformAttention, TD
+from networklearners import *
+from tabularlearners import *
 from consolidationbrain import ConsolidationBrain
 from motivatedagent import MotivatedAgent
 from PlusMazeExperiment import PlusMazeExperiment
@@ -60,6 +60,7 @@ def test_tabularBrainNiv():
     experiment_stats = PlusMazeExperiment(agent, dashboard=False)
 
     assert experiment_stats is not None
+
 
 def test_tabularUniformAttentionNetwork():
     env = PlusMazeOneHotCues(relevant_cue=CueType.ODOR)

@@ -4,8 +4,7 @@ import numpy as np
 import torch
 from abstractbrain import AbstractBrain
 import os.path
-from standardbrainnetwork import AbstractNetwork
-from learner import AbstractLearner
+from networklearners import AbstractLearner
 import config
 
 torch.device('cuda' if torch.cuda.is_available() else 'cpu')

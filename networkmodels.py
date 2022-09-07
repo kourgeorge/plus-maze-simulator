@@ -9,7 +9,7 @@ from Modules import ChannelProccessor
 norm = 'fro'
 
 
-class AbstractNetwork(nn.Module):
+class AbstractNetworkModel(nn.Module):
 
 	def __str__(self):
 		return self.__class__.__name__
@@ -30,9 +30,7 @@ class AbstractNetwork(nn.Module):
 		raise NotImplementedError()
 
 
-
-
-class UniformAttentionNetwork(AbstractNetwork):
+class UniformAttentionNetwork(AbstractNetworkModel):
 	def __init__(self, encoding_size, num_channels, num_actions):
 		super().__init__()
 		self.model_odor = nn.Linear(encoding_size, 1, bias=True)
@@ -68,7 +66,7 @@ class UniformAttentionNetwork(AbstractNetwork):
 		return {'odor_subnetwork_change': odor_change}
 
 
-class FullyConnectedNetwork(AbstractNetwork):
+class FullyConnectedNetwork(AbstractNetworkModel):
 	def __init__(self, encoding_size, num_channels, num_actions):
 		super().__init__()
 		self.affine = nn.Linear(num_channels * num_actions * encoding_size, num_actions, bias=True)
@@ -134,7 +132,7 @@ class FullyConnectedNetwork2Layers(FullyConnectedNetwork):
 		return {'layer1_change': affine_change,
 				'layer2_change': controller_change}
 
-class EfficientNetwork(AbstractNetwork):
+class EfficientNetwork(AbstractNetworkModel):
 	"""This network handles the stimuli from each door similarly and separately. It first encodes each stimuli (channel)
 	from each door (in a similar fashion) then attend the relevant stimuli and then the door. The encoding, attentions are learned"""
 
@@ -178,7 +176,7 @@ class EfficientNetwork(AbstractNetwork):
 	def network_diff(self, network2):
 		dim_attn1 = self.dim_attn.detach().numpy()
 		dim_attn2 = network2.dim_attn.detach().numpy()
-		dim_attn_change = EfficientNetwork.vector_change(dim_attn1,dim_attn2)
+		dim_attn_change = EfficientNetwork.vector_change(dim_attn1, dim_attn2)
 
 		door_attn1 = self.door_attn.detach().numpy()
 		door_attn2 = network2.door_attn.detach().numpy()
@@ -209,7 +207,7 @@ class EfficientNetwork(AbstractNetwork):
 		return utils.normalized_norm(u-v)
 		#return scipy.spatial.distance.cosine(color_proc1, color_proc2)
 
-class SeparateMotivationAreasNetwork(AbstractNetwork):
+class SeparateMotivationAreasNetwork(AbstractNetworkModel):
 
 	def __init__(self, encoding_size, num_channels, num_actions):
 		super().__init__()
@@ -245,7 +243,7 @@ class SeparateMotivationAreasNetwork(AbstractNetwork):
 
 		return {**food_dif, **water_diff}
 
-class SeparateMotivationAreasFCNetwork(AbstractNetwork):
+class SeparateMotivationAreasFCNetwork(AbstractNetworkModel):
 
 	def __init__(self, encoding_size, num_channels, num_actions):
 		super().__init__()

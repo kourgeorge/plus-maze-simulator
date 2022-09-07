@@ -3,7 +3,7 @@ __author__ = 'gkour'
 import numpy as np
 import config
 from abstractbrain import AbstractBrain
-from learner import TD
+from networklearners import TD
 import torch
 
 class MotivatedTDBrain(AbstractBrain):
