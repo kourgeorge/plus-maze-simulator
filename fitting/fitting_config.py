@@ -4,6 +4,7 @@ import itertools
 from consolidationbrain import ConsolidationBrain, RandomBrain
 from fixeddoorattentionbrain import FixedDoorAttentionBrain
 from lateoutcomeevaluationbrain import LateOutcomeEvaluationBrain
+from tabularmodels import UniformAttentionTabular, TabularQ
 from tdbrain import TDBrain
 from learner import DQN, TD, TDUniformAttention
 from motivationdependantbrain import MotivationDependantBrain
