@@ -8,6 +8,7 @@ from Modules import ChannelProccessor
 
 norm = 'fro'
 
+
 class AbstractNetwork(nn.Module):
 
 	def __str__(self):
@@ -125,6 +126,42 @@ class UniformAttentionTabular:
 		return {'color_change': np.linalg.norm(self.V['colors'] - brain2.V['colors']),
 				'odor_change':  np.linalg.norm(self.V['odors'] - brain2.V['odors']),
 				'spatial_change':  np.linalg.norm(self.V['spatial'] - brain2.V['spatial'])}
+
+
+class UniformAttentionNetwork(AbstractNetwork):
+	def __init__(self, encoding_size, num_channels, num_actions):
+		super().__init__()
+		self.model_odor = nn.Linear(encoding_size, 1, bias=True)
+		self.model_light = nn.Linear(encoding_size, 1, bias=True)
+		self.door_bias = nn.Parameter(nn.init.xavier_uniform_(torch.empty(size=(1, num_actions))), requires_grad=True)
+		self.phi = torch.ones([3,1])/3
+
+	def forward(self, x):
+		x_odor = x[:, 0]
+		x_light = x[:, 1]
+		odor_val = self.model_odor(x_odor)
+		light_val = self.model_light(x_light)
+		door_val = torch.unsqueeze(self.door_bias.repeat(x.shape[0], 1), dim=-1)
+		weighted_vals = torch.matmul(torch.cat([odor_val, light_val,door_val], dim=-1), torch.softmax(self.phi, axis=-1))
+		return torch.squeeze(weighted_vals, dim=2)
+
+	def get_stimuli_layer(self):
+		return self.model_food[0].weight
+
+	def get_door_attention(self):
+		return torch.tensor([[0, 0, 0, 0], [0, 0, 0, 0]])
+
+	def get_dimension_attention(self):
+		return torch.tensor([[0, 0, 0, 0], [0, 0, 0, 0]])
+
+	def get_network_metrics(self):
+		return {'layer1_dim': utils.normalized_norm(self.model_odor.weight.detach().numpy())}
+
+	def network_diff(self, network2):
+		odor_subnetwork = self.model_odor.weight.detach()
+		odor_subnetwork2 = network2.model_odor.weight.detach()
+		odor_change = np.linalg.norm(odor_subnetwork - odor_subnetwork2, ord=norm)
+		return {'odor_subnetwork_change': odor_change}
 
 
 class FullyConnectedNetwork(AbstractNetwork):
