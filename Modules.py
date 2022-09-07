@@ -4,10 +4,11 @@ import torch.nn as nn
 import torch
 from torch.nn import functional as F
 
+
 class FilterSum(nn.Module):
 	def __init__(self,shape,sum_dim):
 		super(FilterSum, self).__init__()
-		filter_size=list(shape)
+		filter_size = list(shape)
 		del filter_size[sum_dim]
 		self.affine = nn.Parameter(nn.init.xavier_uniform_(torch.empty(size=filter_size)))
 		self.sum_dim=sum_dim

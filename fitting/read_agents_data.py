@@ -98,8 +98,9 @@ def reward_type(row):
 def save_pd_to_csv(df, file_name):
     df.to_csv(file_name, index=False)
 
+
 if __name__ == '__main__':    
-    expr_data = {1: [1,2], 2: [1], 4: [6,7,8], 5: [1,2], 6: [10, 11]}
+    expr_data = {1: [1, 2], 2: [1], 4: [6, 7, 8], 5: [1, 2], 6: [10, 11]}
 
     for expr in expr_data:
         for rat in expr_data[expr]:
