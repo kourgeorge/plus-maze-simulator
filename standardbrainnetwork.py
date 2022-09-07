@@ -69,18 +69,11 @@ class TabularQ:
 		return self.__class__.__name__
 
 
-def get_selected_door_stimuli(states, doors):
-	cues = np.argmax(states[:, :, doors], axis=-1)
-	return cues[:,0], cues[:,1]
-
-
 class TabularAL:
 	def __str__(self):
 		return self.__class__.__name__
 
 	def __init__(self, encoding_size, num_channels, num_actions):
-		#encoding size is the number of different possible cue in each dimension
-		# num_channels is the number of doors
 		self._num_actions = num_actions
 		self.V = dict()
 		self.V['odors'] = np.zeros([encoding_size])
@@ -91,12 +84,19 @@ class TabularAL:
 	def __call__(self, *args, **kwargs):
 		states = args[0]
 		batch = states.shape[0]
-		odor, color = get_selected_door_stimuli(states, range(4))
+
+		cues = np.argmax(states, axis=-1)
+		odor = cues[:, 0]
+		color = cues[:, 1]
 		data = np.stack([self.odor_value(odor), self.color_value(color),
-						 np.repeat(np.expand_dims(self.spatial_value(np.array(range(4))), axis=0), repeats=batch,
-								   axis=0)])
+						 np.repeat(np.expand_dims(self.spatial_value(np.array(range(4))), axis=0), repeats=batch, axis=0)])
 		doors_value = np.matmul(np.expand_dims(utils.softmax(self._phi), axis=0), np.transpose(data, axes=(1, 0, 2)))
 		return np.squeeze(doors_value, axis=1)
+
+	def get_selected_door_stimuli(self, states, doors):
+		cues = np.argmax(states, axis=-1)
+		selected_cues = cues[np.arange(len(states)), :, doors]
+		return selected_cues[:, 0], selected_cues[:, 1]
 
 	def odor_value(self, odors):
 		return self.V['odors'][odors]
@@ -125,7 +125,6 @@ class TabularAL:
 		return {'color_change': np.linalg.norm(self.V['colors'] - brain2.V['colors']),
 				'odor_change':  np.linalg.norm(self.V['odors'] - brain2.V['odors']),
 				'spatial_change':  np.linalg.norm(self.V['spatial'] - brain2.V['spatial'])}
-
 
 
 class FullyConnectedNetwork(AbstractNetwork):

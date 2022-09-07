@@ -95,13 +95,14 @@ class TDAL(AbstractLearner):
 		deltas = (reward_batch - v_all_dims)
 		selected_odors, selected_colors = self.model.get_selected_door_stimuli(state_batch, actions)
 
-		#The update procedure
-		for selected_door, selected_odor, selected_color, delta in zip(actions, selected_odors, selected_colors, deltas):
-			self.model.V['odors'][selected_odor] = self.model.V['odors'][selected_odor] + \
-													learning_rate * delta * self.model._phi[0]
-			self.model.V['colors'][selected_color] = self.model.V['colors'][selected_color] + \
-													learning_rate * delta * self.model._phi[1]
-			self.model.V['spatial'][selected_door] = self.model.V['spatial'][selected_door] + \
-													learning_rate * delta * self.model._phi[2]
+		for odor in np.unique(selected_odors):
+			self.model.V['odors'][odor] = self.model.V['odors'][odor] + \
+										  np.mean(learning_rate * self.model._phi[0] * deltas[selected_odors == odor])
+		for color in np.unique(selected_colors):
+			self.model.V['colors'][color] = self.model.V['colors'][color] + \
+											np.mean(learning_rate * self.model._phi[1] * deltas[selected_colors == color])
+		for door in np.unique(actions):
+			self.model.V['spatial'][door] = self.model.V['spatial'][door] + \
+											np.mean(learning_rate * self.model._phi[2] * deltas[actions == door])
 
-		return np.mean(deltas)
+		return np.mean(deltas**2)
