@@ -102,3 +102,9 @@ class UniformAttentionTabular:
 		return {'color_change': np.linalg.norm(self.V['colors'] - brain2.V['colors']),
 				'odor_change':  np.linalg.norm(self.V['odors'] - brain2.V['odors']),
 				'spatial_change':  np.linalg.norm(self.V['spatial'] - brain2.V['spatial'])}
+
+
+class AttentionAtChoiceAndLearningTabular(UniformAttentionTabular):
+	def __init__(self,encoding_size, num_channels, num_actions):
+		super().__init__(encoding_size, num_channels, num_actions)
+

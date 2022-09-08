@@ -19,7 +19,9 @@ non_motivated_reward = [0, 0.3]
 learning_rates = [0.001, 0.01, 0.2]
 brains = [(TDBrain, TD, TabularQ),
 		  (TDBrain, TDUniformAttention, UniformAttentionTabular),
+		(TDBrain, TDUniformAttention, AttentionAtChoiceAndLearningTabular),
 		  (ConsolidationBrain, DQN, UniformAttentionNetwork),
+		  (ConsolidationBrain, DQN, AttentionAtChoiceAndLearningNetwork),
 		  (ConsolidationBrain, DQN, FullyConnectedNetwork),
 		  (ConsolidationBrain, DQN, FullyConnectedNetwork2Layers),
 		  (ConsolidationBrain, DQN, EfficientNetwork),

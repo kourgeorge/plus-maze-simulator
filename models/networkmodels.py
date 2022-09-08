@@ -36,7 +36,7 @@ class UniformAttentionNetwork(AbstractNetworkModel):
 		self.model_odor = nn.Linear(encoding_size, 1, bias=True)
 		self.model_light = nn.Linear(encoding_size, 1, bias=True)
 		self.door_bias = nn.Parameter(nn.init.xavier_uniform_(torch.empty(size=(1, num_actions))), requires_grad=True)
-		self.phi = torch.ones([3,1])/3
+		self.phi = torch.ones([3, 1])/3
 
 	def forward(self, x):
 		x_odor = x[:, 0]
@@ -51,10 +51,10 @@ class UniformAttentionNetwork(AbstractNetworkModel):
 		return self.model_food[0].weight
 
 	def get_door_attention(self):
-		return torch.tensor([[0, 0, 0, 0], [0, 0, 0, 0]])
+		return self.door_bias
 
 	def get_dimension_attention(self):
-		return torch.tensor([[0, 0, 0, 0], [0, 0, 0, 0]])
+		return self._phi
 
 	def get_network_metrics(self):
 		return {'layer1_dim': utils.normalized_norm(self.model_odor.weight.detach().numpy())}
@@ -64,6 +64,12 @@ class UniformAttentionNetwork(AbstractNetworkModel):
 		odor_subnetwork2 = network2.model_odor.weight.detach()
 		odor_change = np.linalg.norm(odor_subnetwork - odor_subnetwork2, ord=norm)
 		return {'odor_subnetwork_change': odor_change}
+
+
+class AttentionAtChoiceAndLearningNetwork(UniformAttentionNetwork):
+	def __init__(self, encoding_size, num_channels, num_actions):
+		super().__init__(encoding_size, num_channels, num_actions)
+		self.phi = nn.Parameter(self.phi, requires_grad=True)
 
 
 class FullyConnectedNetwork(AbstractNetworkModel):
@@ -131,6 +137,7 @@ class FullyConnectedNetwork2Layers(FullyConnectedNetwork):
 		controller_change = np.linalg.norm(controller1 - controller2, ord=norm)
 		return {'layer1_change': affine_change,
 				'layer2_change': controller_change}
+
 
 class EfficientNetwork(AbstractNetworkModel):
 	"""This network handles the stimuli from each door similarly and separately. It first encodes each stimuli (channel)
@@ -207,6 +214,7 @@ class EfficientNetwork(AbstractNetworkModel):
 		return utils.normalized_norm(u-v)
 		#return scipy.spatial.distance.cosine(color_proc1, color_proc2)
 
+
 class SeparateMotivationAreasNetwork(AbstractNetworkModel):
 
 	def __init__(self, encoding_size, num_channels, num_actions):
@@ -242,6 +250,7 @@ class SeparateMotivationAreasNetwork(AbstractNetworkModel):
 		food_dif = {'food_{}'.format(k): v for k, v in food_dif.items()}
 
 		return {**food_dif, **water_diff}
+
 
 class SeparateMotivationAreasFCNetwork(AbstractNetworkModel):
 

@@ -39,14 +39,18 @@ class TDUniformAttention(AbstractLearner):
 		deltas = (reward_batch - v_all_dims)
 		selected_odors, selected_colors = self.model.get_selected_door_stimuli(state_batch, actions)
 
+		phi = utils.softmax(self.model._phi)
 		for odor in np.unique(selected_odors):
 			self.model.V['odors'][odor] = self.model.V['odors'][odor] + \
-										  np.mean(learning_rate * self.model._phi[0] * deltas[selected_odors == odor])
+										  np.mean(learning_rate * phi[0] * deltas[selected_odors == odor])
 		for color in np.unique(selected_colors):
 			self.model.V['colors'][color] = self.model.V['colors'][color] + \
-											np.mean(learning_rate * self.model._phi[1] * deltas[selected_colors == color])
+											np.mean(learning_rate * phi[1] * deltas[selected_colors == color])
 		for door in np.unique(actions):
 			self.model.V['spatial'][door] = self.model.V['spatial'][door] + \
-											np.mean(learning_rate * self.model._phi[2] * deltas[actions == door])
+											np.mean(learning_rate * phi[2] * deltas[actions == door])
+
+		if isinstance(self.model, AttentionAtChoiceAndLearningTabular):
+			self.model._phi = self.model._phi + utils.softmax(self.model._phi) * learning_rate * np.mean(deltas)
 
 		return np.mean(deltas**2)
