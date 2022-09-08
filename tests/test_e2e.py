@@ -2,15 +2,15 @@ __author__ = 'gkour'
 
 from environment import PlusMazeOneHotCues, CueType
 from rewardtype import RewardType
-from networkmodels import *
-from fixeddoorattentionbrain import FixedDoorAttentionBrain
-from networklearners import *
-from tabularlearners import *
-from consolidationbrain import ConsolidationBrain
+from models.networkmodels import *
+from brains.fixeddoorattentionbrain import FixedDoorAttentionBrain
+from learners.networklearners import *
+from learners.tabularlearners import *
+from brains.consolidationbrain import ConsolidationBrain
 from motivatedagent import MotivatedAgent
 from PlusMazeExperiment import PlusMazeExperiment
-from tabularmodels import UniformAttentionTabular, TabularQ
-from tdbrain import TDBrain
+from models.tabularmodels import UniformAttentionTabular, TabularQ
+from brains.tdbrain import TDBrain
 
 
 def test_BasicDQNBrain():
