@@ -4,8 +4,8 @@ import numpy as np
 import os
 import time
 import config
+from PlusMazeExperiment import ExperimentStatus
 from environment import PlusMazeOneHotCues, CueType
-from PlusMazeExperiment import stage_names, ExperimentStatus, set_next_stage
 from motivatedagent import MotivatedAgent
 import fitting_utils as fitting_utils
 from Dashboard import Dashboard
@@ -35,7 +35,8 @@ def PlusMazeExperimentFitting(agent: MotivatedAgent, rat_data, dashboard=False):
 
     trial = 0
     print('============================ Brain:{}, Network:{} ======================='.format(str(agent.get_brain()), str(agent.get_brain().get_model())))
-    print("Stage {}: {} - Water Motivated, odor relevant. (Odors: {}, Correct: {})".format(env._stage, stage_names[env._stage], [np.argmax(encoding) for encoding in env.get_odor_cues()],
+    print("Stage {}: {} - Water Motivated, odor relevant. (Odors: {}, Correct: {})".format(env._stage, env.stage_names[env.get_stage()],
+                                                                                           [np.argmax(encoding) for encoding in env.get_odor_cues()],
                                                                                              np.argmax(env.get_correct_cue_value())))
     likelihood_list = []  # only on real data
     model_action_dists = np.empty([1, env.num_actions()])
@@ -67,7 +68,7 @@ def PlusMazeExperimentFitting(agent: MotivatedAgent, rat_data, dashboard=False):
 
         trial += 1
         if should_pass_to_next_stage(rat_data, trial):
-            set_next_stage(env, agent)
+            env.set_next_stage(agent)
 
     print("Likelihood - Average:{}, Median:{}".format(np.mean(likelihood_list), np.median(likelihood_list)))
     stats.metadata['experiment_status'] = ExperimentStatus.COMPLETED

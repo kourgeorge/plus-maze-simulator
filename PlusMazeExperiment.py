@@ -13,10 +13,9 @@ import os
 import time
 from enum import Enum
 
-stage_names = ['Baseline', 'IDshift', 'Mshift(Food)', 'MShift(Water)+IDshift', 'EDShift(Light)', 'EDshift(Spatial)']
 
 trials_in_day = 100
-max_experiment_length = len(stage_names)*10 #days
+max_experiment_length = len(PlusMazeOneHotCues.stage_names)*10 #days
 
 
 class ExperimentStatus(Enum):
@@ -24,16 +23,15 @@ class ExperimentStatus(Enum):
     RUNNING = 'running'
 
 
-def PlusMazeExperiment(agent:MotivatedAgent, dashboard=False):
-
-    env = PlusMazeOneHotCues(relevant_cue=CueType.ODOR)
+def PlusMazeExperiment(env: PlusMaze, agent:MotivatedAgent, dashboard=False):
     env.reset()
     stats = Stats(metadata={'brain': str(agent.get_brain()),
                                 'network': str(agent.get_brain().get_model()),
                                 'brain_params': agent.get_brain().num_trainable_parameters() if isinstance(agent.get_brain(), ConsolidationBrain) else 0,
                                 'motivated_reward': agent._motivated_reward_value,
                                 'non_motivated_reward': agent._non_motivated_reward_value,
-                                'experiment_status': ExperimentStatus.RUNNING})
+                                'experiment_status': ExperimentStatus.RUNNING,
+                                'stage_names': env.stage_names})
 
     if dashboard:
         dash = Dashboard(agent.get_brain())
@@ -47,10 +45,12 @@ def PlusMazeExperiment(agent:MotivatedAgent, dashboard=False):
 
     trial = 0
     print('============================ Brain:{}, Network:{} ======================='.format(str(agent.get_brain()), str(agent.get_brain().get_model())))
-    print("Stage {}: {} - Water Motivated, odor relevant. (Odors: {}, Correct: {})".format(env._stage, stage_names[env._stage], [np.argmax(encoding) for encoding in env.get_odor_cues()],
-                                                                                             np.argmax(env.get_correct_cue_value())))
+    print("Stage {}: {} - Water Motivated, odor relevant. (Odors: {}, Correct: {})".format(env.get_stage(),
+                                                                                           env.stage_names[env.get_stage()],
+                                                                                           [np.argmax(encoding) for encoding in env.get_odor_cues()],
+                                                                                            np.argmax(env.get_correct_cue_value())))
 
-    while env.get_stage() < len(stage_names):
+    while env.get_stage() < len(PlusMazeOneHotCues.stage_names):
 
         if trial>trials_in_day*max_experiment_length:
             print("Agent failed to learn.")
@@ -78,35 +78,9 @@ def PlusMazeExperiment(agent:MotivatedAgent, dashboard=False):
             reward = np.mean(stats.reports[-1].reward)
             if current_criterion > config.SUCCESS_CRITERION_THRESHOLD:# and reward > 0.6:
                 #print(agent.get_brain().get_model().V)
-                set_next_stage(env, agent)
+                env.set_next_stage(agent)
 
     stats.metadata['experiment_status'] = ExperimentStatus.COMPLETED
     return stats
 
 
-def set_next_stage(env: PlusMaze, agent: MotivatedAgent):
-    env.set_stage(env.get_stage()+1)
-    print('---------------------------------------------------------------------')
-    if env.get_stage() == 1:
-        env.set_random_odor_set()
-        #env.set_relevant_cue(CueType.LIGHT)
-        print("Stage {}: {} (Odors: {}, Correct:{})".format(env._stage, stage_names[env._stage], [np.argmax(encoding) for encoding in env.get_odor_cues()],np.argmax(env.get_correct_cue_value())))
-
-    elif env.get_stage() == 2:
-        agent.set_motivation(RewardType.FOOD)
-        print("Stage {}: {}".format(env._stage, stage_names[env._stage]))
-
-    elif env.get_stage() == 3:
-        agent.set_motivation(RewardType.WATER)
-        env.set_random_odor_set()
-        print("Stage {}: {} (Odors: {}. Correct {})".format(env._stage, stage_names[env._stage], [np.argmax(encoding) for encoding in env.get_odor_cues()],
-                                                                                 np.argmax(env.get_correct_cue_value())))
-    elif env.get_stage() == 4:
-        env.set_relevant_cue(CueType.LIGHT)
-        env.set_random_odor_set()
-        print("Stage {}: {} (Lights: {}. Correct {})".format(env._stage, stage_names[env._stage], [np.argmax(encoding) for encoding in env.get_light_cues()],
-                                                                                 np.argmax(env.get_correct_cue_value())))
-    elif env.get_stage() == 5:
-        env._relevant_cue = CueType.SPATIAL
-        env.set_random_odor_set()
-        print("Stage {}: {} (Correct Doors: {})".format(env._stage, stage_names[env._stage], env.get_correct_cue_value()))

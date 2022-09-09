@@ -135,7 +135,7 @@ def plot_results(results_file_path):
 				   'bs': np.round(brain_results['values'][2], 3)}
 			ds = ds.append(row, ignore_index=True)
 			for stage in range(5):
-				ds[PlusMazeExperiment.stage_names[stage]] = np.stack(list(ds['stages']))[:, stage]
+				ds[PlusMazeOneHotCues.stage_names[stage]] = np.stack(list(ds['stages']))[:, stage]
 
 	# params = "(nmr:{}, lr:{}, bs:{})".format(*np.round(brain_results['values'], 3))
 	# print("{}, {}: \t{} {}".format(rat, brain, np.round(brain_results['likelihood'],3), params))
@@ -145,7 +145,7 @@ def plot_results(results_file_path):
 
 	sns.set_theme(style="darkgrid")
 
-	df_unpivot = pd.melt(ds, id_vars=['brain', 'animal'], value_vars=['likelihood']+PlusMazeExperiment.stage_names[0:5])
+	df_unpivot = pd.melt(ds, id_vars=['brain', 'animal'], value_vars=['likelihood']+PlusMazeOneHotCues.stage_names[0:5])
 	df_unpivot['likelihood'] = df_unpivot['value']
 	sns.boxplot(x='variable', y='likelihood', hue='brain', data=df_unpivot)
 	del ds['stages']
@@ -166,4 +166,4 @@ def plot_results(results_file_path):
 
 if __name__ == '__main__':
 	#run_all_data()
-	plot_results('fitting/fitting_results_2022_09_08_02_48.pkl')
+	plot_results('fitting/before_flavia_before_refactor.pkl')

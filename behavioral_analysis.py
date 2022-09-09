@@ -5,13 +5,11 @@ import matplotlib.pyplot as plt
 import numpy as np
 from scipy.stats import sem
 import time
-from PlusMazeExperiment import stage_names
-
 import utils
 
 
 def plot_days_per_stage(all_brains_types_stats, file_path):
-	stages = list(range(len(stage_names)))
+
 	width = 0.7/len(all_brains_types_stats)
 	fig, ax = plt.subplots(figsize=(10, 6))
 	brain_names = []
@@ -20,6 +18,7 @@ def plot_days_per_stage(all_brains_types_stats, file_path):
 		repetitions = len(brain_type_stats)
 		days_per_stage_brain_type = []
 		brain_names+=[brain_type_stats[0].metadata['brain']]
+		stages = list(range(len(brain_type_stats[0].metadata['stage_names'])))
 		for experiment_stats in brain_type_stats:
 			c = Counter(list(experiment_stats.epoch_stats_df['Stage']))
 			days_per_stage_brain_type.append([c[i] for i in stages])
@@ -32,7 +31,7 @@ def plot_days_per_stage(all_brains_types_stats, file_path):
 												 brain_type_stats[0].metadata['brain_params']), capsize=2)
 		stats_all_brains[i] = days_per_stage_brain_type
 
-	plt.xticks(np.array(stages) + width / 2 * len(all_brains_types_stats), stage_names, rotation=0, fontsize='10', horizontalalignment='center')
+	plt.xticks(np.array(stages) + width / 2 * len(all_brains_types_stats), stages, rotation=0, fontsize='10', horizontalalignment='center')
 
 	plt.title("Days Per stage. #reps={}".format(repetitions))
 	plt.legend()
@@ -41,7 +40,7 @@ def plot_days_per_stage(all_brains_types_stats, file_path):
 
 
 def days_to_consider_in_each_stage(subject_reports, q=75):
-	stages = list(range(len(stage_names)))
+	stages = list(range(len(subject_reports[0].metadata['stage_names'])))
 	days_per_stage = []
 	for experiment_report_df in subject_reports:
 		c = Counter(list(experiment_report_df.epoch_stats_df['Stage']))
@@ -56,7 +55,6 @@ def days_to_consider_in_each_stage(subject_reports, q=75):
 
 
 def plot_behavior_results(brain_type_stats, dirname=None):
-	stages = list(range(len(stage_names)))
 	days_each_stage = days_to_consider_in_each_stage(brain_type_stats)
 	b_signals = ['Correct', 'Reward', 'WaterPreference', 'WaterCorrect', 'FoodCorrect']
 	#b_signals = ['Correct', 'CorrectNetwork', 'Likelihood']
@@ -66,7 +64,7 @@ def plot_behavior_results(brain_type_stats, dirname=None):
 	results_dict = {}
 	for signal in b_signals+n_signals:
 		results_dict[signal] = np.ndarray(shape=[len(brain_type_stats), sum(days_each_stage)])
-
+	stages = list(range(len(brain_type_stats[0].metadata['stage_names'])))
 	stage_indices = np.insert(np.cumsum(days_each_stage),0,0)
 	for i, stat in enumerate(brain_type_stats):
 		for stage in stages:

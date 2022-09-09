@@ -2,7 +2,7 @@ __author__ = 'gkour'
 
 from brains.lateoutcomeevaluationbrain import LateOutcomeEvaluationBrain
 from motivatedagent import MotivatedAgent
-from environment import PlusMazeOneHotCues, CueType
+from environment import PlusMazeOneHotCues2ActiveDoors, CueType, PlusMazeOneHotCues
 
 import os
 import config
@@ -31,9 +31,6 @@ brains = [(TDBrain, TD, TabularQ),
 
 
 if __name__ == '__main__':
-    env = PlusMazeOneHotCues(relevant_cue=CueType.ODOR)
-    observation_size = env.state_shape()
-
     repetitions = 2
 
     brains_reports = []
@@ -42,12 +39,13 @@ if __name__ == '__main__':
         aborted_experiments = 0
         brain_repetition_reports = [None] * repetitions
         while completed_experiments < repetitions:
+            env = PlusMazeOneHotCues(relevant_cue=CueType.ODOR)
             (brain, learner, model) = agent_spec
             agent = MotivatedAgent(brain(learner(model(env.stimuli_encoding_size(), 2, env.num_actions()),
                                                  learning_rate=config.LEARNING_RATE), batch_size=config.BATCH_SIZE),
                                    motivation=RewardType.WATER, motivated_reward_value=config.MOTIVATED_REWARD,
                                    non_motivated_reward_value=config.NON_MOTIVATED_REWARD)
-            experiment_stats = PlusMazeExperiment(agent, dashboard=False)
+            experiment_stats = PlusMazeExperiment(env, agent, dashboard=False)
             if experiment_stats.metadata['experiment_status'] == ExperimentStatus.COMPLETED:
                 brain_repetition_reports[completed_experiments] = experiment_stats
                 completed_experiments += 1

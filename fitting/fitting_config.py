@@ -11,7 +11,7 @@ from learners.networklearners import *
 from learners.tabularlearners import *
 
 REPETITIONS = 3
-ANIMAL_DATA_PATH = './fitting/behavioral_data'
+ANIMAL_DATA_PATH = './fitting/motivation_behavioral_data'
 ANIMAL_BATCHES = {1: [1, 2], 2: [1], 4: [6, 7, 8], 5: [1, 2], 6: [10, 11]}
 #ANIMAL_BATCHES = {1: [1, 2],  2: [1], 4: [6, 7]}
 

@@ -3,6 +3,7 @@ __author__ = 'gkour'
 import random
 import numpy as np
 import utils
+from motivatedagent import MotivatedAgent
 from rewardtype import RewardType
 from enum import Enum
 
@@ -14,6 +15,8 @@ class CueType(Enum):
 
 
 class PlusMaze:
+    stage_names = ['Baseline', 'IDshift', 'Mshift(Food)', 'MShift(Water)+IDshift', 'EDShift(Light)', 'EDshift(Spatial)']
+
     def __init__(self, relevant_cue: CueType=CueType.ODOR):
         # relevant_cue: 0 is odor, 1 is light
         # correct_value: 1/-1 the identity of the correct cue
@@ -144,6 +147,32 @@ class PlusMaze:
                           self._odor_cues[arm3O] + self._light_cues[arm3L] +
                           self._odor_cues[1 - arm3O] + self._light_cues[1 - arm3L])
 
+    def set_next_stage(env, agent: MotivatedAgent):
+        env.set_stage(env.get_stage()+1)
+        print('---------------------------------------------------------------------')
+        if env.get_stage() == 1:
+            env.set_random_odor_set()
+            #env.set_relevant_cue(CueType.LIGHT)
+            print("Stage {}: {} (Odors: {}, Correct:{})".format(env._stage, env.stage_names[env._stage], [np.argmax(encoding) for encoding in env.get_odor_cues()],np.argmax(env.get_correct_cue_value())))
+
+        elif env.get_stage() == 2:
+            agent.set_motivation(RewardType.FOOD)
+            print("Stage {}: {}".format(env._stage, env.stage_names[env._stage]))
+
+        elif env.get_stage() == 3:
+            agent.set_motivation(RewardType.WATER)
+            env.set_random_odor_set()
+            print("Stage {}: {} (Odors: {}. Correct {})".format(env._stage, env.stage_names[env._stage], [np.argmax(encoding) for encoding in env.get_odor_cues()],
+                                                                                     np.argmax(env.get_correct_cue_value())))
+        elif env.get_stage() == 4:
+            env.set_relevant_cue(CueType.LIGHT)
+            env.set_random_odor_set()
+            print("Stage {}: {} (Lights: {}. Correct {})".format(env._stage, env.stage_names[env._stage], [np.argmax(encoding) for encoding in env.get_light_cues()],
+                                                                                     np.argmax(env.get_correct_cue_value())))
+        elif env.get_stage() == 5:
+            env._relevant_cue = CueType.SPATIAL
+            env.set_random_odor_set()
+            print("Stage {}: {} (Correct Doors: {})".format(env._stage, env.stage_names[env._stage], env.get_correct_cue_value()))
 
 class PlusMazeOneHotCues(PlusMaze):
     def __init__(self, *args, **kwargs):
@@ -238,3 +267,62 @@ class PlusMazeOneHotCues(PlusMaze):
         while c1 in old_cues or c2 in old_cues:
             c1, c2 = random.sample(range(0, encoding_size), 2)
         return [np.eye(encoding_size)[c1], np.eye(encoding_size)[c2]]
+
+
+class PlusMazeOneHotCues2ActiveDoors(PlusMazeOneHotCues):
+    stage_names = ['Baseline', 'IDshift1', 'IDshift2', 'EDShift(Light)']
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+    def set_state(self, state):
+        raise NotImplementedError()
+
+    def random_state(self):
+        active_doors = random.sample(range(0, 4), 2)
+        non_active_doors = list(set(range(0,4)).difference(active_doors))
+        arm1O = random.choice([0, 1])
+        arm1L = random.choice([0, 1])
+
+        state = np.ndarray(shape=[2, 4, self.stimuli_encoding_size()])
+
+        state[0, active_doors[0], :] = self._odor_cues[arm1O]
+        state[0, active_doors[1], :] = self._odor_cues[1-arm1O]
+
+        state[1, active_doors[0], :] = self._light_cues[arm1L]
+        state[1, active_doors[1], :] = self._light_cues[1 - arm1L]
+
+        state[:, non_active_doors[0], :] = -1 * np.ones_like(state[:, non_active_doors[0], :])
+        state[:, non_active_doors[1], :] = -1 * np.ones_like(state[:, non_active_doors[1], :])
+
+        return state
+
+    def step(self, action):
+        selected_cues = self._state[:, action, :]
+        self._state = np.ones(self.state_shape())
+        if (self._relevant_cue == CueType.SPATIAL and action in self._correct_spatial_cues) or \
+                (self._relevant_cue != CueType.SPATIAL and
+                 np.array_equal(selected_cues[self._relevant_cue.value, :], self.get_correct_cue_value())):
+            outcome = RewardType.WATER
+            return self._state, outcome, 1, self._get_step_info(outcome)
+        return self._state, RewardType.NONE, 1, self._get_step_info(RewardType.NONE)
+
+    def set_next_stage(env, agent: MotivatedAgent):
+        env.set_stage(env.get_stage()+1)
+        print('---------------------------------------------------------------------')
+        if env.get_stage() == 1:
+            env.set_random_odor_set()
+            #env.set_relevant_cue(CueType.LIGHT)
+            print("Stage {}: {} (Odors: {}, Correct:{})".format(env._stage, env.stage_names[env._stage], [np.argmax(encoding) for encoding in env.get_odor_cues()],np.argmax(env.get_correct_cue_value())))
+
+        elif env.get_stage() == 2:
+            env.set_random_odor_set()
+            print("Stage {}: {}".format(env.get_stage(), env.stage_names[env._stage]))
+
+        elif env.get_stage() == 3:
+            env.set_relevant_cue(CueType.LIGHT)
+            env.set_random_odor_set()
+            print("Stage {}: {} (Lights: {}. Correct {})".format(env._stage, env.stage_names[env._stage], [np.argmax(encoding) for encoding in env.get_light_cues()],
+                                                                                     np.argmax(env.get_correct_cue_value())))
+
+
