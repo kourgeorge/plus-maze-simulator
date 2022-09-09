@@ -19,7 +19,9 @@ from brains.tdbrain import TDBrain
 
 brains = [(TDBrain, TD, TabularQ),
           (TDBrain, TDUniformAttention, UniformAttentionTabular),
+          (TDBrain, TDUniformAttention, AttentionAtChoiceAndLearningTabular),
           (ConsolidationBrain, DQN, UniformAttentionNetwork),
+          (ConsolidationBrain, DQN, AttentionAtChoiceAndLearningNetwork),
           (ConsolidationBrain, DQN, FullyConnectedNetwork),
           (ConsolidationBrain, DQN, FullyConnectedNetwork2Layers),
           (ConsolidationBrain, DQN, EfficientNetwork),
