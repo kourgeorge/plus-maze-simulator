@@ -99,9 +99,14 @@ def save_pd_to_csv(df, file_name):
     df.to_csv(file_name, index=False)
 
 
-if __name__ == '__main__':    
+def export_motivational_experiment_data():
     expr_data = {1: [1, 2], 2: [1], 4: [6, 7, 8], 5: [1, 2], 6: [10, 11]}
 
     for expr in expr_data:
         for rat in expr_data[expr]:
-            save_pd_to_csv(get_all_data_from_csv_for_agent(expr,rat), './fitting/behavioral_data/output_expr{}_rat{}.csv'.format(expr, rat))
+            save_pd_to_csv(get_all_data_from_csv_for_agent(expr,rat), './fitting/motivation_behavioral_data/output_expr{}_rat{}.csv'.format(expr, rat))
+
+
+if __name__ == '__main__':
+
+    export_motivational_experiment_data()
