@@ -99,3 +99,7 @@ def unsupervised_dimensionality(samples_embedding, explained_variance=0.95):
 def normalized_norm(u, ord=None):
     u = np.asarray(u)
     return np.linalg.norm(u, ord=ord)/u.size
+
+
+def states_encoding_to_cues(states, encoding_size):
+    return np.argmax(states, axis=-1) + encoding_size * np.all(states == 0, axis=-1)

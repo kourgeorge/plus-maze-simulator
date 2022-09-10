@@ -51,6 +51,8 @@ class TDUniformAttention(AbstractLearner):
 											np.mean(learning_rate * phi[2] * deltas[actions == door])
 
 		if isinstance(self.model, AttentionAtChoiceAndLearningTabular):
-			self.model._phi = self.model._phi + utils.softmax(self.model._phi) * learning_rate * np.mean(deltas)
+			beta = (np.mean(deltas)+1)*5
+			#print(beta)
+			self.model._phi = self.model._phi + utils.softmax(self.model._phi, beta)
 
 		return np.mean(deltas**2)

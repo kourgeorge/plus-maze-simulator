@@ -11,18 +11,19 @@ class TabularQ:
 	def __init__(self, encoding_size, num_channels, num_actions):
 		self._num_actions = num_actions
 		self.Q = dict()
+		self.encoding_size = encoding_size
 
 	def __call__(self, *args, **kwargs):
 		state = args[0]
 		state_actions_value = []
-		for obs in np.argmax(state, axis=-1):
+		for obs in utils.states_encoding_to_cues(state, self.encoding_size):
 			if obs.tostring() not in self.Q.keys():
 				self.Q[obs.tostring()] = 0.5 * np.ones(self._num_actions)
 			state_actions_value.append(self.Q[obs.tostring()])
 		return state_actions_value
 
 	def set_state_action_value(self, state, action, value):
-		obs = np.argmax(state, axis=-1)
+		obs = utils.states_encoding_to_cues(state, self.encoding_size)
 		self.Q[obs.tostring()][action] = value
 
 	def get_stimuli_layer(self):
@@ -51,10 +52,11 @@ class UniformAttentionTabular:
 		return self.__class__.__name__
 
 	def __init__(self, encoding_size, num_channels, num_actions):
+		self.encoding_size=encoding_size
 		self._num_actions = num_actions
 		self.V = dict()
-		self.V['odors'] = np.zeros([encoding_size])
-		self.V['colors'] = np.zeros([encoding_size])
+		self.V['odors'] = np.zeros([encoding_size+1])
+		self.V['colors'] = np.zeros([encoding_size+1])
 		self.V['spatial'] = np.zeros([4])
 		self._phi = np.ones([3]) * 0.3
 
@@ -62,7 +64,7 @@ class UniformAttentionTabular:
 		states = args[0]
 		batch = states.shape[0]
 
-		cues = np.argmax(states, axis=-1)
+		cues = utils.states_encoding_to_cues(states, self.encoding_size)
 		odor = cues[:, 0]
 		color = cues[:, 1]
 		data = np.stack([self.odor_value(odor), self.color_value(color),
@@ -71,7 +73,7 @@ class UniformAttentionTabular:
 		return np.squeeze(doors_value, axis=1)
 
 	def get_selected_door_stimuli(self, states, doors):
-		cues = np.argmax(states, axis=-1)
+		cues = utils.states_encoding_to_cues(states, self.encoding_size)
 		selected_cues = cues[np.arange(len(states)), :, doors]
 		return selected_cues[:, 0], selected_cues[:, 1]
 
