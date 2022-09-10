@@ -32,7 +32,7 @@ brains = [(TDBrain, TD, TabularQ),
           ]
 
 
-if __name__ == '__main__':
+def run_simulation(env):
     repetitions = 2
 
     brains_reports = []
@@ -41,7 +41,8 @@ if __name__ == '__main__':
         aborted_experiments = 0
         brain_repetition_reports = [None] * repetitions
         while completed_experiments < repetitions:
-            env = PlusMazeOneHotCues(relevant_cue=CueType.ODOR)
+            #env = PlusMazeOneHotCues2ActiveDoors(relevant_cue=CueType.ODOR)
+            env.init()
             (brain, learner, model) = agent_spec
             agent = MotivatedAgent(brain(learner(model(env.stimuli_encoding_size(), 2, env.num_actions()),
                                                  learning_rate=config.LEARNING_RATE), batch_size=config.BATCH_SIZE),
@@ -62,4 +63,8 @@ if __name__ == '__main__':
     for brain_report in brains_reports:
         plot_behavior_results(brain_report)
 
-    x=1
+
+if __name__ == '__main__':
+    env = PlusMazeOneHotCues2ActiveDoors(relevant_cue=CueType.ODOR)
+    run_simulation(env)
+    x = 1
