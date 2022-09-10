@@ -109,13 +109,10 @@ class FullyConnectedNetwork2Layers(FullyConnectedNetwork):
 		self.controller = nn.Linear(num_actions, num_actions, bias=True)
 		self.model = torch.nn.Sequential(
 			self.affine,
-			nn.Dropout(p=0.6),
+			nn.Dropout(p=0),
 			nn.Sigmoid(),
 			self.controller,
 		)
-
-	def forward(self, x):
-		return self.model(torch.flatten(x, start_dim=1))
 
 	def get_stimuli_layer(self):
 		return self.model[0].weight
