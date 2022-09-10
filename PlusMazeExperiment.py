@@ -15,7 +15,6 @@ from enum import Enum
 
 
 trials_in_day = 100
-max_experiment_length = len(PlusMazeOneHotCues.stage_names)*10 #days
 
 
 class ExperimentStatus(Enum):
@@ -24,6 +23,7 @@ class ExperimentStatus(Enum):
 
 
 def PlusMazeExperiment(env: PlusMaze, agent:MotivatedAgent, dashboard=False):
+    max_experiment_length = len(env.stage_names) * 10  # days
     env.reset()
     stats = Stats(metadata={'brain': str(agent.get_brain()),
                                 'network': str(agent.get_brain().get_model()),
@@ -50,7 +50,7 @@ def PlusMazeExperiment(env: PlusMaze, agent:MotivatedAgent, dashboard=False):
                                                                                            [np.argmax(encoding) for encoding in env.get_odor_cues()],
                                                                                             np.argmax(env.get_correct_cue_value())))
 
-    while env.get_stage() < len(PlusMazeOneHotCues.stage_names):
+    while env.get_stage() < len(env.stage_names):
 
         if trial>trials_in_day*max_experiment_length:
             print("Agent failed to learn.")
