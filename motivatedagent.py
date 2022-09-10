@@ -24,8 +24,7 @@ class MotivatedAgent:
         return self._brain
 
     def decide(self, state):
-        decision = torch.softmax(self._brain.think(np.expand_dims(state, 0), self).squeeze().detach(),
-                                 dim=-1).numpy()
+        decision = self._brain.think(np.expand_dims(state, 0), self).squeeze().detach().numpy()
         action = epsilon_greedy(self._exploration_param, decision)
         return action
 
