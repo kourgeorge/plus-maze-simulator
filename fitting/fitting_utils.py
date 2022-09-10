@@ -9,6 +9,9 @@ def get_timestamp():
 	import datetime
 	return datetime.datetime.now().strftime("%Y_%m_%d_%H_%M")
 
+def brain_name(architecture):
+	return "{}.{}.{}".format(architecture[0].__name__, architecture[1].__name__, architecture[2].__name__)
+
 
 def episode_rollout_on_real_data(env: PlusMazeOneHotCues, agent: MotivatedAgent, current_trial):
 	total_reward = 0
