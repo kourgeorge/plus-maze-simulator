@@ -25,6 +25,8 @@ class PlusMaze:
 		self._stimuli_encoding_size = 2
 		self._initial_relevant_cue: CueType = relevant_cue
 		self._relevant_cue: CueType = self._initial_relevant_cue
+		self._used_odor_cues = []
+		self._used_light_cues = []
 		self._odor_cues = None
 		self._light_cues = None
 		self._correct_spatial_cues = [1, 3]
@@ -35,8 +37,10 @@ class PlusMaze:
 	def init(self):
 		self._stage = 0
 		self._relevant_cue = self._initial_relevant_cue
-		self._odor_cues = None
-		self._light_cues = None
+		self._used_odor_cues = []
+		self._used_light_cues = []
+		self._odor_cues = []
+		self._light_cues = []
 		self.set_random_odor_set()
 		self.set_random_light_set()
 
@@ -193,9 +197,9 @@ class PlusMaze:
 
 
 class PlusMazeOneHotCues(PlusMaze):
-	def __init__(self, *args, **kwargs):
+	def __init__(self, stimuli_encoding = 6, *args, **kwargs):
 		super().__init__(*args, **kwargs)
-		self._stimuli_encoding_size = 6
+		self._stimuli_encoding_size = stimuli_encoding
 		self._odor_cues = None
 		self._light_cues = None
 		self.set_random_odor_set()
@@ -248,10 +252,12 @@ class PlusMazeOneHotCues(PlusMaze):
 		return self._stimuli_encoding_size
 
 	def set_random_odor_set(self):
-		self._odor_cues = PlusMazeOneHotCues._choose_new_cue_set(self._odor_cues, self._stimuli_encoding_size)
+		self._odor_cues = PlusMazeOneHotCues._choose_new_cue_set(self._used_odor_cues, self._stimuli_encoding_size)
+		self._used_odor_cues += list(np.argmax(self._odor_cues, axis=-1))
 
 	def set_random_light_set(self):
-		self._light_cues = PlusMazeOneHotCues._choose_new_cue_set(self._light_cues, self._stimuli_encoding_size)
+		self._light_cues = PlusMazeOneHotCues._choose_new_cue_set(self._used_light_cues, self._stimuli_encoding_size)
+		self._used_light_cues+= list(np.argmax(self._light_cues, axis=-1))
 
 	def random_state(self):
 		arm1O = random.choice([0, 1])
@@ -277,12 +283,7 @@ class PlusMazeOneHotCues(PlusMaze):
 		return (2, self.num_actions(), self.stimuli_encoding_size())
 
 	@staticmethod
-	def _choose_new_cue_set(old_cues_one_hot, encoding_size):
-		if old_cues_one_hot is None:
-			c1, c2 = random.sample(range(0, encoding_size), 2)
-			return [np.eye(encoding_size)[c1], np.eye(encoding_size)[c2]]
-
-		old_cues = [np.argmax(old_cues_one_hot[0]), np.argmax(old_cues_one_hot[1])]
+	def _choose_new_cue_set(old_cues, encoding_size):
 		c1, c2 = random.sample(range(0, encoding_size), 2)
 		while c1 in old_cues or c2 in old_cues:
 			c1, c2 = random.sample(range(0, encoding_size), 2)
