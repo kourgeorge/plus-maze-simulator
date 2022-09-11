@@ -197,7 +197,7 @@ class PlusMaze:
 
 
 class PlusMazeOneHotCues(PlusMaze):
-	def __init__(self, stimuli_encoding = 6, *args, **kwargs):
+	def __init__(self, stimuli_encoding = 10, *args, **kwargs):
 		super().__init__(*args, **kwargs)
 		self._stimuli_encoding_size = stimuli_encoding
 		self._odor_cues = None
@@ -284,6 +284,8 @@ class PlusMazeOneHotCues(PlusMaze):
 
 	@staticmethod
 	def _choose_new_cue_set(old_cues, encoding_size):
+		if set(old_cues)==set(range(encoding_size)):
+			raise Exception("All possible distinct cues were used. Please icrease encoding size to allow a larger set of cues.")
 		c1, c2 = random.sample(range(0, encoding_size), 2)
 		while c1 in old_cues or c2 in old_cues:
 			c1, c2 = random.sample(range(0, encoding_size), 2)
