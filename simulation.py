@@ -65,6 +65,7 @@ def run_simulation(env):
 
 
 if __name__ == '__main__':
-    env = PlusMazeOneHotCues2ActiveDoors(relevant_cue=CueType.ODOR)
+    #env = PlusMazeOneHotCues2ActiveDoors(relevant_cue=CueType.ODOR, stimuli_encoding=8)
+    env = PlusMazeOneHotCues(relevant_cue=CueType.ODOR, stimuli_encoding=10)
     run_simulation(env)
     x = 1
