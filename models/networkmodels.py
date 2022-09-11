@@ -33,18 +33,19 @@ class AbstractNetworkModel(nn.Module):
 class UniformAttentionNetwork(AbstractNetworkModel):
 	def __init__(self, encoding_size, num_channels, num_actions):
 		super().__init__()
-		self.model_odor = nn.Linear(encoding_size, 1, bias=True)
-		self.model_light = nn.Linear(encoding_size, 1, bias=True)
-		self.door_bias = nn.Parameter(nn.init.xavier_uniform_(torch.empty(size=(1, num_actions))), requires_grad=True)
+		self.odors = nn.Linear(encoding_size, 1, bias=True)
+		self.colors = nn.Linear(encoding_size, 1, bias=True)
+		self.spatial = nn.Parameter(nn.init.xavier_uniform_(torch.empty(size=(1, num_actions))), requires_grad=True)
 		self.phi = torch.ones([3, 1])/3
+
 
 	def forward(self, x):
 		x_odor = x[:, 0]
 		x_light = x[:, 1]
-		odor_val = self.model_odor(x_odor)
-		light_val = self.model_light(x_light)
-		door_val = torch.unsqueeze(self.door_bias.repeat(x.shape[0], 1), dim=-1)
-		weighted_vals = torch.matmul(torch.cat([odor_val, light_val,door_val], dim=-1), torch.softmax(self.phi, axis=-1))
+		odor_val = self.odors(x_odor)
+		light_val = self.colors(x_light)
+		door_val = torch.unsqueeze(self.spatial.repeat(x.shape[0], 1), dim=-1)
+		weighted_vals = torch.matmul(torch.cat([odor_val, light_val, door_val], dim=-1), torch.softmax(self.phi, axis=-1))
 		return torch.squeeze(weighted_vals, dim=2)
 
 	def get_stimuli_layer(self):
@@ -54,14 +55,14 @@ class UniformAttentionNetwork(AbstractNetworkModel):
 		return self.door_bias
 
 	def get_dimension_attention(self):
-		return self._phi
+		return self.phi
 
 	def get_network_metrics(self):
-		return {'layer1_dim': utils.normalized_norm(self.model_odor.weight.detach().numpy())}
+		return {'layer1_dim': utils.normalized_norm(self.odors.weight.detach().numpy())}
 
 	def network_diff(self, network2):
-		odor_subnetwork = self.model_odor.weight.detach()
-		odor_subnetwork2 = network2.model_odor.weight.detach()
+		odor_subnetwork = self.odors.weight.detach()
+		odor_subnetwork2 = network2.odors.weight.detach()
 		odor_change = np.linalg.norm(odor_subnetwork - odor_subnetwork2, ord=norm)
 		return {'odor_subnetwork_change': odor_change}
 
@@ -69,7 +70,7 @@ class UniformAttentionNetwork(AbstractNetworkModel):
 class AttentionAtChoiceAndLearningNetwork(UniformAttentionNetwork):
 	def __init__(self, encoding_size, num_channels, num_actions):
 		super().__init__(encoding_size, num_channels, num_actions)
-		self.phi = nn.Parameter(self.phi, requires_grad=True)
+		self.phi = nn.Parameter(nn.init.xavier_uniform_(torch.empty(size=(3,1))), requires_grad=True)
 
 
 class FullyConnectedNetwork(AbstractNetworkModel):
