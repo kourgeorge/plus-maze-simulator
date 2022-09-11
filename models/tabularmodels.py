@@ -58,7 +58,7 @@ class UniformAttentionTabular:
 		self.V['odors'] = np.zeros([encoding_size+1])
 		self.V['colors'] = np.zeros([encoding_size+1])
 		self.V['spatial'] = np.zeros([4])
-		self._phi = np.ones([3]) * 0.3
+		self.phi = np.ones([3]) / 3
 
 	def __call__(self, *args, **kwargs):
 		states = args[0]
@@ -69,7 +69,7 @@ class UniformAttentionTabular:
 		color = cues[:, 1]
 		data = np.stack([self.odor_value(odor), self.color_value(color),
 						 np.repeat(np.expand_dims(self.spatial_value(np.array(range(4))), axis=0), repeats=batch, axis=0)])
-		doors_value = np.matmul(np.expand_dims(utils.softmax(self._phi), axis=0), np.transpose(data, axes=(1, 0, 2)))
+		doors_value = np.matmul(np.expand_dims(utils.softmax(self.phi), axis=0), np.transpose(data, axes=(1, 0, 2)))
 		return np.squeeze(doors_value, axis=1)
 
 	def get_selected_door_stimuli(self, states, doors):
@@ -109,4 +109,5 @@ class UniformAttentionTabular:
 class AttentionAtChoiceAndLearningTabular(UniformAttentionTabular):
 	def __init__(self,encoding_size, num_channels, num_actions):
 		super().__init__(encoding_size, num_channels, num_actions)
+		self.phi = utils.softmax(np.random.normal(loc=0.0, scale=1.0, size=3))
 
