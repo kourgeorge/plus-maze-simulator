@@ -5,16 +5,15 @@ import os
 import time
 import config
 from PlusMazeExperiment import ExperimentStatus
-from environment import PlusMazeOneHotCues, CueType
+from environment import PlusMazeOneHotCues, CueType, PlusMaze
 from motivatedagent import MotivatedAgent
 import fitting_utils as fitting_utils
 from Dashboard import Dashboard
 from FittingStats import FittingStats
 
 
-def PlusMazeExperimentFitting(agent: MotivatedAgent, rat_data, dashboard=False):
+def PlusMazeExperimentFitting(env: PlusMaze, agent: MotivatedAgent, rat_data, dashboard=False):
 
-    env = PlusMazeOneHotCues(relevant_cue=CueType.ODOR)
     env.reset()
     stats = FittingStats(metadata={'brain': str(agent.get_brain()),
                                 'network': str(agent.get_brain().get_model()),
@@ -35,7 +34,7 @@ def PlusMazeExperimentFitting(agent: MotivatedAgent, rat_data, dashboard=False):
 
     trial = 0
     print('============================ Brain:{}, Network:{} ======================='.format(str(agent.get_brain()), str(agent.get_brain().get_model())))
-    print("Stage {}: {} - Water Motivated, odor relevant. (Odors: {}, Correct: {})".format(env._stage, env.stage_names[env.get_stage()],
+    print("Stage {}: {} - Water Motivated, odor relevant. (Odors: {}, Correct: {})".format(env.get_stage(), env.stage_names[env.get_stage()],
                                                                                            [np.argmax(encoding) for encoding in env.get_odor_cues()],
                                                                                              np.argmax(env.get_correct_cue_value())))
     likelihood_list = []  # only on real data

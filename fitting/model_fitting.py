@@ -10,7 +10,7 @@ from skopt import plots
 from skopt.space import Real, Integer
 
 from fitting.PlusMazeExperimentFitting import PlusMazeExperimentFitting
-from fitting.fitting_config import ANIMAL_BATCHES, ANIMAL_DATA_PATH, brains
+from fitting.fitting_config import MOTIVATED_ANIMAL_BATCHES, MOTIVATED_ANIMAL_DATA_PATH, brains
 import config
 from fitting_utils import get_timestamp
 from motivatedagent import MotivatedAgent
@@ -46,19 +46,21 @@ def llik_td(x):
 	# random.seed(0)
 
 	(nmr, lr, batch_size) = x
-	rat_data_path = os.path.join(ANIMAL_DATA_PATH, 'output_expr{}_rat{}.csv'.format(animal_batch, rat))
+	rat_data_path = os.path.join(MOTIVATED_ANIMAL_DATA_PATH, 'output_expr{}_rat{}.csv'.format(animal_batch, rat))
 	rat_data = pd.read_csv(rat_data_path)
 
 	brain, learner, network = architecture
 
 	blockPrint()
+	env = PlusMazeOneHotCues(relevant_cue=CueType.ODOR)
+
 	agent = MotivatedAgent(brain(
 		learner(network(env.stimuli_encoding_size(), 2, env.num_actions()), learning_rate=lr), batch_size=batch_size),
 		motivation=RewardType.WATER,
 		motivated_reward_value=config.MOTIVATED_REWARD,
 		non_motivated_reward_value=nmr)
 
-	experiment_stats, all_experiment_likelihoods = PlusMazeExperimentFitting(agent, dashboard=False, rat_data=rat_data)
+	experiment_stats, all_experiment_likelihoods = PlusMazeExperimentFitting(env, agent, dashboard=False, rat_data=rat_data)
 	enablePrint()
 
 	daily_likelihoods = experiment_stats.epoch_stats_df.Likelihood
@@ -98,8 +100,8 @@ def run_all_data():
 	space = [nmr, lr, batch_size]
 
 	results = {}
-	for animal_batch in ANIMAL_BATCHES:
-		for rat in ANIMAL_BATCHES[animal_batch]:
+	for animal_batch in MOTIVATED_ANIMAL_BATCHES:
+		for rat in MOTIVATED_ANIMAL_BATCHES[animal_batch]:
 			animal_id = "{}_{}".format(animal_batch, rat)
 			print(animal_id)
 			results[animal_id] = {}
@@ -165,5 +167,5 @@ def plot_results(results_file_path):
 
 
 if __name__ == '__main__':
-	#run_all_data()
-	plot_results('fitting/before_flavia_before_refactor.pkl')
+	run_all_data()
+	#plot_results('fitting/before_flavia_before_refactor.pkl')
