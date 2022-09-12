@@ -141,9 +141,9 @@ class PlusMaze:
 
 	def get_correct_cue_value(self):
 		if self._relevant_cue == CueType.ODOR:
-			return self.get_odor_cues()[0]
+			return self.get_odor_cues()[1]
 		if self._relevant_cue == CueType.LIGHT:
-			return self.get_light_cues()[0]
+			return self.get_light_cues()[1]
 		if self._relevant_cue == CueType.SPATIAL:
 			return self._correct_spatial_cues
 
