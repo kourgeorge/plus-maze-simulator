@@ -34,44 +34,29 @@ def test_FixedDoorAttentionBrain():
 
     agent = MotivatedAgent(brain,motivation=RewardType.WATER,
                                        motivated_reward_value=1, non_motivated_reward_value=0.3)
-    experiment_stats = PlusMazeExperiment(agent, dashboard=False)
+    experiment_stats = PlusMazeExperiment(env, agent, dashboard=False)
 
     assert experiment_stats is not None
 
 
-
-def test_tabularBrain(brain):
+def test_brain(brain):
     env = PlusMazeOneHotCues(relevant_cue=CueType.ODOR)
     agent = MotivatedAgent(brain, motivation=RewardType.WATER,
                                        motivated_reward_value=1, non_motivated_reward_value=0.3)
-    experiment_stats = PlusMazeExperiment(agent, dashboard=False)
-
-    assert experiment_stats is not None
-
-
-def test_UniformAttentionNetwork(network):
-    learner = DQN(network)
-    print(list(network.parameters()))
-    brain = ConsolidationBrain(learner=learner, batch_size=10)
-    agent = MotivatedAgent(brain, motivation=RewardType.WATER,
-                                       motivated_reward_value=1, non_motivated_reward_value=0.3)
-    experiment_stats = PlusMazeExperiment(agent, dashboard=False)
-
+    experiment_stats = PlusMazeExperiment(env, agent, dashboard=False)
 
     assert experiment_stats is not None
 
 
 if __name__ == '__main__':
     env = PlusMazeOneHotCues(relevant_cue=CueType.ODOR)
-    #test_FixedDoorAttentionBrain()
-    #test_tabularBrain(TDBrain(TD(learning_rate=0.01, model=TabularQ(6, 2, 4)), env.num_actions()))
-    test_tabularBrain(TDBrain(TDUniformAttention(learning_rate=0.01,
-                                                 model=UniformAttentionTabular(env.stimuli_encoding_size(), 2,
+
+    test_brain(TDBrain(TDUniformAttention(learning_rate=0.01,
+                                          model=UniformAttentionTabular(env.stimuli_encoding_size(), 2,
                                                                                env.num_actions()))))
-    test_tabularBrain(TDBrain(TDUniformAttention(learning_rate=0.01,
-                                                 model=AttentionAtChoiceAndLearningTabular(env.stimuli_encoding_size(), 2,
+    test_brain(TDBrain(TDUniformAttention(learning_rate=0.01,
+                                          model=AttentionAtChoiceAndLearningTabular(env.stimuli_encoding_size(), 2,
                                                                                env.num_actions()))))
-    #test_tabularBrainNiv()
-    test_UniformAttentionNetwork(UniformAttentionNetwork(6, 2, 4))
-    test_UniformAttentionNetwork(AttentionAtChoiceAndLearningNetwork(6, 2, 4))
-    test_UniformAttentionNetwork(AttentionAtChoiceAndLearningNetwork(6, 2, 4))
+    test_brain(ConsolidationBrain(DQN(learning_rate=0.01,
+                                          model=FullyConnectedNetwork(env.stimuli_encoding_size(), 2,
+                                                                               env.num_actions()))))
