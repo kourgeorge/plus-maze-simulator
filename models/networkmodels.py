@@ -1,5 +1,6 @@
 __author__ = 'gkour'
 
+import scipy
 import torch.nn as nn
 import torch
 import numpy as np
@@ -33,8 +34,8 @@ class AbstractNetworkModel(nn.Module):
 class UniformAttentionNetwork(AbstractNetworkModel):
 	def __init__(self, encoding_size, num_channels, num_actions):
 		super().__init__()
-		self.odors = nn.Linear(encoding_size, 1, bias=True)
-		self.colors = nn.Linear(encoding_size, 1, bias=True)
+		self.odors = nn.Linear(encoding_size, 1, bias=False)
+		self.colors = nn.Linear(encoding_size, 1, bias=False)
 		self.spatial = nn.Parameter(nn.init.xavier_uniform_(torch.empty(size=(1, num_actions))), requires_grad=True)
 		self.phi = torch.ones([3, 1])/3
 
@@ -58,13 +59,16 @@ class UniformAttentionNetwork(AbstractNetworkModel):
 		return self.phi
 
 	def get_network_metrics(self):
-		return {'layer1_dim': utils.normalized_norm(self.odors.weight.detach().numpy())}
+		return {'colors': np.linalg.norm(self.colors.weight.detach()),
+				'odors':  np.linalg.norm(self.odors.weight.detach()),
+				'spatial':  np.linalg.norm(self.spatial.detach()),
+				'phi': scipy.stats.entropy(torch.softmax(self.phi, axis=-1).detach())}
 
 	def network_diff(self, network2):
-		odor_subnetwork = self.odors.weight.detach()
-		odor_subnetwork2 = network2.odors.weight.detach()
-		odor_change = np.linalg.norm(odor_subnetwork - odor_subnetwork2, ord=norm)
-		return {'odor_subnetwork_change': odor_change}
+		return {'d(colors)': np.linalg.norm(self.colors.weight.detach() - network2.colors.weight.detach()),
+		 'd(odors)':  np.linalg.norm(self.odors.weight.detach() - network2.odors.weight.detach()),
+		 'd(spatial)': np.linalg.norm(self.spatial.detach() - network2.spatial.detach()),
+		 'd(phi)': scipy.stats.entropy(pk=torch.softmax(self.phi, axis=-1).detach(), qk=torch.softmax(network2.phi, axis=-1).detach())}
 
 
 class AttentionAtChoiceAndLearningNetwork(UniformAttentionNetwork):

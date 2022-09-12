@@ -1,6 +1,8 @@
 __author__ = 'gkour'
 
 import numpy as np
+import scipy
+
 import utils
 
 norm = 'fro'
@@ -86,24 +88,17 @@ class UniformAttentionTabular:
 	def spatial_value(self, doors):
 		return np.array(self.V['spatial'])[doors]
 
-	def get_stimuli_layer(self):
-		raise NotImplementedError()
-
-	def get_door_attention(self):
-		raise NotImplementedError()
-
-	def get_dimension_attention(self):
-		raise NotImplementedError()
-
 	def get_network_metrics(self):
 		return {'color': np.linalg.norm(self.V['colors'] ),
 				'odor':  np.linalg.norm(self.V['odors'] ),
-				'spatial':  np.linalg.norm(self.V['spatial'])}
+				'spatial':  np.linalg.norm(self.V['spatial']),
+				'phi': scipy.stats.entropy(self.phi)}
 
 	def network_diff(self, brain2):
 		return {'color_change': np.linalg.norm(self.V['colors'] - brain2.V['colors']),
 				'odor_change':  np.linalg.norm(self.V['odors'] - brain2.V['odors']),
-				'spatial_change':  np.linalg.norm(self.V['spatial'] - brain2.V['spatial'])}
+				'spatial_change':  np.linalg.norm(self.V['spatial'] - brain2.V['spatial']),
+				'phi_change': scipy.stats.entropy(self.phi,qk=brain2.phi)}
 
 
 class AttentionAtChoiceAndLearningTabular(UniformAttentionTabular):
