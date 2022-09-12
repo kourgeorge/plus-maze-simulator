@@ -7,9 +7,9 @@ import config
 from PlusMazeExperiment import ExperimentStatus
 from environment import PlusMazeOneHotCues, CueType, PlusMaze
 from motivatedagent import MotivatedAgent
-import fitting_utils as fitting_utils
+import fitting.fitting_utils as fitting_utils
 from Dashboard import Dashboard
-from FittingStats import FittingStats
+from fitting.FittingStats import FittingStats
 
 
 def PlusMazeExperimentFitting(env: PlusMaze, agent: MotivatedAgent, rat_data, dashboard=False):
