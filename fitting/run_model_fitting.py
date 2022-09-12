@@ -6,18 +6,17 @@ import pandas as pd
 import torch
 import random
 
-from fitting.fitting_config import configs, extract_configuration_params, REPETITIONS, ANIMAL_DATA_PATH, ANIMAL_BATCHES
+from fitting.fitting_config import configs, extract_configuration_params, REPETITIONS, MOTIVATED_ANIMAL_DATA_PATH, \
+	MOTIVATED_ANIMAL_BATCHES, MAZE_ANIMAL_DATA_PATH, MAZE_ANIMALS
 from fitting.fitting_utils import get_timestamp
 from motivatedagent import MotivatedAgent
-from environment import PlusMazeOneHotCues, CueType
+from environment import PlusMazeOneHotCues2ActiveDoors, CueType, PlusMazeOneHotCues
 from rewardtype import RewardType
 import config
 from PlusMazeExperimentFitting import PlusMazeExperimentFitting
 
-# Initialize environment
-env = PlusMazeOneHotCues(relevant_cue=CueType.ODOR)
 
-def run_fitting(model_params, rat_data_file=None, rat_id=None, repetitions=3):
+def run_fitting(env, model_params, rat_data_file=None, rat_id=None, repetitions=3):
 
 	# Read behavioral data
 	rat_data = pd.read_csv(rat_data_file)
@@ -27,13 +26,15 @@ def run_fitting(model_params, rat_data_file=None, rat_id=None, repetitions=3):
 
 	results_df = pd.DataFrame()
 	for rep in range(repetitions):
+		# Initialize environment
+		env.init()
 		agent = MotivatedAgent(
 			brain(learner(network(env.stimuli_encoding_size(), 2, env.num_actions()), learning_rate=learning_rate)),
 			motivation=RewardType.WATER,
 			motivated_reward_value=config.MOTIVATED_REWARD, non_motivated_reward_value=non_motivated_reward_value)
 
 		# Run the Model
-		experiment_stats, all_experiment_likelihoods = PlusMazeExperimentFitting(agent, rat_data=rat_data)
+		experiment_stats, all_experiment_likelihoods = PlusMazeExperimentFitting(env, agent, rat_data=rat_data)
 
 		# Report results
 		#plot_behavior_results([experiment_stats])
@@ -66,8 +67,7 @@ def run_fitting(model_params, rat_data_file=None, rat_id=None, repetitions=3):
 	return results_df
 
 
-if __name__ == '__main__':
-
+def fit_motivation_rat_data():
 	# create results folder and dataframe
 	results_path = os.path.join('Results', 'Rats-Results', get_timestamp())
 	if not os.path.exists(results_path):
@@ -75,13 +75,40 @@ if __name__ == '__main__':
 
 	df = pd.DataFrame()
 	# go over all model_params and all animals
-	for animal_batch in ANIMAL_BATCHES:
-		for animal in ANIMAL_BATCHES[animal_batch]:
+	for animal_batch in MOTIVATED_ANIMAL_BATCHES:
+		for animal in MOTIVATED_ANIMAL_BATCHES[animal_batch]:
 			rat_id = '{}_{}'.format(animal_batch, animal)
-			rat_data_path = os.path.join(ANIMAL_DATA_PATH, 'output_expr{}_rat{}.csv'.format(animal_batch, animal))
+			rat_data_path = os.path.join(MOTIVATED_ANIMAL_DATA_PATH, 'output_expr{}_rat{}.csv'.format(animal_batch, animal))
 			for config_index, params in enumerate(configs):
 				print("Batch:{}, Animal:{}.\nParameters:{}".format(animal_batch, animal, params))
-				run_df = run_fitting(params, rat_data_path, rat_id, repetitions=REPETITIONS)
+				env = PlusMazeOneHotCues(relevant_cue=CueType.ODOR)
+				run_df = run_fitting(env, params, rat_data_path, rat_id, repetitions=REPETITIONS)
 				df = df.append(run_df, ignore_index=True)
 		df.to_csv(os.path.join(results_path, 'results_until_batch_{}.csv'.format(animal_batch)), index=False)
 	df.to_csv(os.path.join(results_path, 'outputForAll.csv'), index=False)
+
+
+def fit_maze_rat_data():
+	# create results folder and dataframe
+	results_path = os.path.join('Results', 'Rats-Results', get_timestamp())
+	if not os.path.exists(results_path):
+		os.makedirs(results_path)
+
+	df = pd.DataFrame()
+	# go over all model_params and all animals
+	for rat_id in MAZE_ANIMALS:
+		rat_data_path = os.path.join(MAZE_ANIMAL_DATA_PATH, 'output_expr_rat{}.csv'.format(rat_id))
+		for config_index, params in enumerate(configs):
+			print("Animal:{}.\nParameters:{}".format(rat_id, params))
+			env = PlusMazeOneHotCues2ActiveDoors(relevant_cue=CueType.ODOR)
+			run_df = run_fitting(env, params, rat_data_path, rat_id, repetitions=REPETITIONS)
+			df = df.append(run_df, ignore_index=True)
+		df.to_csv(os.path.join(results_path, 'results_until_rat_{}.csv'.format(rat_id)), index=False)
+
+
+	df.to_csv(os.path.join(results_path, 'outputForAll.csv'), index=False)
+
+
+if __name__ == '__main__':
+	fit_motivation_rat_data()
+	#fit_maze_rat_data()
