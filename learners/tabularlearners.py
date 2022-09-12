@@ -59,4 +59,22 @@ class TDUniformAttention(AbstractLearner):
 			old_phi = self.model.phi
 			self.model.phi = (1 - learning_rate) * self.model.phi + learning_rate * delta_phi
 			diff_phi = self.model.phi - old_phi
-		return np.mean(deltas**2)
+		return deltas
+
+
+class TDAttentionAtLearning(TDUniformAttention):
+	def __init__(self, *args, **kwargs):
+		super().__init__(*args, **kwargs)
+
+	def learn(self, state_batch, action_batch, reward_batch, action_values, nextstate_batch):
+		deltas = super().learn(state_batch, action_batch, reward_batch, action_values, nextstate_batch)
+		delta = np.mean(deltas)
+		learning_rate = self.optimizer['learning_rate']
+		beta = 0.5 * (delta + 1)
+		delta_phi = (1 - beta) * np.ones([3]) / 3 + beta * np.eye(3)[
+			np.argmax(self.model.phi)]  # np.softmax(np.eye(np.argmax(self.model._phi)), beta)
+		# print("delta:{}, beta:{}, delta_phi:{} ".format(delta,beta, delta_phi ))
+		old_phi = self.model.phi
+		self.model.phi = (1 - learning_rate) * self.model.phi + learning_rate * delta_phi
+		diff_phi = self.model.phi - old_phi
+		return delta
