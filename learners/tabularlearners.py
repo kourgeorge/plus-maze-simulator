@@ -40,25 +40,16 @@ class TDUniformAttention(AbstractLearner):
 		selected_odors, selected_colors = self.model.get_selected_door_stimuli(state_batch, actions)
 
 		phi = self.model.phi
-		for odor in np.unique(selected_odors):
+		for odor in set(np.unique(selected_odors)).difference([self.model.encoding_size]):
 			self.model.V['odors'][odor] = self.model.V['odors'][odor] + \
-										  np.mean(learning_rate * phi[0] * deltas[selected_odors == odor])
-		for color in np.unique(selected_colors):
+										  np.nanmean(learning_rate * phi[0] * deltas[selected_odors == odor])
+		for color in set(np.unique(selected_colors)).difference([self.model.encoding_size]):
 			self.model.V['colors'][color] = self.model.V['colors'][color] + \
-											np.mean(learning_rate * phi[1] * deltas[selected_colors == color])
+											np.nanmean(learning_rate * phi[1] * deltas[selected_colors == color])
 		for door in np.unique(actions):
 			self.model.V['spatial'][door] = self.model.V['spatial'][door] + \
-											np.mean(learning_rate * phi[2] * deltas[actions == door])
+											np.nanmean(learning_rate * phi[2] * deltas[actions == door])
 
-		if isinstance(self.model, AttentionAtChoiceAndLearningTabular):
-			delta = np.mean(deltas)
-			learning_rate = self.optimizer['learning_rate']
-			beta = 0.5*(delta+1)
-			delta_phi = (1-beta) * np.ones([3])/3 + beta*np.eye(3)[np.argmax(self.model.phi)] #np.softmax(np.eye(np.argmax(self.model._phi)), beta)
-			#print("delta:{}, beta:{}, delta_phi:{} ".format(delta,beta, delta_phi ))
-			old_phi = self.model.phi
-			self.model.phi = (1 - learning_rate) * self.model.phi + learning_rate * delta_phi
-			diff_phi = self.model.phi - old_phi
 		return deltas
 
 
