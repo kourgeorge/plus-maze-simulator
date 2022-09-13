@@ -3,6 +3,7 @@ __author__ = 'gkour'
 import numpy as np
 from motivatedagent import MotivatedAgent
 from environment import PlusMazeOneHotCues
+from rewardtype import RewardType
 
 
 def get_timestamp():
@@ -33,13 +34,16 @@ def episode_rollout_on_real_data(env: PlusMazeOneHotCues, agent: MotivatedAgent,
 		act_dist += dec_1hot
 		new_state, outcome, terminated, info = env.step(action)
 		reward = agent.evaluate_outcome(outcome)
+		if (outcome == RewardType.NONE and current_trial.reward != 0) or \
+				(outcome != RewardType.NONE and current_trial.reward == 0):
+			raise Exception("There is a discripency between data and simulation reward.")
 		total_reward += reward
 		model_action_dist = agent.get_brain().think(np.expand_dims(state, 0), agent).squeeze().detach().numpy()
 		likelihood += -1 * np.log(model_action_dist[action])
 
 		agent.add_experience(state, dec_1hot, reward, outcome, new_state, terminated, info)
 
-		state = env.set_state(current_trial)
+		env.set_state(current_trial)
 		info.likelihood = likelihood
 		info.network_action = agent.decide(state)
 		_, outcome_network, _, _ = env.step(info.network_action)
