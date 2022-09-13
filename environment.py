@@ -293,7 +293,8 @@ class PlusMazeOneHotCues(PlusMaze):
 
 
 class PlusMazeOneHotCues2ActiveDoors(PlusMazeOneHotCues):
-	stage_names = ['ODOR1', 'ODOR2', 'ODOR3', 'EDShift(Light)']
+	#stage_names = ['ODOR1', 'ODOR2', 'ODOR3', 'EDShift(Light)']
+	stage_names = ['ODOR1', 'ODOR2', 'EDShift(Light)']
 
 	def __init__(self, *args, **kwargs):
 		super().__init__(*args, **kwargs)
@@ -305,8 +306,8 @@ class PlusMazeOneHotCues2ActiveDoors(PlusMazeOneHotCues):
 			armcsv = arm + 1
 			odor_cue = int(state_info['A{}o'.format(armcsv)])
 			light_cue = int(state_info['A{}c'.format(armcsv)])
-			state[0, arm, :] = self._odor_cues[odor_cue] if odor_cue != -1 else 0 * np.ones_like(state[0, arm, :])
-			state[1, arm, :] = self._light_cues[light_cue] if light_cue != -1 else 0 * np.ones_like(state[1, arm, :])
+			state[0, arm, :] = self._odor_cues[odor_cue] if odor_cue != -1 else np.zeros_like(state[0, arm, :])
+			state[1, arm, :] = self._light_cues[light_cue] if light_cue != -1 else np.zeros_like(state[1, arm, :])
 
 		self._state = state
 		return state
@@ -325,8 +326,8 @@ class PlusMazeOneHotCues2ActiveDoors(PlusMazeOneHotCues):
 		state[1, active_doors[0], :] = self._light_cues[arm1L]
 		state[1, active_doors[1], :] = self._light_cues[1 - arm1L]
 
-		state[:, non_active_doors[0], :] = 0 * np.ones_like(state[:, non_active_doors[0], :])
-		state[:, non_active_doors[1], :] = 0 * np.ones_like(state[:, non_active_doors[1], :])
+		state[:, non_active_doors[0], :] = np.zeros_like(state[:, non_active_doors[0], :])
+		state[:, non_active_doors[1], :] = np.zeros_like(state[:, non_active_doors[1], :])
 
 		return state
 
