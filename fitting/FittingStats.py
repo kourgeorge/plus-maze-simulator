@@ -19,7 +19,7 @@ class FittingStats(Stats):
         report_dict = super()._create_report_from_memory(experience, brain, last)
         last_exp = experience.last(last)
         infos = [data[6] for data in last_exp]
-        report_dict.likelihood = np.median([info.likelihood for info in infos])
+        report_dict.likelihood = np.mean([info.likelihood for info in infos])
         correct_network = [1 if info.network_outcome != RewardType.NONE else 0 for info in infos]
         report_dict.correct_network = np.mean(correct_network)
 
