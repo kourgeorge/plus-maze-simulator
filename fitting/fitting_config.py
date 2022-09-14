@@ -1,6 +1,9 @@
 __author__ = 'gkour'
 
 import itertools
+
+from skopt.space import Real, Integer
+
 from brains.consolidationbrain import ConsolidationBrain, RandomBrain
 from brains.fixeddoorattentionbrain import FixedDoorAttentionBrain
 from brains.lateoutcomeevaluationbrain import LateOutcomeEvaluationBrain
@@ -24,24 +27,31 @@ def motivational_animals_generator():
 			yield (animal_batch, rat)
 
 
+nmr = Real(name='nmr', low=-1, high=1)
+lr = Real(name='lr', low=0.0001, high=0.2, prior='log-uniform')
+batch_size = Integer(name='batch_size', low=1, high=20)
+beta = Real(name='beta', low=0.1, high=5)
+
 non_motivated_reward = [0, 0.3]
 learning_rates = [0.001, 0.01, 0.2]
-brains = [#(TDBrain, TD, TabularQ),
-		  # (TDBrain, TDUniformAttention, UniformAttentionTabular),
-			# (TDBrain, TDUniformAttention, AttentionAtChoiceAndLearningTabular),
-		  # (ConsolidationBrain, DQN, UniformAttentionNetwork),
-		  # (ConsolidationBrain, DQN, AttentionAtChoiceAndLearningNetwork),
-		  (ConsolidationBrain, DQN, FullyConnectedNetwork),
-		  # (ConsolidationBrain, DQN, FullyConnectedNetwork2Layers),
-		  # (ConsolidationBrain, DQN, EfficientNetwork),
-		  # (FixedDoorAttentionBrain, DQN, EfficientNetwork),
-		  # (MotivationDependantBrain, DQN, SeparateMotivationAreasNetwork),
-		  # (MotivationDependantBrain, DQN, SeparateMotivationAreasFCNetwork),
-		  # (LateOutcomeEvaluationBrain, DQN, SeparateMotivationAreasNetwork),
-		  # (RandomBrain, DQN, EfficientNetwork)
-		  ]
+maze_models = [((TDBrain, TD, TabularQ), (beta, lr, batch_size)),
+			   ((TDBrain, TDUniformAttention, UniformAttentionTabular), (beta,lr,batch_size)),
+			   ((TDBrain, TDUniformAttention, AttentionAtChoiceAndLearningTabular),(nmr,lr,batch_size)),
+			   ((ConsolidationBrain, DQN, FullyConnectedNetwork),(beta,lr,batch_size)),
+			   ((ConsolidationBrain, DQN, UniformAttentionNetwork),(beta,lr,batch_size)),
+			   ((ConsolidationBrain, DQN, AttentionAtChoiceAndLearningNetwork),(beta,lr,batch_size)),
+			   ((ConsolidationBrain, DQN, FullyConnectedNetwork2Layers),(beta,lr,batch_size)),
+			   ((ConsolidationBrain, DQN, EfficientNetwork),(beta,lr,batch_size)),
+			   ((RandomBrain, DQN, EfficientNetwork),(beta,lr,batch_size))
+			   ]
 
-combinations = list(itertools.product(brains, learning_rates, non_motivated_reward))
+motivational_models = maze_models + \
+					  [((FixedDoorAttentionBrain, DQN, EfficientNetwork), (nmr, lr, batch_size)),
+					   ((MotivationDependantBrain, DQN, SeparateMotivationAreasNetwork), (nmr, lr, batch_size)),
+					   ((MotivationDependantBrain, DQN, SeparateMotivationAreasFCNetwork), (nmr, lr, batch_size)),
+					   ((LateOutcomeEvaluationBrain, DQN, SeparateMotivationAreasNetwork), (nmr, lr, batch_size))]
+
+combinations = list(itertools.product(maze_models, learning_rates, non_motivated_reward))
 configs = [{'br': br, 'lr': lr, 'non_motivated_reward': nmr} for br, lr, nmr in combinations]
 
 
