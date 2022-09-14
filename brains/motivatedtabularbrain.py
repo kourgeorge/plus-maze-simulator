@@ -3,22 +3,23 @@ __author__ = 'gkour'
 import numpy as np
 import config
 from abstractbrain import AbstractBrain
-from learners.networklearners import TD
+from learners.tabularlearners import TD
 import torch
 
 
 class MotivatedTDBrain(AbstractBrain):
 
-	def __init__(self, learner: TD, reward_discount=0, batch_size=config.BATCH_SIZE):
+	def __init__(self, learner: TD, beta=1, reward_discount=0, batch_size=config.BATCH_SIZE):
 		super().__init__(reward_discount)
 		self.learner = learner
 		self.batch_size = batch_size
 		self._reward_discount = reward_discount
+		self.beta = beta
 		self.num_optimizations = 0
 
 	def think(self, obs, agent):
 		action_value = np.stack(self.get_model()(obs))
-		action_dist = torch.softmax(torch.from_numpy(action_value), axis=-1)
+		action_dist = torch.softmax(self.beta*torch.from_numpy(action_value), axis=-1)
 		return action_dist
 
 	def get_model(self):
