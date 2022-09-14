@@ -1,9 +1,11 @@
 __author__ = 'gkour'
 
 import numpy as np
-import scipy
+from scipy.stats import entropy
+from scipy.spatial.distance import jensenshannon
 
 import utils
+from utils import compress
 
 norm = 'fro'
 
@@ -60,7 +62,7 @@ class UniformAttentionTabular:
 		self.V['odors'] = np.zeros([encoding_size+1])
 		self.V['colors'] = np.zeros([encoding_size+1])
 		self.V['spatial'] = np.zeros([4])
-		self.phi = np.ones([3]) / 3
+		self.phi = np.ones([3])
 
 	def __call__(self, *args, **kwargs):
 		states = args[0]
@@ -89,16 +91,17 @@ class UniformAttentionTabular:
 		return np.array(self.V['spatial'])[doors]
 
 	def get_network_metrics(self):
-		return {'color': np.linalg.norm(self.V['colors'] ),
-				'odor':  np.linalg.norm(self.V['odors'] ),
+		return {'color': np.linalg.norm(self.V['colors']),
+				'odor':  np.linalg.norm(self.V['odors']),
 				'spatial':  np.linalg.norm(self.V['spatial']),
-				'phi': scipy.stats.entropy(self.phi)}
+				'phi': entropy(self.phi)}
 
 	def network_diff(self, brain2):
-		return {'color_change': np.linalg.norm(self.V['colors'] - brain2.V['colors']),
-				'odor_change':  np.linalg.norm(self.V['odors'] - brain2.V['odors']),
-				'spatial_change':  np.linalg.norm(self.V['spatial'] - brain2.V['spatial']),
-				'phi_change': scipy.stats.entropy(self.phi,qk=brain2.phi)}
+
+		return {'color_change': entropy(self.V['colors'], brain2.V['colors']),
+				'odor_change':  jensenshannon(self.V['odors'], brain2.V['odors']),
+				'spatial_change':  jensenshannon(self.V['spatial'], brain2.V['spatial']),
+				'phi_change': jensenshannon(self.phi, brain2.phi)}
 
 
 class AttentionAtChoiceAndLearningTabular(UniformAttentionTabular):

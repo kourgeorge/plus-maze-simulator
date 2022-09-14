@@ -103,3 +103,7 @@ def normalized_norm(u, ord=None):
 
 def states_encoding_to_cues(states, encoding_size):
     return np.argmax(states, axis=-1) + encoding_size * np.all(states == 0, axis=-1)
+
+
+def compress(a):
+    return a[a != 0]
