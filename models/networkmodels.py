@@ -39,14 +39,13 @@ class UniformAttentionNetwork(AbstractNetworkModel):
 		self.spatial = nn.Parameter(nn.init.xavier_uniform_(torch.empty(size=(1, num_actions))), requires_grad=True)
 		self.phi = torch.ones([3, 1])/3
 
-
 	def forward(self, x):
 		x_odor = x[:, 0]
 		x_light = x[:, 1]
 		odor_val = self.odors(x_odor)
 		light_val = self.colors(x_light)
 		door_val = torch.unsqueeze(self.spatial.repeat(x.shape[0], 1), dim=-1)
-		weighted_vals = torch.matmul(torch.cat([odor_val, light_val, door_val], dim=-1), torch.softmax(self.phi, axis=-1))
+		weighted_vals = torch.matmul(torch.cat([odor_val, light_val, door_val], dim=-1), torch.softmax(self.phi, axis=0))
 		return torch.squeeze(weighted_vals, dim=2)
 
 	def get_stimuli_layer(self):
