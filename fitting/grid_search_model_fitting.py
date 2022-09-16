@@ -33,7 +33,7 @@ def run_fitting(env, model_params, rat_data_file=None, rat_id=None, repetitions=
 			motivation=RewardType.WATER,
 			motivated_reward_value=config.MOTIVATED_REWARD, non_motivated_reward_value=non_motivated_reward_value)
 
-		# Run the Model
+		# Run the fitting process
 		experiment_stats, all_experiment_likelihoods = PlusMazeExperimentFitting(env, agent, rat_data=rat_data)
 
 		# Report results
@@ -110,5 +110,5 @@ def fit_maze_rat_data():
 
 
 if __name__ == '__main__':
-	fit_motivation_rat_data()
-	#fit_maze_rat_data()
+	#fit_motivation_rat_data()
+	fit_maze_rat_data()
