@@ -1,5 +1,7 @@
 __author__ = 'gkour'
 
+import os
+import sys
 import numpy as np
 from motivatedagent import MotivatedAgent
 from environment import PlusMazeOneHotCues
@@ -51,3 +53,26 @@ def episode_rollout_on_real_data(env: PlusMazeOneHotCues, agent: MotivatedAgent,
 
 		state = new_state
 	return steps, total_reward, act_dist, model_action_dist, likelihood
+
+
+def blockPrint():
+	sys.stdout = open(os.devnull, 'w')
+
+# Restore
+def enablePrint():
+	sys.stdout = sys.__stdout__
+
+
+def calculate_stage_likelihood(experiment_stats):
+	daily_likelihoods = experiment_stats.epoch_stats_df.Likelihood
+	stages = experiment_stats.epoch_stats_df.Stage
+	all_stages = len(np.unique(experiment_stats.epoch_stats_df.Stage))
+	likelihood_stage = np.zeros([all_stages])
+	for stage in range(all_stages):
+		stage_likelihood = [daily_likelihoods[i] for i in range(len(daily_likelihoods)) if stages[i] == stage]
+		if len(stage_likelihood) == 0:
+			likelihood_stage[stage] = None
+		else:
+			likelihood_stage[stage] = np.nanmean(stage_likelihood)
+
+	return likelihood_stage
