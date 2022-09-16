@@ -76,3 +76,7 @@ def calculate_stage_likelihood(experiment_stats):
 			likelihood_stage[stage] = np.nanmean(stage_likelihood)
 
 	return likelihood_stage
+
+
+def float_string_list_to_list(str):
+	return [float(a) for a in str.strip('][').split(', ')]
