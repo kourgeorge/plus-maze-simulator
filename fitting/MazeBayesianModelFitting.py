@@ -1,47 +1,37 @@
+__author__ = 'gkour'
+
 import os
 import pickle
-import sys
+import warnings
 
-import pandas as pd
 import numpy as np
+import pandas as pd
 from skopt import gp_minimize
-from skopt import plots
 
-from fitting.PlusMazeExperimentFitting import PlusMazeExperimentFitting
-from fitting.fitting_config import MAZE_ANIMAL_DATA_PATH, MOTIVATED_ANIMAL_DATA_PATH, maze_models
-import fitting_utils
 import config
+from environment import PlusMazeOneHotCues2ActiveDoors, CueType
+from fitting import fitting_utils
+from fitting.fitting_config import maze_models, MAZE_ANIMAL_DATA_PATH
+from fitting.PlusMazeExperimentFitting import PlusMazeExperimentFitting
+from fitting.fitting_utils import blockPrint, enablePrint
 from motivatedagent import MotivatedAgent
-from environment import PlusMazeOneHotCues, CueType, PlusMazeOneHotCues2ActiveDoors
 from rewardtype import RewardType
-import PlusMazeExperiment as PlusMazeExperiment
 import seaborn as sns
 
-import warnings
 warnings.filterwarnings("ignore")
 
-def blockPrint():
-	sys.stdout = open(os.devnull, 'w')
 
-# Restore
-def enablePrint():
-	sys.stdout = sys.__stdout__
-
-
-class MazeBayesianModelFitting:
-	def __init__(self, env, animals_data_folder, models, n_calls=35):
-		self.n_calls = n_calls
+class MazeBayesianModelFitting():
+	def __init__(self, env, experiment_data, model, parameters_space, n_calls):
 		self.env = env
-		self.animal_data = [pd.read_csv(os.path.join(animals_data_folder, rat_file))
-							for rat_file in list(np.sort(os.listdir(animals_data_folder)))]
-		self.models = models
-		self.curr_rat = None
-		self.curr_model = None
+		self.experiment_data = experiment_data
+		self.model = model
+		self.parameters_space = parameters_space
+		self.n_calls = n_calls
 
-	def run_fitting(self, parameters):
-		(brain, learner, network),_ = self.curr_model
+	def _run_model(self, parameters):
+		(brain, learner, network) = self.model
 		(beta, lr, batch_size) = parameters
-
 		blockPrint()
 		self.env.init()
 		agent = MotivatedAgent(brain(
@@ -52,108 +42,123 @@ class MazeBayesianModelFitting:
 			non_motivated_reward_value=0)
 
 		experiment_stats, all_experiment_likelihoods = PlusMazeExperimentFitting(self.env, agent, dashboard=False,
-																				 rat_data=self.curr_rat)
+																				 rat_data=self.experiment_data)
 		enablePrint()
 
-		daily_likelihoods = experiment_stats.epoch_stats_df.Likelihood
-		stages = experiment_stats.epoch_stats_df.Stage
-		all_stages = len(self.env.stage_names)
-		likelihood_stage = np.zeros([all_stages])
-		for stage in range(all_stages):
-			stage_likelihood = [daily_likelihoods[i] for i in range(len(daily_likelihoods)) if stages[i] == stage]
-			if len(stage_likelihood) == 0:
-				likelihood_stage[stage] = None
-			else:
-				likelihood_stage[stage] = np.nanmean(stage_likelihood)
-		return likelihood_stage, all_experiment_likelihoods
+		return experiment_stats, all_experiment_likelihoods
 
-	def calc_experiment_likelihood(self, parameters):
-		model, params_space = self.curr_model
-		likelihood_stage, all_experiment_likelihoods = self.run_fitting(parameters)
+	def _calc_experiment_likelihood(self, parameters):
+		model = self.model
+		experiment_stats, all_experiment_likelihoods = self._run_model(parameters)
+		likelihood_stage = fitting_utils.calculate_stage_likelihood(experiment_stats)
 		y = np.nanmean(likelihood_stage)
 
 		print("{}.\tx={},\t\ty={:.3f},\tstages={} \toverall_mean={:.3f}".format(fitting_utils.brain_name(model),
-																		list(np.round(parameters, 4)), y,
-														  				np.round(likelihood_stage, 3),
-			  															np.mean(all_experiment_likelihoods)))
+																				list(np.round(parameters, 4)), y,
+																				np.round(likelihood_stage, 3),
+																				np.mean(all_experiment_likelihoods)))
 		return np.clip(y, a_min=0, a_max=50)
 
-	def run_bayesian_optimization(self):
+	def optimize(self):
+		search_result = gp_minimize(self._calc_experiment_likelihood, self.parameters_space,
+									n_calls=self.n_calls)
+		experiment_stats, all_experiment_likelihoods = self._run_model(search_result.x)
+		return search_result, experiment_stats, all_experiment_likelihoods
 
-		fitting_results = {}
-		for animal_id, self.curr_rat in enumerate(self.animal_data):
-			print(animal_id)
-			fitting_results[animal_id] = {}
-			for self.curr_model in self.models:
-				model, space = self.curr_model
-				search_result = gp_minimize(self.calc_experiment_likelihood, space,
-											n_calls=self.n_calls)
-				likelihood_stage, all_experiment_likelihoods = self.run_fitting(search_result.x)
-				fitting_results[animal_id][fitting_utils.brain_name(model)] = \
-																			{"exp_likl": np.mean(all_experiment_likelihoods),
-																			 "stages_likl": likelihood_stage,
-																			"trial_likl": all_experiment_likelihoods,
-																			"parameters": search_result.x,
-																			"results": search_result}
+	def _fake_optimize(self):
+		class Object(object):
+			pass
 
-		with open('fitting/Results/Rats-Results/fitting_results_{}.pkl'.format(fitting_utils.get_timestamp()),
-				  'wb') as f:
-			pickle.dump(fitting_results, f)
-		return fitting_results
+		x = (1.5, 0.05, 15)
+		obj = Object()
+		obj.x = x
+		experiment_stats, all_experiment_likelihoods = self._run_model(x)
+		return obj, experiment_stats, all_experiment_likelihoods
 
-	@staticmethod
-	def plot_results(env, results_file_path):
-		# for fitness, x in sorted(zip(search_result.func_vals, search_result.x_iters)):
-		# 	print(fitness, x)
-		with open(results_file_path, 'rb') as f:
-			results = pickle.load(f)
 
-		ds = pd.DataFrame()
-		for rat, rat_value in results.items():
-			for brain, brain_results in rat_value.items():
-				row = {'brain': brain,
-					   'animal': rat,
-					   'stages_likl': np.round(brain_results['stages_likl'], 3),
-					   'exp_likl': np.round(brain_results['exp_likl'], 3),
-					   'parameters': np.round(brain_results['parameters'], 3)}
-				ds = ds.append(row, ignore_index=True)
-				for stage in range(len(env.stage_names)):
-					ds[env.stage_names[stage]] = np.stack(list(ds['stages_likl']))[:, stage]
+def all_subjects_all_models_optimization(env, animals_data_folder, all_models, n_calls=35):
+	animal_data = [pd.read_csv(os.path.join(animals_data_folder, rat_file))
+				   for rat_file in list(np.sort(os.listdir(animals_data_folder)))]
 
-		# params = "(nmr:{}, lr:{}, bs:{})".format(*np.round(brain_results['values'], 3))
-		# print("{}, {}: \t{} {}".format(rat, brain, np.round(brain_results['likelihood'],3), params))
-		# plots.plot_histogram(result=brain_results, dimension_identifier='lr', bins=20)
-		# plots.plot_objective_2D(brain_results['results'], 'lr', 'batch_size')
-		# plots.plot_objective(brain_results['results'], plot_dims=['nmr', 'lr'])
+	fitting_results = {}
+	results_df = pd.DataFrame()
+	for animal_id, curr_rat in enumerate(animal_data):
+		print(animal_id)
+		fitting_results[animal_id] = {}
+		for curr_model in all_models:
+			model, parameters_space = curr_model
+			search_result, experiment_stats, all_experiment_likelihoods = \
+				MazeBayesianModelFitting(env, curr_rat, model, parameters_space, n_calls).optimize()
+			fitting_results[animal_id][fitting_utils.brain_name(model)] = dict = \
+				{"subject": animal_id,
+				 "model": fitting_utils.brain_name(model),
+				 "exp_likl": np.mean(all_experiment_likelihoods),
+				 "stages_likl": fitting_utils.calculate_stage_likelihood(experiment_stats),
+				 "daily_likl": list(experiment_stats.epoch_stats_df.Likelihood),
+				 "stages": list(experiment_stats.epoch_stats_df.Stage),
+				 "trial_likl": all_experiment_likelihoods,
+				 "parameters": search_result.x,
+				 "results_obj": search_result}
 
-		sns.set_theme(style="darkgrid")
+			results_df = results_df.append(dict, ignore_index=True)
+	del results_df["results_obj"]
 
-		df_unpivot = pd.melt(ds, id_vars=['brain', 'animal'], value_vars=['exp_likl']+env.stage_names)
-		df_unpivot['exp_likl'] = df_unpivot['value']
-		sns.boxplot(x='variable', y='exp_likl', hue='brain', data=df_unpivot)
-		del ds['stages_likl']
-		# f, axes = plt.subplots(3, 3)
+	results_df.to_csv('fitting/Results/Rats-Results/fitting_results_{}.csv'.format(fitting_utils.get_timestamp()))
+	# with open('fitting/Results/Rats-Results/fitting_results_{}.pkl'.format(fitting_utils.get_timestamp()),
+	# 		  'wb') as f:
+	# 	pickle.dump(fitting_results, f)
+	return fitting_results
 
-		# for i, animal in enumerate(np.unique(ds['animal'])):
-		# 	plt.figure(figsize=(3.5, 3.5))
-		# 	ds_filtered = ds[ds['animal'] == animal]
-		# 	g = sns.scatterplot(y="lr", x="nmr",
-		# 						hue="brain", size='likelihood',
-		# 						data=ds_filtered, sizes=(20, 200), alpha=0.7)
-		#
-		# 	# g.set(yscale="log")
-		# 	g.yaxis.grid(True, "minor", linewidth=.25)
+
+def plot_all_subjects_fitting_results(env, results_file_path):
+	# for fitness, x in sorted(zip(search_result.func_vals, search_result.x_iters)):
+	# 	print(fitness, x)
+	with open(results_file_path, 'rb') as f:
+		results = pickle.load(f)
+
+	ds = pd.DataFrame()
+	for rat, rat_value in results.items():
+		for brain, brain_results in rat_value.items():
+			row = {'brain': brain,
+				   'animal': rat,
+				   'stages_likl': np.round(brain_results['stages_likl'], 3),
+				   'exp_likl': np.round(brain_results['exp_likl'], 3),
+				   'parameters': np.round(brain_results['parameters'], 3)}
+			ds = ds.append(row, ignore_index=True)
+			for stage in range(len(env.stage_names)):
+				ds[env.stage_names[stage]] = np.stack(list(ds['stages_likl']))[:, stage]
+
+	# params = "(nmr:{}, lr:{}, bs:{})".format(*np.round(brain_results['values'], 3))
+	# print("{}, {}: \t{} {}".format(rat, brain, np.round(brain_results['likelihood'],3), params))
+	# plots.plot_histogram(result=brain_results, dimension_identifier='lr', bins=20)
+	# plots.plot_objective_2D(brain_results['results'], 'lr', 'batch_size')
+	# plots.plot_objective(brain_results['results'], plot_dims=['nmr', 'lr'])
+
+	sns.set_theme(style="darkgrid")
+
+	df_unpivot = pd.melt(ds, id_vars=['brain', 'animal'], value_vars=['exp_likl'] + env.stage_names)
+	df_unpivot['exp_likl'] = df_unpivot['value']
+	sns.boxplot(x='variable', y='exp_likl', hue='brain', data=df_unpivot)
+	del ds['stages_likl']
 
 
 if __name__ == '__main__':
-	# fitting = MazeBayesianModelFitting(PlusMazeOneHotCues(relevant_cue=CueType.ODOR, stimuli_encoding=10),
-	# 								   animals_data_folder=MOTIVATED_ANIMAL_DATA_PATH, brains=brains)
+	# subject_expr_data = pd.read_csv('fitting/maze_behavioral_data/output_expr_rat0.csv')
+	# model, parameters_space = maze_models[0]
+	# fitter = MazeBayesianModelFitting(PlusMazeOneHotCues2ActiveDoors(relevant_cue=CueType.ODOR, stimuli_encoding=10),
+	# 								  subject_expr_data, model, parameters_space, n_calls=15)
+	# search_result, experiment_stats, likelihood_stage, all_experiment_likelihoods = fitter.optimize()
 
-	fitting = MazeBayesianModelFitting(PlusMazeOneHotCues2ActiveDoors(relevant_cue=CueType.ODOR, stimuli_encoding=10),
-									   animals_data_folder=MAZE_ANIMAL_DATA_PATH, models=maze_models).run_bayesian_optimization()
+	# # fitting = MazeBayesianModelFitting(PlusMazeOneHotCues(relevant_cue=CueType.ODOR, stimuli_encoding=10),
+	# # 								   animals_data_folder=MOTIVATED_ANIMAL_DATA_PATH, brains=brains)
+	# #
 
+	all_subjects_all_models_optimization(PlusMazeOneHotCues2ActiveDoors(relevant_cue=CueType.ODOR, stimuli_encoding=10),
+										 MAZE_ANIMAL_DATA_PATH, maze_models, n_calls=35)
 
-	# MazeBayesianModelFitting.plot_results(PlusMazeOneHotCues2ActiveDoors(relevant_cue=CueType.ODOR, stimuli_encoding=10),
-	# 									  'fitting/Results/Rats-Results/fitting_results_2022_09_13_21_34.pkl')
+	# fitting = plot_all_subjects_fitting_results(PlusMazeOneHotCues2ActiveDoors(relevant_cue=CueType.ODOR, stimuli_encoding=10),
+	# 											 animals_data_folder=MAZE_ANIMAL_DATA_PATH, all_models=maze_models,
+	# 											 n_calls=10)
 
-	x=1
+	# plot_all_subjects_fitting_results(PlusMazeOneHotCues2ActiveDoors(relevant_cue=CueType.ODOR, stimuli_encoding=10),
+	# 								  'fitting/Results/Rats-Results/fitting_results_2022_09_15_05_17.pkl')
