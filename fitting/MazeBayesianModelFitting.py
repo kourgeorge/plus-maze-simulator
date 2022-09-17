@@ -41,29 +41,29 @@ class MazeBayesianModelFitting():
 			motivated_reward_value=config.MOTIVATED_REWARD,
 			non_motivated_reward_value=0)
 
-		experiment_stats, all_experiment_likelihoods = PlusMazeExperimentFitting(self.env, agent, dashboard=False,
+		experiment_stats, rat_data_with_likelihood = PlusMazeExperimentFitting(self.env, agent, dashboard=False,
 																				 rat_data=self.experiment_data)
 		enablePrint()
 
-		return experiment_stats, all_experiment_likelihoods
+		return experiment_stats, rat_data_with_likelihood
 
 	def _calc_experiment_likelihood(self, parameters):
 		model = self.model
-		experiment_stats, all_experiment_likelihoods = self._run_model(parameters)
-		likelihood_stage = fitting_utils.calculate_stage_likelihood(experiment_stats)
+		experiment_stats, rat_data_with_likelihood = self._run_model(parameters)
+		likelihood_stage = fitting_utils.calculate_stage_likelihood(rat_data_with_likelihood)
 		y = np.nanmean(likelihood_stage)
 
 		print("{}.\tx={},\t\ty={:.3f},\tstages={} \toverall_mean={:.3f}".format(fitting_utils.brain_name(model),
 																				list(np.round(parameters, 4)), y,
 																				np.round(likelihood_stage, 3),
-																				np.mean(all_experiment_likelihoods)))
+																				np.mean(rat_data_with_likelihood.likelihood)))
 		return np.clip(y, a_min=0, a_max=50)
 
 	def optimize(self):
 		search_result = gp_minimize(self._calc_experiment_likelihood, self.parameters_space,
 									n_calls=self.n_calls)
-		experiment_stats, all_experiment_likelihoods = self._run_model(search_result.x)
-		return search_result, experiment_stats, all_experiment_likelihoods
+		experiment_stats, rat_data_with_likelihood = self._run_model(search_result.x)
+		return search_result, experiment_stats, rat_data_with_likelihood
 
 	def _fake_optimize(self):
 		class Object(object):
@@ -87,21 +87,13 @@ def all_subjects_all_models_optimization(env, animals_data_folder, all_models, n
 		fitting_results[animal_id] = {}
 		for curr_model in all_models:
 			model, parameters_space = curr_model
-			search_result, experiment_stats, all_experiment_likelihoods = \
+			search_result, experiment_stats, rat_data_with_likelihood = \
 				MazeBayesianModelFitting(env, curr_rat, model, parameters_space, n_calls).optimize()
-			fitting_results[animal_id][fitting_utils.brain_name(model)] = dict = \
-				{"subject": animal_id,
-				 "model": fitting_utils.brain_name(model),
-				 "exp_likl": np.mean(all_experiment_likelihoods),
-				 "stages_likl": fitting_utils.calculate_stage_likelihood(experiment_stats),
-				 "daily_likl": list(experiment_stats.epoch_stats_df.Likelihood),
-				 "stages": list(experiment_stats.epoch_stats_df.Stage),
-				 "trial_likl": all_experiment_likelihoods,
-				 "parameters": search_result.x,
-				 "results_obj": search_result}
+			rat_data_with_likelihood['subject'] = animal_id
+			rat_data_with_likelihood["model"] = fitting_utils.brain_name(model)
+			rat_data_with_likelihood["parameters"] = [search_result.x] * len(rat_data_with_likelihood)
 
-			results_df = results_df.append(dict, ignore_index=True)
-	del results_df["results_obj"]
+			results_df = results_df.append(rat_data_with_likelihood, ignore_index=True)
 
 	results_df.to_csv('fitting/Results/Rats-Results/fitting_results_{}.csv'.format(fitting_utils.get_timestamp()))
 	# with open('fitting/Results/Rats-Results/fitting_results_{}.pkl'.format(fitting_utils.get_timestamp()),
@@ -154,7 +146,7 @@ if __name__ == '__main__':
 	# #
 
 	all_subjects_all_models_optimization(PlusMazeOneHotCues2ActiveDoors(relevant_cue=CueType.ODOR, stimuli_encoding=10),
-										 MAZE_ANIMAL_DATA_PATH, maze_models, n_calls=35)
+										 MAZE_ANIMAL_DATA_PATH, maze_models, n_calls=11)
 
 	# fitting = plot_all_subjects_fitting_results(PlusMazeOneHotCues2ActiveDoors(relevant_cue=CueType.ODOR, stimuli_encoding=10),
 	# 											 animals_data_folder=MAZE_ANIMAL_DATA_PATH, all_models=maze_models,

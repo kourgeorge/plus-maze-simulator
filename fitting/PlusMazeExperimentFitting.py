@@ -14,6 +14,7 @@ from fitting.FittingStats import FittingStats
 
 def PlusMazeExperimentFitting(env: PlusMaze, agent: MotivatedAgent, rat_data, dashboard=False):
 
+    rat_data['likelihood']=np.nan
     env.reset()
     stats = FittingStats(metadata={'brain': str(agent.get_brain()),
                                 'network': str(agent.get_brain().get_model()),
@@ -46,6 +47,7 @@ def PlusMazeExperimentFitting(env: PlusMaze, agent: MotivatedAgent, rat_data, da
             likelihood_list.append(likelihood)
             model_action_dists = np.append(model_action_dists, np.expand_dims(model_action_dist, axis=0), axis=0)
             loss = agent.smarten()
+            rat_data['likelihood'].iloc[trial]=likelihood
 
         if day_passed(trial, rat_data):
             stats.update_stats_from_agent(agent, trial, config.REPORTING_INTERVAL)
@@ -71,7 +73,7 @@ def PlusMazeExperimentFitting(env: PlusMaze, agent: MotivatedAgent, rat_data, da
 
     print("Likelihood - Average:{}, Median:{}".format(np.mean(likelihood_list), np.median(likelihood_list)))
     stats.metadata['experiment_status'] = ExperimentStatus.COMPLETED
-    return stats, likelihood_list
+    return stats, rat_data
 
 
 def should_pass_to_next_stage(rat_data, trial):
