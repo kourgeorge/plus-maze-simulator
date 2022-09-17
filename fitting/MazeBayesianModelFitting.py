@@ -50,7 +50,7 @@ class MazeBayesianModelFitting():
 	def _calc_experiment_likelihood(self, parameters):
 		model = self.model
 		experiment_stats, rat_data_with_likelihood = self._run_model(parameters)
-		likelihood_stage = fitting_utils.calculate_stage_likelihood(rat_data_with_likelihood)
+		likelihood_stage = rat_data_with_likelihood.groupby('stage').mean()['likelihood']
 		y = np.nanmean(likelihood_stage)
 
 		print("{}.\tx={},\t\ty={:.3f},\tstages={} \toverall_mean={:.3f}".format(fitting_utils.brain_name(model),
