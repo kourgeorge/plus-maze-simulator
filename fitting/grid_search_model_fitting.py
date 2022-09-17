@@ -34,7 +34,7 @@ def run_fitting(env, model_params, rat_data_file=None, rat_id=None, repetitions=
 			motivated_reward_value=config.MOTIVATED_REWARD, non_motivated_reward_value=non_motivated_reward_value)
 
 		# Run the fitting process
-		experiment_stats, all_experiment_likelihoods = PlusMazeExperimentFitting(env, agent, rat_data=rat_data)
+		experiment_stats, rat_data_likelihood = PlusMazeExperimentFitting(env, agent, rat_data=rat_data)
 
 		# Report results
 		#plot_behavior_results([experiment_stats])
@@ -55,8 +55,8 @@ def run_fitting(env, model_params, rat_data_file=None, rat_id=None, repetitions=
 				'non_motivated_reward': non_motivated_reward_value,
 				'memory_size': config.MEMORY_SIZE, 'learning_rate': learning_rate,
 				'trials': len(rat_data),
-				'median_full_likelihood': np.median(all_experiment_likelihoods),
-				'average_full_likelihood': np.mean(all_experiment_likelihoods),
+				'median_full_likelihood': np.median(rat_data_likelihood.likelihood),
+				'average_full_likelihood': np.mean(rat_data_likelihood.likelihood),
 				'average_likelihood_s1': likelihood_stage[0],
 				'average_likelihood_s2': likelihood_stage[1],
 				'average_likelihood_s3': likelihood_stage[2],
