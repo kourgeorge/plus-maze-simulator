@@ -96,13 +96,13 @@ class MazeBayesianModelFitting:
 				rat_data_with_likelihood["parameters"] = [search_result.x] * len(rat_data_with_likelihood)
 
 				results_df = results_df.append(rat_data_with_likelihood, ignore_index=True)
-			results_df.to_csv('fitting/Results/Rats-Results/fitting_results{}_until_{}.csv'.format(timestamp, subject_id))
+			results_df.to_csv('fitting/Results/Rats-Results/fitting_results{}_tmp.csv'.format(timestamp))
 		results_df.to_csv('fitting/Results/Rats-Results/fitting_results{}.csv'.format(timestamp))
 		return fitting_results
 
 
-
 if __name__ == '__main__':
 
-	MazeBayesianModelFitting.all_subjects_all_models_optimization(PlusMazeOneHotCues2ActiveDoors(relevant_cue=CueType.ODOR, stimuli_encoding=10),
-										 MAZE_ANIMAL_DATA_PATH, maze_models, n_calls=11)
+	MazeBayesianModelFitting.all_subjects_all_models_optimization(
+		PlusMazeOneHotCues2ActiveDoors(relevant_cue=CueType.ODOR, stimuli_encoding=10),
+										 MAZE_ANIMAL_DATA_PATH, maze_models, n_calls=35)
