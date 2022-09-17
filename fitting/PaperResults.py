@@ -12,7 +12,7 @@ from matplotlib.ticker import MaxNLocator
 import seaborn as sns
 
 
-def models_fitting_accuracy_over_times(data_file_path):
+def models_fitting_quality_over_times(data_file_path):
 	df = pd.read_csv(data_file_path)
 	df = df[['subject', 'model', 'stage', 'day in stage', 'trial', 'likelihood']].copy()
 
@@ -94,19 +94,53 @@ def compare_neural_tabular_models(data_file_path):
 	fig.legend(handles, ["Q vs. FC", "UA Tabular vs. UA Neural", "ACL Tabular vs. ACL Neural"],
 			   loc='upper center', prop={'size': 8})
 
-	plt.subplots_adjust(left=0.1,
-						bottom=0.2,
-						right=0.9,
-						top=0.8,
-						wspace=0.6,
-						hspace=0.5)
+	plt.subplots_adjust(left=0.1, bottom=0.2, right=0.9, top=0.8, wspace=0.6, hspace=0.5)
 	plt.savefig('fitting/Results/figures/neural_tabular_compare_{}'.format(fitting_utils.get_timestamp()))
 	plt.show()
 
 
+def compare_model_subject_learning_rate(data_file_path):
+
+	df = pd.read_csv(data_file_path)
+	df = df[['subject', 'model', 'stage', 'day in stage', 'trial', 'reward', 'model_reward']].copy()
+
+	days_info_df = df.groupby(['subject', 'model', 'stage', 'day in stage']).mean().reset_index()
+
+	fig = plt.figure(figsize=(35, 7), dpi=120, facecolor='w')
+	for i, subject in enumerate(np.unique(df["subject"])):
+		df_sub = days_info_df[days_info_df["subject"] == subject]
+		axis = fig.add_subplot(330 + i + 1)
+
+
+		for model in np.unique(df_sub["model"]):
+			model_subject_df = df_sub[df_sub["model"] == model]
+			days = range(len(model_subject_df))
+			axis.plot(days, model_subject_df.model_reward, label=model, alpha=0.5)
+			axis.xaxis.set_major_locator(MaxNLocator(integer=True))
+
+			axis.set_xlabel('Days') if i > 5 else 0
+			axis.set_ylabel("Accuracy") if i % 3 == 0 else 0
+
+			stage_transition_days = np.where(model_subject_df['day in stage'] == 1)
+			for stage_day in stage_transition_days[0] + 1:
+				axis.axvline(x=stage_day + 0.5, alpha=0.5, dashes=(5, 2, 1, 2), lw=2)
+
+		axis.plot(days, model_subject_df.reward, label='subject', color='black')
+
+	handles, labels = axis.get_legend_handles_labels()
+	fig.legend(handles, labels, prop={'size': 8.5})  # loc=(0.55,0.1), prop={'size': 7}
+
+	plt.subplots_adjust(left=0.1, bottom=0.1, right=0.9, top=0.9, wspace=0.4, hspace=0.4)
+
+	plt.savefig('fitting/Results/figures/Likelihood_{}'.format(fitting_utils.get_timestamp()))
+	plt.show()
+
 if __name__ == '__main__':
-	models_fitting_accuracy_over_times(
-		'/Users/gkour/repositories/plusmaze/fitting/Results/Rats-Results/fitting_results_2022_09_17_17_15.csv')
-	compare_neural_tabular_models(
-		'/Users/gkour/repositories/plusmaze/fitting/Results/Rats-Results/fitting_results_2022_09_17_17_15.csv')
+	# models_fitting_quality_over_times(
+	# 	'/Users/gkour/repositories/plusmaze/fitting/Results/Rats-Results/fitting_results_2022_09_17_17_15.csv')
+	# compare_neural_tabular_models(
+	# 	'/Users/gkour/repositories/plusmaze/fitting/Results/Rats-Results/fitting_results_2022_09_17_17_15.csv')
+
+	compare_model_subject_learning_rate('/Users/gkour/repositories/plusmaze/fitting/Results/Rats-Results/fitting_results_2022_09_17_19_04_fake.csv')
+
 	x = 1
