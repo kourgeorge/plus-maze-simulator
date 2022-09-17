@@ -107,6 +107,30 @@ class FullyConnectedNetwork(AbstractNetworkModel):
 		return {'layer1_dim_change': change}
 
 
+class RandomNetwork(AbstractNetworkModel):
+	def __init__(self, encoding_size, num_channels, num_actions):
+		super().__init__()
+		self.affine = nn.Linear(num_channels * num_actions * encoding_size, num_actions, bias=True)
+
+	def forward(self, x):
+		return 0
+
+	def get_stimuli_layer(self):
+		return self.model[0].weight
+
+	def get_door_attention(self):
+		return torch.tensor([[0, 0, 0, 0], [0, 0, 0, 0]])
+
+	def get_dimension_attention(self):
+		return torch.tensor([[0, 0, 0, 0], [0, 0, 0, 0]])
+
+	def get_network_metrics(self):
+		return {}
+
+	def network_diff(self, network2):
+		return {}
+
+
 class FullyConnectedNetwork2Layers(FullyConnectedNetwork):
 	def __init__(self, encoding_size, num_channels, num_actions):
 		super().__init__(encoding_size, num_channels, num_actions)

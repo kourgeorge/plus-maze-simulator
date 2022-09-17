@@ -41,12 +41,12 @@ maze_models = [((TDBrain, TD, TabularQ), (beta, lr, batch_size)),
 			   ((ConsolidationBrain, DQN, UniformAttentionNetwork),(beta,lr,batch_size)),
 			   ((ConsolidationBrain, DQN, AttentionAtChoiceAndLearningNetwork),(beta,lr,batch_size)),
 			   ((ConsolidationBrain, DQN, FullyConnectedNetwork2Layers),(beta,lr,batch_size)),
-			   ((RandomBrain, DQN, EfficientNetwork),(beta,lr,batch_size))
+			   ((RandomBrain, DQN, RandomNetwork),(beta,lr,batch_size))
 			   ]
 
 motivational_models = maze_models + \
-					  [((ConsolidationBrain, DQN, EfficientNetwork),(beta,lr,batch_size)),
-						((FixedDoorAttentionBrain, DQN, EfficientNetwork), (nmr, lr, batch_size)),
+					  [((ConsolidationBrain, DQN, EfficientNetwork), (beta, lr, batch_size)),
+					   ((FixedDoorAttentionBrain, DQN, EfficientNetwork), (nmr, lr, batch_size)),
 					   ((MotivationDependantBrain, DQN, SeparateMotivationAreasNetwork), (nmr, lr, batch_size)),
 					   ((MotivationDependantBrain, DQN, SeparateMotivationAreasFCNetwork), (nmr, lr, batch_size)),
 					   ((LateOutcomeEvaluationBrain, DQN, SeparateMotivationAreasNetwork), (nmr, lr, batch_size))]
