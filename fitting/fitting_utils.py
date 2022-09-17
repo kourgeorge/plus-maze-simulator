@@ -13,7 +13,8 @@ def get_timestamp():
 	return datetime.datetime.now().strftime("%Y_%m_%d_%H_%M")
 
 def brain_name(architecture):
-	return "{}.{}.{}".format(architecture[0].__name__, architecture[1].__name__, architecture[2].__name__)
+	#return "{}.{}.{}".format(architecture[0].__name__, architecture[1].__name__, architecture[2].__name__)
+	return "{}".format(architecture[2].__name__)
 
 
 def episode_rollout_on_real_data(env: PlusMazeOneHotCues, agent: MotivatedAgent, current_trial):
@@ -62,21 +63,3 @@ def blockPrint():
 def enablePrint():
 	sys.stdout = sys.__stdout__
 
-
-def calculate_stage_likelihood(experiment_stats):
-	daily_likelihoods = experiment_stats.epoch_stats_df.Likelihood
-	stages = experiment_stats.epoch_stats_df.Stage
-	all_stages = len(np.unique(experiment_stats.epoch_stats_df.Stage))
-	likelihood_stage = np.zeros([all_stages])
-	for stage in range(all_stages):
-		stage_likelihood = [daily_likelihoods[i] for i in range(len(daily_likelihoods)) if stages[i] == stage]
-		if len(stage_likelihood) == 0:
-			likelihood_stage[stage] = None
-		else:
-			likelihood_stage[stage] = np.nanmean(stage_likelihood)
-
-	return likelihood_stage
-
-
-def float_string_list_to_list(str):
-	return [float(a) for a in str.strip('][').split(', ')]
