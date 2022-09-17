@@ -107,7 +107,7 @@ class FullyConnectedNetwork(AbstractNetworkModel):
 		return {'layer1_dim_change': change}
 
 
-class RandomNetwork(AbstractNetworkModel):
+class Random(AbstractNetworkModel):
 	def __init__(self, encoding_size, num_channels, num_actions):
 		super().__init__()
 		self.affine = nn.Linear(num_channels * num_actions * encoding_size, num_actions, bias=True)
