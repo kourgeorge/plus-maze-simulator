@@ -31,7 +31,7 @@ def show_models_fitting_accuracy_over_times_for_subject(env, models):
 
 		axis.xlabel('Days')
 		axis.set_ylabel("Subject {}".format(i))
-		#axis.set_title("Subject {}".format(i))
+		# axis.set_title("Subject {}".format(i))
 		stage_transition_days = np.where(np.ediff1d(experiment_stats.epoch_stats_df.Stage) == 1)
 		for stage_day in stage_transition_days[0] + 1:
 			axis.axvline(x=stage_day + 0.5, alpha=0.5, dashes=(5, 2, 1, 2), lw=2)
@@ -54,6 +54,7 @@ def show_models_fitting_accuracy_over_times_for_subject(env, models):
 
 def show_models_fitting_accuracy_over_times_for_subject_from_data(data_file_path):
 	df = pd.read_csv(data_file_path)
+	df = df[['subject', 'model', 'stage', 'day in stage', 'trial', 'likelihood']].copy()
 
 	fig = plt.figure(figsize=(35, 7), dpi=120, facecolor='w')
 	for i, subject in enumerate(np.unique(df["subject"])):
@@ -64,16 +65,21 @@ def show_models_fitting_accuracy_over_times_for_subject_from_data(data_file_path
 		for model in np.unique(df_sub["model"]):
 			# find individual best fitting parameters.
 			df_sub_model = df_sub[df_sub["model"] == model]
-			daily_likl = fitting_utils.float_string_list_to_list(list(df_sub_model["daily_likl"])[0])
-			stages = fitting_utils.float_string_list_to_list(list(df_sub_model["stages"])[0])
-			days = np.array(range(len(daily_likl)))+1
-			axis.plot(days, np.exp(-np.array(daily_likl)), label=model.split('.')[-1])
+			#daily_likl = fitting_utils.float_string_list_to_list(list(df_sub_model["daily_likl"])[0])
+
+			model_subject_df = df_sub_model.groupby(['subject', 'model', 'stage', 'day in stage']).mean().reset_index()
+			model_subject_df.likelihood = np.exp(-model_subject_df.likelihood)
+			daily_likl = model_subject_df.likelihood
+
+			#stages = fitting_utils.float_string_list_to_list(list(df_sub_model["stages"])[0])
+			days = list(model_subject_df.index+1)
+			axis.plot(days, daily_likl, label=model.split('.')[-1])
 			axis.xaxis.set_major_locator(MaxNLocator(integer=True))
 
-		axis.set_xlabel('Days') if i>5 else 0
-		axis.set_ylabel("Likelihood") if i%3==0 else 0
+		axis.set_xlabel('Days') if i > 5 else 0
+		axis.set_ylabel("Likelihood") if i % 3 == 0 else 0
 		axis.set_title("Subject {}".format(i))
-		stage_transition_days = np.where(np.ediff1d(stages) == 1)
+		stage_transition_days = np.where(model_subject_df['day in stage'] == 1)
 		for stage_day in stage_transition_days[0] + 1:
 			axis.axvline(x=stage_day + 0.5, alpha=0.5, dashes=(5, 2, 1, 2), lw=2)
 
@@ -94,62 +100,49 @@ def show_models_fitting_accuracy_over_times_for_subject_from_data(data_file_path
 	plt.savefig('fitting/Results/figures/Likelihood_{}'.format(fitting_utils.get_timestamp()))
 	plt.show()
 
-def show_neural_tabular_for_stage_and_subject(data_file_path):
+
+def compare_neural_tabular_models(data_file_path):
 	df = pd.read_csv(data_file_path)
-	df.stages_likl = [fitting_utils.float_string_list_to_list(row) for row in list(df.stages_likl)]
+	df = df[['subject', 'model', 'stage', 'day in stage', 'trial', 'likelihood']].copy()
 	stages = ['ODOR1', 'ODOR2', 'EDShift(Light)']
-	for stage_indx, stage in enumerate(stages):
-		df[stage] = np.exp(-np.stack(list(df.stages_likl))[:,stage_indx])
-	del df['stages_likl']
 
-	df.exp_likl=np.exp(-df.exp_likl)
+	stage_mean_df = df.groupby(['subject', 'model', 'stage', 'day in stage']).mean().reset_index()
+	stage_mean_df.likelihood = np.exp(-stage_mean_df.likelihood)
 
-	subjects = np.unique(df["subject"])
+	model_pairs = [('TabularQ', 'FullyConnectedNetwork'),
+				   ('UniformAttentionTabular', 'UniformAttentionNetwork'),
+				   ('AttentionAtChoiceAndLearningTabular', 'AttentionAtChoiceAndLearningNetwork')]
+	pairs_df = pd.DataFrame()
+	joined_df = stage_mean_df.merge(stage_mean_df, on=['subject', 'stage', 'day in stage'])
 
-	model_pairs=[('TDBrain.TD.TabularQ','ConsolidationBrain.DQN.FullyConnectedNetwork'),
-					  ('TDBrain.TDUniformAttention.UniformAttentionTabular','ConsolidationBrain.DQN.UniformAttentionNetwork'),
-					  ('TDBrain.TDUniformAttention.AttentionAtChoiceAndLearningTabular','ConsolidationBrain.DQN.AttentionAtChoiceAndLearningNetwork')]
-
-	results_df = pd.DataFrame()
 	for pair_ind, model_pair in enumerate(model_pairs):
 		tabular_model = model_pair[0]
 		neural_model = model_pair[1]
-
-		for subject in subjects:
-			df_sub_model_tabular = df[(df.subject == subject) & (df.model == tabular_model)]
-			df_sub_model_neural = df[(df.subject == subject) & (df.model == neural_model)]
-
-			dict={'subject':subject,
-				  'pair':model_pair,
-				  'expr_likl': (df_sub_model_tabular.exp_likl.iloc[0], df_sub_model_neural.exp_likl.iloc[0]),
-				  stages[0]: (df_sub_model_tabular[stages[0]].iloc[0], df_sub_model_neural[stages[0]].iloc[0]),
-				  stages[1]: (df_sub_model_tabular[stages[1]].iloc[0], df_sub_model_neural[stages[1]].iloc[0]),
-				  stages[2]: (df_sub_model_tabular[stages[2]].iloc[0], df_sub_model_neural[stages[2]].iloc[0])}
-
-			results_df = results_df.append(dict, ignore_index=True)
+		pair_df = joined_df[(joined_df.model_x == tabular_model) & (joined_df.model_y == neural_model)]
+		pairs_df = pairs_df.append(pair_df, ignore_index=True)
+	pairs_df['pair'] = pairs_df.model_x + ', ' + pairs_df.model_y
 
 	sns.set_theme(style="whitegrid")
-
 	fig = plt.figure(figsize=(12, 4), dpi=120, facecolor='w')
-
-	for i, stage in enumerate(stages+['expr_likl']):
+	for i, stage in enumerate(stages):
 		axis = fig.add_subplot(140 + i + 1)
-		results_df[stage+'_tabular'] = np.stack(results_df[stage].to_numpy())[:, 0]
-		results_df[stage+'_neural'] = np.stack(results_df[stage].to_numpy())[:, 1]
-
-		min_prob= np.min(list(results_df[stage+'_tabular'])+list(results_df[stage+'_neural']))
-		max_prob = np.max(list(results_df[stage + '_tabular']) + list(results_df[stage + '_neural']))
-		sns.scatterplot(x=stage+'_tabular', y=stage+'_neural', hue='pair', data=results_df, ax=axis)
-		#axis.plot(np.linspace(min_prob, max_prob, 100), np.linspace(min_prob, max_prob, 100), color='grey')
+		pairs_df_stage = pairs_df[pairs_df['stage'] == i + 1]
+		sns.scatterplot(x='likelihood_x', y='likelihood_y', hue='pair', data=pairs_df_stage, ax=axis, alpha=0.6, s=20)
 		axis.plot(np.linspace(0.1, 0.7, 100), np.linspace(0.1, 0.7, 100), color='grey')
-		axis.set(xlabel='Tabular', ylabel='Neural') if i==0 else axis.set(xlabel='Tabular', ylabel='')
+		axis.set(xlabel='Tabular', ylabel='Neural') if i == 0 else axis.set(xlabel='Tabular', ylabel='')
 		axis.set_title(stage)
 		axis.legend([], [], frameon=False)
 
-
 		handles, labels = axis.get_legend_handles_labels()
-		fig.legend(handles, ["Q vs. FC","UA Tabular vs. UA Neural", "ACL Tabular vs. ACL Neural"],
+		fig.legend(handles, ["Q vs. FC", "UA Tabular vs. UA Neural", "ACL Tabular vs. ACL Neural"],
 				   loc='upper center', prop={'size': 8})
+
+	axis = fig.add_subplot(144)
+	sns.scatterplot(x='likelihood_x', y='likelihood_y', hue='pair', data=pairs_df, ax=axis, alpha=0.5, s=10)
+	axis.plot(np.linspace(0.1, 0.7, 100), np.linspace(0.1, 0.7, 100), color='grey')
+	axis.set_title('All Stages')
+	axis.set(xlabel='Tabular', ylabel='')
+	axis.legend([], [], frameon=False)
 
 
 	plt.subplots_adjust(left=0.1,
@@ -163,11 +156,10 @@ def show_neural_tabular_for_stage_and_subject(data_file_path):
 
 
 if __name__ == '__main__':
-	# show_models_fitting_accuracy_over_times_for_subject(
-	# 	PlusMazeOneHotCues2ActiveDoors(relevant_cue=CueType.ODOR, stimuli_encoding=10), maze_models)
 
-	show_neural_tabular_for_stage_and_subject('/Users/gkour/repositories/plusmaze/fitting/Results/Rats-Results/fitting_results_2022_09_17_04_47.csv')
-	#show_models_fitting_accuracy_over_times_for_subject_from_data(
-	#	'/Users/gkour/repositories/plusmaze/fitting/Results/Rats-Results/fitting_results_2022_09_17_04_47.csv')
 
+	show_models_fitting_accuracy_over_times_for_subject_from_data(
+		'/Users/gkour/repositories/plusmaze/fitting/Results/Rats-Results/fitting_results_2022_09_17_17_15.csv')
+	# compare_neural_tabular_models(
+	# 	'/Users/gkour/repositories/plusmaze/fitting/Results/Rats-Results/fitting_results_2022_09_17_17_15.csv')
 	x = 1
