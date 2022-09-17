@@ -12,9 +12,12 @@ from Dashboard import Dashboard
 from fitting.FittingStats import FittingStats
 
 
-def PlusMazeExperimentFitting(env: PlusMaze, agent: MotivatedAgent, rat_data, dashboard=False):
+def PlusMazeExperimentFitting(env: PlusMaze, agent: MotivatedAgent, experiment_data, dashboard=False):
 
-    rat_data['likelihood']=np.nan
+    fitting_info = experiment_data.copy()
+    fitting_info['model_reward'] = np.nan
+    #fitting_info['model_action_dist'] = np.nan
+    fitting_info['likelihood']=np.nan
     env.reset()
     stats = FittingStats(metadata={'brain': str(agent.get_brain()),
                                 'network': str(agent.get_brain().get_model()),
@@ -38,18 +41,18 @@ def PlusMazeExperimentFitting(env: PlusMaze, agent: MotivatedAgent, rat_data, da
     print("Stage {}: {} - Water Motivated, odor relevant. (Odors: {}, Correct: {})".format(env.get_stage(), env.stage_names[env.get_stage()],
                                                                                            [np.argmax(encoding) for encoding in env.get_odor_cues()],
                                                                                              np.argmax(env.get_correct_cue_value())))
-    likelihood_list = []  # only on real data
     model_action_dists = np.empty([1, env.num_actions()])
-    while trial < len(rat_data):
-        if completed_trial(rat_data, trial):
-            _, _, _, model_action_dist, likelihood = fitting_utils.episode_rollout_on_real_data(env, agent,
-                                                                                                rat_data.iloc[trial])
-            likelihood_list.append(likelihood)
+    while trial < len(fitting_info):
+        if completed_trial(fitting_info, trial):
+            _, _, _, model_action_dist, likelihood, model_action_outcome = fitting_utils.episode_rollout_on_real_data(env, agent,
+                                                                                                                      fitting_info.iloc[trial])
             model_action_dists = np.append(model_action_dists, np.expand_dims(model_action_dist, axis=0), axis=0)
             loss = agent.smarten()
-            rat_data['likelihood'].iloc[trial]=likelihood
+            fitting_info['likelihood'].iloc[trial] = likelihood
+            #fitting_info['model_action_dist'].iloc[trial] = model_action_dist
+            fitting_info['model_reward'].iloc[trial] = agent.evaluate_outcome(model_action_outcome)
 
-        if day_passed(trial, rat_data):
+        if day_passed(trial, fitting_info):
             stats.update_stats_from_agent(agent, trial, config.REPORTING_INTERVAL)
             pre_stage_transition_update()
 
@@ -68,12 +71,12 @@ def PlusMazeExperimentFitting(env: PlusMaze, agent: MotivatedAgent, rat_data, da
             model_action_dists = np.empty([1, env.num_actions()])
 
         trial += 1
-        if should_pass_to_next_stage(rat_data, trial):
+        if should_pass_to_next_stage(fitting_info, trial):
             env.set_next_stage(agent)
 
-    print("Likelihood - Average:{}, Median:{}".format(np.mean(likelihood_list), np.median(likelihood_list)))
+    print("Likelihood - Average:{}, Median:{}".format(np.mean(fitting_info.likelihood), np.median(fitting_info.likelihood)))
     stats.metadata['experiment_status'] = ExperimentStatus.COMPLETED
-    return stats, rat_data
+    return stats, fitting_info
 
 
 def should_pass_to_next_stage(rat_data, trial):

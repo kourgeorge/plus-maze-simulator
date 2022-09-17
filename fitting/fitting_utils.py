@@ -48,12 +48,12 @@ def episode_rollout_on_real_data(env: PlusMazeOneHotCues, agent: MotivatedAgent,
 
 		env.set_state(current_trial)
 		info.likelihood = likelihood
-		info.network_action = agent.decide(state)
-		_, outcome_network, _, _ = env.step(info.network_action)
-		info.network_outcome = outcome_network
+		info.model_action = agent.decide(state)
+		_, model_action_outcome, _, _ = env.step(info.model_action)
+		info.network_outcome = model_action_outcome
 
 		state = new_state
-	return steps, total_reward, act_dist, model_action_dist, likelihood
+	return steps, total_reward, act_dist, model_action_dist, likelihood, model_action_outcome
 
 
 def blockPrint():

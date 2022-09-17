@@ -42,7 +42,7 @@ class MazeBayesianModelFitting():
 			non_motivated_reward_value=0)
 
 		experiment_stats, rat_data_with_likelihood = PlusMazeExperimentFitting(self.env, agent, dashboard=False,
-																				 rat_data=self.experiment_data)
+																			   experiment_data=self.experiment_data)
 		enablePrint()
 
 		return experiment_stats, rat_data_with_likelihood
@@ -72,8 +72,8 @@ class MazeBayesianModelFitting():
 		x = (1.5, 0.05, 15)
 		obj = Object()
 		obj.x = x
-		experiment_stats, all_experiment_likelihoods = self._run_model(x)
-		return obj, experiment_stats, all_experiment_likelihoods
+		experiment_stats, rat_data_with_likelihood = self._run_model(x)
+		return obj, experiment_stats, rat_data_with_likelihood
 
 
 def all_subjects_all_models_optimization(env, animals_data_folder, all_models, n_calls=35):

@@ -30,7 +30,7 @@ def test_fitting_FC_motivational():
 		non_motivated_reward_value=nmr)
 
 	experiment_stats, all_experiment_likelihoods = PlusMazeExperimentFitting(env, agent, dashboard=False,
-																			 rat_data=rat_data)
+																			 experiment_data=rat_data)
 
 	assert np.mean(all_experiment_likelihoods) < 1.2
 
