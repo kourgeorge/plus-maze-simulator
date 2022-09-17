@@ -3,7 +3,7 @@ __author__ = 'gkour'
 
 class AbstractBrain:
 
-    def __init__(self, reward_discount):
+    def __init__(self, reward_discount, *args, **kwargs):
         self.reward_discount = reward_discount
 
     def think(self, obs, agent):
