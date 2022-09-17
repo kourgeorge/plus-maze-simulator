@@ -34,7 +34,7 @@ def run_fitting(env, model_params, rat_data_file=None, rat_id=None, repetitions=
 			motivated_reward_value=config.MOTIVATED_REWARD, non_motivated_reward_value=non_motivated_reward_value)
 
 		# Run the fitting process
-		experiment_stats, rat_data_likelihood = PlusMazeExperimentFitting(env, agent, rat_data=rat_data)
+		experiment_stats, rat_data_likelihood = PlusMazeExperimentFitting(env, agent, fitting_info=rat_data)
 
 		# Report results
 		#plot_behavior_results([experiment_stats])
