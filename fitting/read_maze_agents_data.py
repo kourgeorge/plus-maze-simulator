@@ -1,5 +1,7 @@
 import os
 from operator import index
+
+import numpy as np
 import pandas as pd
 from glob import glob
 from datetime import datetime
@@ -67,7 +69,7 @@ def add_stage_index_and_day_to_df(df, stage_index, day_index):
 def parse_table_stage_by_odor(df, stage):
     df = set_odor_and_color_column(df, stage)
     df['action'] = df['chosen_arm']
-    df['reward'] = df.apply(lambda row: 1 if row.chosen_arm == row.door_relevant_cue1 else 0, axis=1)
+    df['reward'] = df.apply(lambda row: 1 if row.chosen_arm == row.door_relevant_cue1 else (None if np.isnan(row.chosen_arm) else 0), axis=1)
     return df[['stage', 'day in stage', 'trial', 'A1o', 'A1c', 'A2o', 'A2c', 'A3o', 'A3c', 'A4o', 'A4c', 'action', 'reward']]
 
 
@@ -89,15 +91,6 @@ def set_odor_and_color_column(df, stage):
         df['A{}c'.format(arm)] = df.apply(
             lambda row: 1 if row.door_color_cue1 == arm else 0 if row.door_color_cue2 == arm else -1, axis=1)
     return df
-    # df['A1o'] = df.apply(lambda row: 1 if row.door_odor_cue1 == 1 else 0 if row.door_odor_cue2 == 1 else -1, axis=1)
-    # df['A1c'] = df.apply(lambda row: 1 if row.door_color_cue1 == 1 else 0 if row.door_color_cue2 == 2 else -1, axis=1)
-    # df['A2o'] = df.apply(lambda row: 1 if row.door_odor_cue1 == 1 else 0 if row.door_odor_cue2 == 2 else -1, axis=1)
-    # df['A2c'] = df.apply(lambda row: 1 if row.door_color_cue1 == 1 else 0 if row.door_color_cue2 == 2 else -1, axis=1)
-    # df['A3o'] = df.apply(lambda row: 1 if row.door_odor_cue1 == 1 else 0 if row.door_odor_cue2 == 3 else -1, axis=1)
-    # df['A3c'] = df.apply(lambda row: 1 if row.irrelevant_stimuli_p2 == 3 else 0, axis=1)
-    # df['A4o'] = df.apply(lambda row: 1 if row.door_odor_cue1 == 1 else 0 if row.door_odor_cue2 == 4 else -1, axis=1)
-    # df['A4c'] = df.apply(lambda row: 1 if row.irrelevant_stimuli_p2 == 4 else 0, axis=1)
-    # return df
 
 
 def reward_type(row):
