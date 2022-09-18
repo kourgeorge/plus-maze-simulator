@@ -82,7 +82,6 @@ class FullyConnectedNetwork(AbstractNetworkModel):
 		self.affine = nn.Linear(num_channels * num_actions * encoding_size, num_actions, bias=True)
 		self.model = torch.nn.Sequential(
 			self.affine,
-			#nn.Softmax(dim=-1)
 		)
 
 	def forward(self, x):
