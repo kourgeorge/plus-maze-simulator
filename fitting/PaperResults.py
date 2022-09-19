@@ -139,6 +139,45 @@ def compare_model_subject_learning_curve(data_file_path):
 	plt.show()
 
 
+def show_likelihood_trials_scatter(data_file_path):
+	df = pd.read_csv(data_file_path)
+	df = df[['subject', 'model', 'stage', 'day in stage', 'trial', 'likelihood']].copy()
+	df.dropna(inplace=True)
+
+	df.likelihood = np.exp(-df.likelihood)
+
+	model_pairs = [('TabularQ', 'FullyConnectedNetwork'),
+				   ('UniformAttentionTabular', 'UniformAttentionNetwork'),
+				   ('AttentionAtChoiceAndLearningTabular', 'AttentionAtChoiceAndLearningNetwork')]
+
+
+	sns.set_theme(style="whitegrid")
+	fig = plt.figure(figsize=(10, 5), dpi=120, facecolor='w')
+
+	for i, model in enumerate(sum(model_pairs,())):
+		for s, stage in enumerate(stages):
+			axis = fig.add_subplot(6,3,i*3+s+1)
+			model_df = df[(df.model==model) & (df.stage==s+1)]
+			sns.histplot(data=model_df, x="likelihood", kde=True)
+			axis.axvline(x=np.mean(model_df.likelihood),
+						color='red')
+			axis.axvline(x=np.median(model_df.likelihood),
+						 color='green')
+
+			axis.set_title(model) if s==0 else 0
+			axis.set_xticklabels(['']) if s == 0 else 0
+			axis.set_xlabel('')
+			axis.set_ylabel('') if s>0 else 0
+
+			axis.set_xlim([0,1])
+
+	plt.subplots_adjust(left=0.1, bottom=0.05, right=0.95, top=0.9, wspace=0.2, hspace=0.5)
+
+
+	plt.savefig('fitting/Results/figures/likelihood_trial_scatter_{}'.format(fitting_utils.get_timestamp()))
+	plt.show()
+
+
 def plot_models_fitting_result_per_stage(data_file_path):
 	df = pd.read_csv(data_file_path)
 
@@ -180,10 +219,11 @@ def plot_models_fitting_result_per_stage(data_file_path):
 
 
 if __name__ == '__main__':
-	file_path = '/Users/gkour/repositories/plusmaze/fitting/Results/Rats-Results/fitting_results_2022_09_17_21_03.csv'
-	# models_fitting_quality_over_times(file_path)
-	# compare_neural_tabular_models(file_path)
-	# compare_model_subject_learning_curve(file_path)
+	file_path = '/Users/gkour/repositories/plusmaze/fitting/Results/Rats-Results/fitting_results_35_2022_09_19_19_09.csv'
+	models_fitting_quality_over_times(file_path)
+	compare_neural_tabular_models(file_path)
+	compare_model_subject_learning_curve(file_path)
 	plot_models_fitting_result_per_stage(file_path)
+	show_likelihood_trials_scatter(file_path)
 
 	x = 1
