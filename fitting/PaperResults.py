@@ -56,6 +56,7 @@ def models_fitting_quality_over_times(data_file_path):
 def compare_neural_tabular_models(data_file_path):
 	df = pd.read_csv(data_file_path)
 	df = df[['subject', 'model', 'stage', 'day in stage', 'trial', 'likelihood']].copy()
+	df.dropna(inplace=True)
 
 	stage_mean_df = df.groupby(['subject', 'model', 'stage', 'day in stage']).mean().reset_index()
 	stage_mean_df.likelihood = np.exp(-stage_mean_df.likelihood)
@@ -63,6 +64,7 @@ def compare_neural_tabular_models(data_file_path):
 	model_pairs = [('TabularQ', 'FullyConnectedNetwork'),
 				   ('UniformAttentionTabular', 'UniformAttentionNetwork'),
 				   ('AttentionAtChoiceAndLearningTabular', 'AttentionAtChoiceAndLearningNetwork')]
+	stage_mean_df = stage_mean_df[stage_mean_df.model.isin(sum(model_pairs,()))]
 	pairs_df = pd.DataFrame()
 	joined_df = stage_mean_df.merge(stage_mean_df, on=['subject', 'stage', 'day in stage'])
 
