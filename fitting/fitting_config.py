@@ -28,7 +28,7 @@ beta = Real(name='beta', low=0.1, high=5)
 
 maze_models = [((TDBrain, TD, TabularQ), (beta, lr, batch_size)),
 			   ((TDBrain, TDUniformAttention, UniformAttentionTabular), (beta, lr, batch_size)),
-			   ((TDBrain, TDUniformAttention, AttentionAtChoiceAndLearningTabular), (nmr, lr, batch_size)),
+			   ((TDBrain, TDAttentionAtLearning, AttentionAtChoiceAndLearningTabular), (beta, lr, batch_size)),
 			   ((ConsolidationBrain, DQN, FullyConnectedNetwork), (beta, lr, batch_size)),
 			   ((ConsolidationBrain, DQN, UniformAttentionNetwork), (beta, lr, batch_size)),
 			   ((ConsolidationBrain, DQN, AttentionAtChoiceAndLearningNetwork), (beta, lr, batch_size)),
