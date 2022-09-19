@@ -59,8 +59,7 @@ class MazeBayesianModelFitting:
 		return np.clip(y, a_min=0, a_max=50)
 
 	def optimize(self):
-		search_result = gp_minimize(self._calc_experiment_likelihood, self.parameters_space,
-									n_calls=self.n_calls)
+		search_result = gp_minimize(self._calc_experiment_likelihood, self.parameters_space, n_calls=self.n_calls)
 		experiment_stats, rat_data_with_likelihood = self._run_model(search_result.x)
 		return search_result, experiment_stats, rat_data_with_likelihood
 
@@ -97,7 +96,7 @@ class MazeBayesianModelFitting:
 
 				results_df = results_df.append(rat_data_with_likelihood, ignore_index=True)
 			results_df.to_csv('fitting/Results/Rats-Results/fitting_results{}_tmp.csv'.format(timestamp))
-		results_df.to_csv('fitting/Results/Rats-Results/fitting_results{}.csv'.format(timestamp))
+		results_df.to_csv('fitting/Results/Rats-Results/fitting_results_{}_{}.csv'.format(n_calls,timestamp))
 		return fitting_results
 
 
@@ -105,4 +104,4 @@ if __name__ == '__main__':
 
 	MazeBayesianModelFitting.all_subjects_all_models_optimization(
 		PlusMazeOneHotCues2ActiveDoors(relevant_cue=CueType.ODOR, stimuli_encoding=10),
-										 MAZE_ANIMAL_DATA_PATH, maze_models, n_calls=35)
+		MAZE_ANIMAL_DATA_PATH, maze_models, n_calls=35)
