@@ -1,12 +1,9 @@
 import numpy as np
 
-from environment import PlusMazeOneHotCues2ActiveDoors, CueType
 import pandas as pd
-import os
 import matplotlib.pyplot as plt
 
 from fitting import fitting_utils
-from fitting.MazeBayesianModelFitting import MazeBayesianModelFitting
 from fitting.fitting_config import MAZE_ANIMAL_DATA_PATH, maze_models
 from matplotlib.ticker import MaxNLocator
 import seaborn as sns
@@ -27,7 +24,7 @@ def models_fitting_quality_over_times(data_file_path):
 		for model in np.unique(df_sub["model"]):
 			df_sub_model = df_sub[df_sub["model"] == model]
 
-			model_subject_df = df_sub_model.groupby(['subject', 'model', 'stage', 'day in stage']).mean().reset_index()
+			model_subject_df = df_sub_model.groupby(['subject', 'model', 'stage', 'day in stage'], sort=False).median().reset_index()
 			model_subject_df.likelihood = np.exp(-model_subject_df.likelihood)
 
 			days = list(model_subject_df.index + 1)
@@ -58,7 +55,7 @@ def compare_neural_tabular_models(data_file_path):
 	df = df[['subject', 'model', 'stage', 'day in stage', 'trial', 'likelihood']].copy()
 	df.dropna(inplace=True)
 
-	stage_mean_df = df.groupby(['subject', 'model', 'stage', 'day in stage']).mean().reset_index()
+	stage_mean_df = df.groupby(['subject', 'model', 'stage', 'day in stage']).median().reset_index()
 	stage_mean_df.likelihood = np.exp(-stage_mean_df.likelihood)
 
 	model_pairs = [('TabularQ', 'FullyConnectedNetwork'),
@@ -113,7 +110,7 @@ def compare_model_subject_learning_curve(data_file_path):
 	df = pd.read_csv(data_file_path)
 	df = df[['subject', 'model', 'stage', 'day in stage', 'trial', 'reward', 'model_reward']].copy()
 
-	days_info_df = df.groupby(['subject', 'model', 'stage', 'day in stage']).mean().reset_index()
+	days_info_df = df.groupby(['subject', 'model', 'stage', 'day in stage'], sort=False).mean().reset_index()
 
 	fig = plt.figure(figsize=(35, 7), dpi=120, facecolor='w')
 	for i, subject in enumerate(np.unique(df["subject"])):
@@ -190,7 +187,7 @@ def plot_models_fitting_result_per_stage(data_file_path):
 
 	df = df[['subject', 'model', 'stage', 'day in stage', 'trial', 'likelihood']].copy()
 	df.likelihood = np.exp(-df.likelihood)
-	df_stage = df.groupby(['subject', 'model', 'stage'], sort=False).mean().reset_index()
+	df_stage = df.groupby(['subject', 'model', 'stage'], sort=False).median().reset_index()
 	sns.set_theme(style="whitegrid")
 	# _, idx = np.unique(df_stage.model, return_index=True)
 	# order = (df_stage.model[np.sort(idx)])
@@ -204,8 +201,8 @@ def plot_models_fitting_result_per_stage(data_file_path):
 	g1.set_xticklabels(stages)
 	g1.set(xlabel='', ylabel='Likelihood')
 	g1.legend([], [], frameon=False)
-	df['dummy']=1
-	df = df.groupby(['subject', 'model'], sort=False).mean().reset_index()
+	df['dummy'] = 1
+	df = df.groupby(['subject', 'model'], sort=False).median().reset_index()
 	g2 = sns.boxplot(x='dummy', y='likelihood', hue='model', data=df, ax=ax1)
 	g2.set_xticklabels([''])
 	g2.set(xlabel='All Stages', ylabel='')
