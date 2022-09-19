@@ -123,22 +123,24 @@ def compare_model_subject_learning_curve(data_file_path):
 		for model in np.unique(df_sub["model"]):
 			model_subject_df = df_sub[df_sub["model"] == model]
 			days = range(len(model_subject_df))
-			axis.plot(days, model_subject_df.model_reward, label=model, alpha=0.5)
+			axis.plot(days, model_subject_df.model_reward, label=model, alpha=0.7)
 			axis.xaxis.set_major_locator(MaxNLocator(integer=True))
 
+			axis.set_title("Subject {}".format(i + 1))
 			axis.set_xlabel('Days') if i > 5 else 0
 			axis.set_ylabel("Accuracy") if i % 3 == 0 else 0
+			axis.set_yticklabels(['']) if i % 3 != 0 else 0
 
 		stage_transition_days = np.where(model_subject_df['day in stage'] == 1)[0][1:]
 		for stage_day in stage_transition_days:
-			axis.axvline(x=stage_day + 0.5, alpha=0.5, dashes=(5, 2, 1, 2), lw=2)
+			axis.axvline(x=stage_day - 0.5, alpha=0.5, dashes=(5, 2, 1, 2), lw=2)
 
 		axis.plot(days, model_subject_df.reward, label='subject', color='black')
 
 	handles, labels = axis.get_legend_handles_labels()
-	fig.legend(handles, labels, prop={'size': 8.5})  # loc=(0.55,0.1), prop={'size': 7}
+	fig.legend(handles, labels, loc=(0.01, 0.8), prop={'size': 8}, labelspacing=0.3)  # loc=(0.55,0.1), prop={'size': 7}
 
-	plt.subplots_adjust(left=0.1, bottom=0.1, right=0.9, top=0.9, wspace=0.4, hspace=0.4)
+	plt.subplots_adjust(left=0.05, bottom=0.1, right=0.99, top=0.8, wspace=0.1, hspace=0.4)
 
 	plt.savefig('fitting/Results/figures/learning_curve_{}'.format(fitting_utils.get_timestamp()))
 	plt.show()
