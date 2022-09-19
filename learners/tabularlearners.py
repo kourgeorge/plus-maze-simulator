@@ -1,5 +1,6 @@
 __author__ = 'gkour'
 
+import numpy as np
 import torch
 
 from learners.abstractlearner import AbstractLearner
@@ -39,7 +40,7 @@ class TDUniformAttention(AbstractLearner):
 		deltas = (reward_batch - v_all_dims)
 		selected_odors, selected_colors = self.model.get_selected_door_stimuli(state_batch, actions)
 
-		phi = self.model.phi
+		phi = utils.softmax(self.model.phi)
 		for odor in set(np.unique(selected_odors)).difference([self.model.encoding_size]):
 			self.model.V['odors'][odor] = self.model.V['odors'][odor] + \
 										  np.nanmean(learning_rate * phi[0] * deltas[selected_odors == odor])
@@ -58,13 +59,31 @@ class TDAttentionAtLearning(TDUniformAttention):
 		super().__init__(*args, **kwargs)
 
 	def learn(self, state_batch, action_batch, reward_batch, action_values, nextstate_batch):
-		deltas = super().learn(state_batch, action_batch, reward_batch, action_values, nextstate_batch)
-		delta = np.mean(deltas)
+
+		super().learn(state_batch, action_batch, reward_batch, action_values, nextstate_batch)
 		learning_rate = self.optimizer['learning_rate']
-		temp = 0.5 * (delta + 1)
-		delta_phi = utils.softmax(self.model.phi, (1 - temp))
-		# print("delta:{}, beta:{}, delta_phi:{} ".format(delta,beta, delta_phi ))
-		old_phi = self.model.phi
-		self.model.phi = (1 - learning_rate) * self.model.phi + learning_rate * delta_phi
-		diff_phi = self.model.phi - old_phi
-		return delta
+		actions = np.argmax(action_batch, axis=1)
+
+		a = self.model(state_batch)
+		v_all_dims = a[np.arange(len(a)), actions]
+
+		deltas = (reward_batch - v_all_dims)
+		selected_odors, selected_colors = self.model.get_selected_door_stimuli(state_batch, actions)
+
+		phi_s = utils.softmax(self.model.phi)
+
+		for selected_odor, selected_color, selected_door, delta in zip(selected_odors, selected_colors, actions, deltas):
+			v = np.array([self.model.V['odors'][selected_odor],
+						  self.model.V['colors'][selected_color],
+						  self.model.V['spatial'][selected_door]])
+
+			# delta_phi = 2 * phi_s * v * delta * (1 - phi_s)
+
+			delta_phi = np.array([2  * delta * np.matmul(v, [1-phi_s[0], -phi_s[1], -phi_s[2]]),
+						2 * delta * np.matmul(v, [-phi_s[0], 1-phi_s[1], -phi_s[2]]),
+						2  * delta * np.matmul(v, [-phi_s[0], -phi_s[1], 1-phi_s[2]])])
+
+			alpha = learning_rate
+			self.model.phi = (1-alpha) *self.model.phi + alpha * delta_phi
+
+		return deltas
