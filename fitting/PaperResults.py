@@ -31,24 +31,25 @@ def models_fitting_quality_over_times(data_file_path):
 			model_subject_df.likelihood = np.exp(-model_subject_df.likelihood)
 
 			days = list(model_subject_df.index + 1)
-			axis.plot(days, model_subject_df.likelihood, label=model.split('.')[-1])
+			axis.plot(days, model_subject_df.likelihood, label=model.split('.')[-1], alpha=0.7)
 			axis.xaxis.set_major_locator(MaxNLocator(integer=True))
+			axis.set_yticklabels(['']) if i % 3 != 0 else 0
 
 		axis.set_xlabel('Days') if i > 5 else 0
 		axis.set_ylabel("Likelihood") if i % 3 == 0 else 0
-		axis.set_title("Subject {}".format(i))
+		axis.set_title("Subject {}".format(i+1))
 		stage_transition_days = np.where(model_subject_df['day in stage'] == 1)[0][1:]
 		for stage_day in stage_transition_days:
 			axis.axvline(x=stage_day + 0.5, alpha=0.5, dashes=(5, 2, 1, 2), lw=2)
 
-		axis.set_ylim(0.1, 0.7)
+		axis.set_ylim(0.1, 1)
 
 	handles, labels = axis.get_legend_handles_labels()
-	fig.legend(handles, labels, prop={'size': 8.5})  # loc=(0.55,0.1), prop={'size': 7}
+	fig.legend(handles, labels, loc="upper left", prop={'size': 8}, labelspacing=0.3)  # loc=(0.55,0.1), prop={'size': 7}
 
-	plt.subplots_adjust(left=0.1, bottom=0.1, right=0.9, top=0.9, wspace=0.4, hspace=0.4)
+	plt.subplots_adjust(left=0.05, bottom=0.1, right=0.99, top=0.8, wspace=0.1, hspace=0.4)
 
-	plt.savefig('fitting/Results/figures/Likelihood_{}'.format(fitting_utils.get_timestamp()))
+	plt.savefig('fitting/Results/figures/daily_likl_{}'.format(fitting_utils.get_timestamp()))
 	plt.show()
 
 
