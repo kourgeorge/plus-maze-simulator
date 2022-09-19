@@ -72,6 +72,8 @@ def compare_neural_tabular_models(data_file_path):
 		pairs_df = pairs_df.append(pair_df, ignore_index=True)
 	pairs_df['pair'] = pairs_df.model_x + ', ' + pairs_df.model_y
 
+	minn = 0
+	maxx = 1
 	sns.set_theme(style="whitegrid")
 	fig = plt.figure(figsize=(12, 4), dpi=120, facecolor='w')
 	for i, stage in enumerate(stages):
@@ -79,25 +81,25 @@ def compare_neural_tabular_models(data_file_path):
 		pairs_df_stage = pairs_df[pairs_df['stage'] == i + 1]
 		sns.scatterplot(x='likelihood_x', y='likelihood_y', hue='pair', size='day in stage', data=pairs_df_stage,
 						ax=axis, alpha=0.6, s=20)
-		axis.plot(np.linspace(0.1, 0.8, 100), np.linspace(0.1, 0.8, 100), color='grey')
+		axis.plot(np.linspace(minn, maxx, 100), np.linspace(minn, maxx, 100), color='grey')
 		axis.set(xlabel='Tabular', ylabel='Neural') if i == 0 else axis.set(xlabel='Tabular', ylabel='')
 		axis.set_title(stage)
 		axis.legend([], [], frameon=False)
-		axis.set_ylim(0.1, 0.8)
+		axis.set_ylim(minn, maxx)
 		axis.set_yticklabels(['']) if i > 0 else 0
 
 	axis = fig.add_subplot(144)
 	sns.scatterplot(x='likelihood_x', y='likelihood_y', hue='pair', data=pairs_df, ax=axis, alpha=0.5, s=10)
-	axis.plot(np.linspace(0.1, 0.8, 100), np.linspace(0.1, 0.8, 100), color='grey')
+	axis.plot(np.linspace(minn, maxx, 100), np.linspace(minn, maxx, 100), color='grey')
 	axis.set_title('All Stages')
 	axis.set(xlabel='Tabular', ylabel='')
 	axis.legend([], [], frameon=False)
-	axis.set_ylim(0.1, 0.8)
+	axis.set_ylim(minn, maxx)
 	axis.set_yticklabels([''])
 
 	handles, labels = axis.get_legend_handles_labels()
 	fig.legend(handles, ["Q vs. FC", "UA Tabular vs. UA Neural", "ACL Tabular vs. ACL Neural"],
-			   loc='upper center', prop={'size': 8.5})
+			   loc='upper left', prop={'size': 8.5})
 
 	plt.subplots_adjust(left=0.1, bottom=0.2, right=0.95, top=0.8, wspace=0.2, hspace=0.2)
 	plt.savefig('fitting/Results/figures/neural_tabular_compare_{}'.format(fitting_utils.get_timestamp()))
