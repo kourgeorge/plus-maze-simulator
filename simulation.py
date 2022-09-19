@@ -19,7 +19,7 @@ from brains.tdbrain import TDBrain
 
 brains = [(TDBrain, TD, TabularQ),
           (TDBrain, TDUniformAttention, UniformAttentionTabular),
-          (TDBrain, TDUniformAttention, AttentionAtChoiceAndLearningTabular),
+          (TDBrain, TDAttentionAtLearning, AttentionAtChoiceAndLearningTabular),
           (ConsolidationBrain, DQN, UniformAttentionNetwork),
           (ConsolidationBrain, DQN, AttentionAtChoiceAndLearningNetwork),
           (ConsolidationBrain, DQN, FullyConnectedNetwork),
@@ -65,7 +65,7 @@ def run_simulation(env):
 
 
 if __name__ == '__main__':
-    #env = PlusMazeOneHotCues2ActiveDoors(relevant_cue=CueType.ODOR, stimuli_encoding=8)
-    env = PlusMazeOneHotCues(relevant_cue=CueType.ODOR, stimuli_encoding=10)
+    env = PlusMazeOneHotCues2ActiveDoors(relevant_cue=CueType.ODOR, stimuli_encoding=8)
+    #env = PlusMazeOneHotCues(relevant_cue=CueType.ODOR, stimuli_encoding=10)
     run_simulation(env)
     x = 1
