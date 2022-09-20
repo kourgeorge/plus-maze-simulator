@@ -217,6 +217,40 @@ def plot_models_fitting_result_per_stage(data_file_path):
 	plt.show()
 
 
+def stage_transition_model_quality(data_file_path):
+	df = pd.read_csv(data_file_path)
+
+	df = df[['subject', 'model', 'stage', 'day in stage', 'likelihood']].copy()
+	df.likelihood = np.exp(-df.likelihood)
+
+	model_df = df.groupby(['model', 'subject', 'stage', 'day in stage'], sort=False).mean().reset_index()
+
+	transition1_before = model_df[(model_df['day in stage'] == 1) & (model_df.stage == 2)]
+	transition1_end = model_df[(model_df.stage == 1)].groupby(['model', 'subject'], sort=False).max('day in stage').reset_index()
+	transition1_df = pd.concat([transition1_before, transition1_end], ignore_index=True)
+
+	transition2_before = model_df[(model_df['day in stage'] == 1) & (model_df.stage == 3)]
+	transition2_end = model_df[(model_df.stage == 2)].groupby(['model', 'subject'], sort=False).max('day in stage').reset_index()
+	transition2_df = pd.concat([transition2_before, transition2_end], ignore_index=True)
+
+	fig = plt.figure(figsize=(10, 5), layout="constrained")
+
+	axis1 = fig.add_subplot(121)
+	axis2 = fig.add_subplot(122)
+	sns.pointplot(x='stage', y='likelihood', hue='model', data=transition1_df, ax=axis1)
+	sns.pointplot(x='stage', y='likelihood', hue='model', data=transition2_df, ax=axis2)
+	axis1.legend([], [], frameon=False), axis2.legend([], [], frameon=False)
+
+	axis1.set_ylim(0.1,0.8)
+	axis2.set_ylim(0.1,0.8)
+	handles, labels = axis2.get_legend_handles_labels()
+	fig.legend(handles, labels, loc='upper center', prop={'size': 9.5})
+
+	axis1.axvline(x=0.5, ymin=0.05, ymax=0.95, alpha=0.5, dashes=(5, 2, 1, 2), lw=2, zorder=0, clip_on=False)
+	axis2.axvline(x=0.5, ymin=0.05, ymax=0.95, alpha=0.5, dashes=(5, 2, 1, 2), lw=2, zorder=0, clip_on=False)
+	plt.savefig('fitting/Results/figures/stage_transition_{}'.format(fitting_utils.get_timestamp()))
+	plt.show()
+
 # # plots.plot_histogram(result=brain_results, dimension_identifier='lr', bins=20)
 # # plots.plot_objective_2D(brain_results['results'], 'lr', 'batch_size')
 # # plots.plot_objective(brain_results['results'], plot_dims=['nmr', 'lr'])
