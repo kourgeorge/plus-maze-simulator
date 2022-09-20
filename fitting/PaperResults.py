@@ -13,19 +13,19 @@ stages = ['ODOR1', 'ODOR2', 'EDShift(Light)']
 
 def models_fitting_quality_over_times(data_file_path):
 	df = pd.read_csv(data_file_path)
-	df = df[['subject', 'model', 'stage', 'day in stage', 'trial', 'likelihood']].copy()
+	df = df[['subject', 'model', 'stage', 'day in stage', 'trial', 'likelihood', 'reward', 'model_reward']].copy()
 
+	df.likelihood = np.exp(-df.likelihood)
 	fig = plt.figure(figsize=(35, 7), dpi=120, facecolor='w')
-	for i, subject in enumerate(np.unique(df["subject"])):
 
+	for i, subject in enumerate(np.unique(df["subject"])):
 		df_sub = df[df["subject"] == subject]
 		axis = fig.add_subplot(330 + i + 1)
 
 		for model in np.unique(df_sub["model"]):
 			df_sub_model = df_sub[df_sub["model"] == model]
 
-			model_subject_df = df_sub_model.groupby(['subject', 'model', 'stage', 'day in stage'], sort=False).median().reset_index()
-			model_subject_df.likelihood = np.exp(-model_subject_df.likelihood)
+			model_subject_df = df_sub_model.groupby(['subject', 'model', 'stage', 'day in stage'], sort=False).mean().reset_index()
 
 			days = list(model_subject_df.index + 1)
 			axis.plot(days, model_subject_df.likelihood, label=model.split('.')[-1], alpha=0.7)
@@ -262,11 +262,12 @@ def stage_transition_model_quality(data_file_path):
 
 
 if __name__ == '__main__':
-	file_path = '/Users/gkour/repositories/plusmaze/fitting/Results/Rats-Results/fitting_results_35_2022_09_19_19_09.csv'
+	file_path = '/Users/gkour/repositories/plusmaze/fitting/Results/Rats-Results/fitting_results_50_2022_09_19_22_55.csv'
 	models_fitting_quality_over_times(file_path)
 	compare_neural_tabular_models(file_path)
 	compare_model_subject_learning_curve(file_path)
 	plot_models_fitting_result_per_stage(file_path)
 	show_likelihood_trials_scatter(file_path)
+	stage_transition_model_quality(file_path)
 
 	x = 1
