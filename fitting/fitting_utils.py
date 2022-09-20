@@ -6,7 +6,7 @@ import numpy as np
 from motivatedagent import MotivatedAgent
 from environment import PlusMazeOneHotCues
 from rewardtype import RewardType
-
+import re
 
 def get_timestamp():
 	import datetime
@@ -63,3 +63,10 @@ def blockPrint():
 def enablePrint():
 	sys.stdout = sys.__stdout__
 
+
+def get_stage_transition_days(experimental_data):
+	return np.where(experimental_data['day in stage'] == 1)[0][1:]
+
+
+def string2list(string):
+	return [float(x.strip()) for x in re.split(",",string.strip(']['))]
