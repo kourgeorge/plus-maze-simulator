@@ -1,9 +1,10 @@
 __author__ = 'gkour'
 
-import scipy
 import torch.nn as nn
 import torch
 import numpy as np
+import scipy
+
 import utils
 from models.Modules import ChannelProccessor
 
@@ -15,19 +16,10 @@ class AbstractNetworkModel(nn.Module):
 	def __str__(self):
 		return self.__class__.__name__
 
-	def get_stimuli_layer(self):
+	def get_model_metrics(self):
 		raise NotImplementedError()
 
-	def get_door_attention(self):
-		raise NotImplementedError()
-
-	def get_dimension_attention(self):
-		raise NotImplementedError()
-
-	def get_network_metrics(self):
-		raise NotImplementedError()
-
-	def network_diff(self, brain2):
+	def get_model_diff(self, brain2):
 		raise NotImplementedError()
 
 
@@ -48,32 +40,36 @@ class UniformAttentionNetwork(AbstractNetworkModel):
 		weighted_vals = torch.matmul(torch.cat([odor_val, light_val, door_val], dim=-1), torch.softmax(self.phi, axis=0))
 		return torch.squeeze(weighted_vals, dim=2)
 
-	def get_stimuli_layer(self):
-		return self.model_food[0].weight
 
-	def get_door_attention(self):
-		return self.door_bias
-
-	def get_dimension_attention(self):
-		return self.phi
-
-	def get_network_metrics(self):
+	def get_model_metrics(self):
 		return {'colors': np.linalg.norm(self.colors.weight.detach()),
 				'odors':  np.linalg.norm(self.odors.weight.detach()),
 				'spatial':  np.linalg.norm(self.spatial.detach()),
 				'phi': scipy.stats.entropy(torch.softmax(self.phi, axis=-1).detach())}
 
-	def network_diff(self, network2):
+	def get_model_diff(self, network2):
 		return {'d(colors)': np.linalg.norm(self.colors.weight.detach() - network2.colors.weight.detach()),
-		 'd(odors)':  np.linalg.norm(self.odors.weight.detach() - network2.odors.weight.detach()),
-		 'd(spatial)': np.linalg.norm(self.spatial.detach() - network2.spatial.detach()),
-		 'd(phi)': scipy.stats.entropy(pk=torch.softmax(self.phi, axis=-1).detach(), qk=torch.softmax(network2.phi, axis=-1).detach())}
+				'd(odors)': np.linalg.norm(self.odors.weight.detach() - network2.odors.weight.detach()),
+				'd(spatial)': np.linalg.norm(self.spatial.detach() - network2.spatial.detach()),
+				'd(phi)': scipy.stats.entropy(pk=torch.softmax(self.phi, axis=-1).detach(),
+											  qk=torch.softmax(network2.phi, axis=-1).detach())}
 
 
 class AttentionAtChoiceAndLearningNetwork(UniformAttentionNetwork):
 	def __init__(self, encoding_size, num_channels, num_actions):
 		super().__init__(encoding_size, num_channels, num_actions)
-		self.phi = nn.Parameter(nn.init.xavier_uniform_(torch.empty(size=(3,1))), requires_grad=True)
+		#self.phi = nn.Parameter(nn.init.xavier_uniform_(torch.empty(size=(3,1))), requires_grad=True)
+		self.phi = nn.Parameter(torch.ones(size=(3,1)), requires_grad=True)
+
+	def get_model_metrics(self):
+		return {'color_attn': self.phi[0].detach().numpy(),
+				'odor_attn': self.phi[1].detach().numpy(),
+				'spatial_attn': self.phi[2].detach().numpy()}
+
+	def get_model_diff(self, model2):
+		return {'color_attn': self.phi[0].detach().numpy() - model2.phi[0].detach().numpy(),
+				'odor_attn': self.phi[1].detach().numpy() - model2.phi[1].detach().numpy(),
+				'spatial_attn': self.phi[2].detach().numpy() - model2.phi[2].detach().numpy()}
 
 
 class FullyConnectedNetwork(AbstractNetworkModel):
@@ -87,19 +83,11 @@ class FullyConnectedNetwork(AbstractNetworkModel):
 	def forward(self, x):
 		return self.model(torch.flatten(x, start_dim=1))
 
-	def get_stimuli_layer(self):
-		return self.model[0].weight
+	def get_model_metrics(self):
+		return {'affine': utils.normalized_norm(self.affine.weight.detach().numpy()),
+				'bias': utils.normalized_norm(self.affine.bias.detach().numpy())}
 
-	def get_door_attention(self):
-		return torch.tensor([[0, 0, 0, 0], [0, 0, 0, 0]])
-
-	def get_dimension_attention(self):
-		return torch.tensor([[0, 0, 0, 0], [0, 0, 0, 0]])
-
-	def get_network_metrics(self):
-		return {'layer1_dim': utils.unsupervised_dimensionality(self.affine.weight.detach().numpy())}
-
-	def network_diff(self, network2):
+	def get_model_diff(self, network2):
 		affine1 = self.affine.weight.detach()
 		affine2 = network2.affine.weight.detach()
 		change = np.linalg.norm(affine1 - affine2, ord=norm)
@@ -123,11 +111,11 @@ class Random(AbstractNetworkModel):
 	def get_dimension_attention(self):
 		return torch.tensor([[0, 0, 0, 0], [0, 0, 0, 0]])
 
-	def get_network_metrics(self):
-		return {}
+	def get_model_metrics(self):
+		return {'None':0}
 
-	def network_diff(self, network2):
-		return {}
+	def get_model_diff(self, network2):
+		return {'None':0}
 
 
 class FullyConnectedNetwork2Layers(FullyConnectedNetwork):
@@ -141,17 +129,14 @@ class FullyConnectedNetwork2Layers(FullyConnectedNetwork):
 			self.controller,
 		)
 
-	def get_stimuli_layer(self):
-		return self.model[0].weight
+	def get_model_metrics(self):
+		return {'affine1': utils.normalized_norm(self.affine.weight.detach().numpy()),
+				'bias1': utils.normalized_norm(self.affine.bias.detach().numpy()),
+				'affine2': utils.normalized_norm(self.controller.weight.detach().numpy()),
+				'bias2': utils.normalized_norm(self.controller.bias.detach().numpy())
+				}
 
-	def get_door_attention(self):
-		return self.model[3].weight
-
-	def get_network_metrics(self):
-		return {'layer1_dim': utils.unsupervised_dimensionality(self.affine.weight.detach()),
-				'layer2_dim': utils.unsupervised_dimensionality(self.controller.weight.detach())}
-
-	def network_diff(self, network2):
+	def get_model_diff(self, network2):
 		affine1 = self.affine.weight.detach()
 		affine2 = network2.affine.weight.detach()
 		affine_change = np.linalg.norm(affine1 - affine2, ord=norm)
@@ -196,7 +181,7 @@ class EfficientNetwork(AbstractNetworkModel):
 	def get_dimension_attention(self):
 		return self.dim_attn
 
-	def get_network_metrics(self):
+	def get_model_metrics(self):
 		# return {'odor_enc_norm': utils.normalized_norm(self.channels_encoding[0].model[0].weight.detach(),ord=norm),
 		# 		'color_enc_norm': utils.normalized_norm(self.channels_encoding[1].model[0].weight.detach(),ord=norm),
 		# 		'dim_attn_norm': utils.normalized_norm(self.dim_attn.detach(),ord=norm),
@@ -204,7 +189,7 @@ class EfficientNetwork(AbstractNetworkModel):
 		# 		}
 		return {}
 
-	def network_diff(self, network2):
+	def get_model_diff(self, network2):
 		dim_attn1 = self.dim_attn.detach().numpy()
 		dim_attn2 = network2.dim_attn.detach().numpy()
 		dim_attn_change = EfficientNetwork.vector_change(dim_attn1, dim_attn2)
@@ -262,15 +247,15 @@ class SeparateMotivationAreasNetwork(AbstractNetworkModel):
 	def get_dimension_attention(self):
 		return torch.cat([self.model_water.dim_attn, self.model_food.dim_attn])
 
-	def get_network_metrics(self):
+	def get_model_metrics(self):
 		#return {**self.model_water.get_network_metrics(), **self.model_food.get_network_metrics()}
 		return {}
 
-	def network_diff(self, network2):
-		water_diff = self.model_water.network_diff(network2.model_water)
+	def get_model_diff(self, network2):
+		water_diff = self.model_water.get_model_diff(network2.model_water)
 		water_diff = {'water_{}'.format(k): v for k, v in water_diff.items()}
 
-		food_dif = self.model_food.network_diff(network2.model_food)
+		food_dif = self.model_food.get_model_diff(network2.model_food)
 		food_dif = {'food_{}'.format(k): v for k, v in food_dif.items()}
 
 		return {**food_dif, **water_diff}
@@ -298,10 +283,10 @@ class SeparateMotivationAreasFCNetwork(AbstractNetworkModel):
 	def get_dimension_attention(self):
 		return torch.tensor([[0, 0, 0, 0], [0, 0, 0, 0]])
 
-	def get_network_metrics(self):
+	def get_model_metrics(self):
 		return {'layer1_dim': utils.unsupervised_dimensionality(self.model_food.affine.weight.detach().numpy())}
 
-	def network_diff(self, network2):
+	def get_model_diff(self, network2):
 		affine1 = self.model_food.affine.weight.detach()
 		affine2 = network2.model_food.affine.weight.detach()
 		change = np.linalg.norm(affine1 - affine2, ord=norm)

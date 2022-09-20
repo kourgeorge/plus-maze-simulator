@@ -40,9 +40,9 @@ class Stats:
                                ('WaterCorrect', report.water_correct_percent),
                                ('FoodCorrect', report.food_correct_percent)])
         if isinstance(self.reports[-1].brain, AbstractBrain):
-            dict.update([(k, v) for k, v in self.reports[-1].brain.get_model().network_diff(
+            dict.update([(k, v) for k, v in self.reports[-1].brain.get_model().get_model_diff(
                                    self.get_last_day_in_previous_stage().brain.get_model()).items()] +
-                               [(k, v) for k, v in self.reports[-1].brain.get_model().get_network_metrics().items()])
+						[(k, v) for k, v in self.reports[-1].brain.get_model().get_model_metrics().items()])
         return dict
 
     def get_last_day_in_previous_stage(self):

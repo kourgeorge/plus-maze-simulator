@@ -49,13 +49,13 @@ class Dashboard:
         self._axes_neural_graph.set_ylabel('Neural [%]')
         #self._axes_neural_graph.set_ylim(0, 10)
         self._line_brain_signals = []
-        all_brain_signals = list(brain.get_model().get_network_metrics().keys()) + list(brain.get_model().network_diff(brain.get_model()).keys())
+        all_brain_signals = list(brain.get_model().get_model_metrics().keys()) + list(brain.get_model().get_model_diff(brain.get_model()).keys())
         for signal_name in all_brain_signals:
             self._line_brain_signals += self._axes_neural_graph.plot([], [], 'o-', color=utils.colorify(signal_name), label=signal_name, markersize=3,
                                                                   alpha=0.4)
 
         self._line_brain_compare = []
-        for signal_name in brain.get_model().network_diff(brain.get_model()):
+        for signal_name in brain.get_model().get_model_diff(brain.get_model()):
             self._line_brain_compare += self._axes_neural_graph.plot([], [], '^-', color=utils.colorify(signal_name), label=signal_name, markersize=3,
                                                                   alpha=0.4)
 

@@ -30,19 +30,10 @@ class TabularQ:
 		obs = utils.states_encoding_to_cues(state, self.encoding_size)
 		self.Q[obs.tostring()][action] = value
 
-	def get_stimuli_layer(self):
-		raise NotImplementedError()
-
-	def get_door_attention(self):
-		raise NotImplementedError()
-
-	def get_dimension_attention(self):
-		raise NotImplementedError()
-
-	def get_network_metrics(self):
+	def get_model_metrics(self):
 		return {'num_entries': len(self.Q.keys())}
 
-	def network_diff(self, brain2):
+	def get_model_diff(self, brain2):
 		diff = [np.linalg.norm(self.Q[state] - brain2.Q[state]) for state in
 				set(self.Q.keys()).intersection(brain2.Q.keys())]
 		return {'table_change': np.mean(diff)*100}
@@ -62,7 +53,7 @@ class UniformAttentionTabular:
 		self.V['odors'] = np.zeros([encoding_size+1])
 		self.V['colors'] = np.zeros([encoding_size+1])
 		self.V['spatial'] = np.zeros([4])
-		self.phi = np.ones([3])
+		self.phi = np.ones([3])/3
 
 	def __call__(self, *args, **kwargs):
 		states = args[0]
@@ -93,19 +84,21 @@ class UniformAttentionTabular:
 	def get_network_metrics(self):
 		return {'color': np.linalg.norm(self.V['colors']),
 				'odor':  np.linalg.norm(self.V['odors']),
-				'spatial':  np.linalg.norm(self.V['spatial']),
-				'phi': entropy(self.phi)}
+				'spatial':  np.linalg.norm(self.V['spatial'])}
 
-	def network_diff(self, brain2):
-
+	def get_model_diff(self, brain2):
 		return {'color_change': entropy(self.V['colors'], brain2.V['colors']),
 				'odor_change':  jensenshannon(self.V['odors'], brain2.V['odors']),
-				'spatial_change':  jensenshannon(self.V['spatial'], brain2.V['spatial']),
-				'phi_change': jensenshannon(self.phi, brain2.phi)}
+				'spatial_change':  jensenshannon(self.V['spatial'], brain2.V['spatial'])}
 
 
 class AttentionAtChoiceAndLearningTabular(UniformAttentionTabular):
 	def __init__(self,encoding_size, num_channels, num_actions):
 		super().__init__(encoding_size, num_channels, num_actions)
-		self.phi = utils.softmax(np.random.normal(loc=0.0, scale=1.0, size=3))
+		#self.phi = np.random.normal(loc=0.0, scale=1.0, size=3)
+
+	def get_model_metrics(self):
+		return {'color_attn': self.phi[0],
+				'odor_attn': self.phi[1],
+				'spatial_attn': self.phi[2]}
 
