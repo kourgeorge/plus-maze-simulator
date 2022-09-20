@@ -81,7 +81,7 @@ class UniformAttentionTabular:
 	def spatial_value(self, doors):
 		return np.array(self.V['spatial'])[doors]
 
-	def get_network_metrics(self):
+	def get_model_metrics(self):
 		return {'color': np.linalg.norm(self.V['colors']),
 				'odor':  np.linalg.norm(self.V['odors']),
 				'spatial':  np.linalg.norm(self.V['spatial'])}
