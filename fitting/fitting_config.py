@@ -23,17 +23,23 @@ MAZE_ANIMALS = [0, 1, 2, 3, 4, 5, 6, 7, 8]
 
 nmr = Real(name='nmr', low=-1, high=1)
 lr = Real(name='lr', low=0.0001, high=0.2, prior='log-uniform')
+attention_lr = Real(name='lr', low=0.0001, high=0.2, prior='log-uniform')
 batch_size = Integer(name='batch_size', low=1, high=20)
 beta = Real(name='beta', low=0.1, high=5)
 
-maze_models = [((TDBrain, TD, TabularQ), (beta, lr, batch_size)),
-			   ((TDBrain, TDUniformAttention, UniformAttentionTabular), (beta, lr, batch_size)),
-			   ((TDBrain, TDAttentionAtLearning, AttentionAtChoiceAndLearningTabular), (beta, lr, batch_size)),
-			   ((ConsolidationBrain, DQN, FullyConnectedNetwork), (beta, lr, batch_size)),
-			   ((ConsolidationBrain, DQN, UniformAttentionNetwork), (beta, lr, batch_size)),
-			   ((ConsolidationBrain, DQN, AttentionAtChoiceAndLearningNetwork), (beta, lr, batch_size)),
-			   ((ConsolidationBrain, DQN, FullyConnectedNetwork2Layers), (beta, lr, batch_size)),
-			   ((RandomBrain, DQN, Random), (beta, lr, batch_size))
+maze_models = [((TDBrain, TD, TabularQ), (beta, lr)),
+			   ((TDBrain, TDUniformAttention, UniformAttentionTabular), (beta, lr)),
+			   ((TDBrain, TDAttentionAtLearning, AttentionAtChoiceAndLearningTabular), (beta, lr, attention_lr)),
+				((TDBrain, TDAttentionAtLearningSimple, AttentionAtChoiceAndLearningTabular), (beta, lr, attention_lr)),
+			   ((ConsolidationBrain, DQN, FullyConnectedNetwork), (beta, lr)),
+			   ((ConsolidationBrain, DQN, UniformAttentionNetwork), (beta, lr)),
+			   ((ConsolidationBrain, DQN, AttentionAtChoiceAndLearningNetwork), (beta, lr)),
+			   ((ConsolidationBrain, DQN, FullyConnectedNetwork2Layers), (beta, lr)),
+				# ((ConsolidationBrain, PG, FullyConnectedNetwork), (beta, lr)),
+				# ((ConsolidationBrain, PG, UniformAttentionNetwork), (beta, lr)),
+				# ((ConsolidationBrain, PG, AttentionAtChoiceAndLearningNetwork), (beta, lr)),
+				# ((ConsolidationBrain, PG, FullyConnectedNetwork2Layers), (beta, lr)),
+			   # ((RandomBrain, DQN, Random), (beta, lr))
 			   ]
 
 motivational_models = maze_models + [((ConsolidationBrain, DQN, EfficientNetwork), (beta, lr, batch_size)),

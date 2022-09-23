@@ -14,6 +14,7 @@ from fitting import fitting_utils
 from fitting.fitting_config import maze_models, MAZE_ANIMAL_DATA_PATH
 from fitting.PlusMazeExperimentFitting import PlusMazeExperimentFitting
 from fitting.fitting_utils import blockPrint, enablePrint
+from learners.tabularlearners import TDAttentionAtLearning
 from motivatedagent import MotivatedAgent
 from rewardtype import RewardType
 
@@ -30,12 +31,18 @@ class MazeBayesianModelFitting:
 
 	def _run_model(self, parameters):
 		(brain, learner, model) = self.model
-		(beta, lr, batch_size) = parameters
+		model_instance = model(self.env.stimuli_encoding_size(), 2, self.env.num_actions())
+
+		if issubclass(learner, TDAttentionAtLearning):
+			(beta, lr, attention_lr) = parameters
+			learner_instance = learner(model_instance, learning_rate=lr, alpha_phi=attention_lr)
+		else:
+			(beta, lr) = parameters
+			learner_instance = learner(model_instance, learning_rate=lr)
+
 		blockPrint()
 		self.env.init()
-		agent = MotivatedAgent(brain(
-			learner(model(self.env.stimuli_encoding_size(), 2, self.env.num_actions()), learning_rate=lr),
-			batch_size=batch_size, beta=beta),
+		agent = MotivatedAgent(brain(learner_instance, beta=beta),
 			motivation=RewardType.WATER,
 			motivated_reward_value=config.MOTIVATED_REWARD,
 			non_motivated_reward_value=0)
@@ -48,6 +55,7 @@ class MazeBayesianModelFitting:
 
 	def _calc_experiment_likelihood(self, parameters):
 		model = self.model
+
 		experiment_stats, rat_data_with_likelihood = self._run_model(parameters)
 		likelihood_stage = list(rat_data_with_likelihood.groupby('stage').mean()['likelihood'])
 		y = np.nanmean(likelihood_stage)

@@ -14,7 +14,7 @@ def get_timestamp():
 
 def brain_name(architecture):
 	#return "{}.{}.{}".format(architecture[0].__name__, architecture[1].__name__, architecture[2].__name__)
-	return "{}".format(architecture[2].__name__)
+	return "{}.{}".format( architecture[1].__name__,architecture[2].__name__)
 
 
 def episode_rollout_on_real_data(env: PlusMazeOneHotCues, agent: MotivatedAgent, current_trial):
