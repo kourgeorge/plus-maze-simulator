@@ -98,7 +98,7 @@ class AttentionAtChoiceAndLearningTabular(UniformAttentionTabular):
 		#self.phi = np.random.normal(loc=0.0, scale=1.0, size=3)
 
 	def get_model_metrics(self):
-		return {'color_attn': self.phi[0],
-				'odor_attn': self.phi[1],
+		return {'odor_attn': self.phi[0],
+				'color_attn': self.phi[1],
 				'spatial_attn': self.phi[2]}
 
