@@ -352,16 +352,16 @@ class PlusMazeOneHotCues2ActiveDoors(PlusMazeOneHotCues):
 															  [np.argmax(encoding) for encoding in
 															   self.get_odor_cues()],
 															  np.argmax(self.get_correct_cue_value())))
-		elif self.get_stage() == 2:
-			self.set_random_odor_set()
-			# env.set_relevant_cue(CueType.LIGHT)
-			print(
-				"Stage {}: {} (Odors: {}, Correct:{})".format(self.get_stage(), self.stage_names[self.get_stage()],
-															  [np.argmax(encoding) for encoding in
-															   self.get_odor_cues()],
-															  np.argmax(self.get_correct_cue_value())))
+		# elif self.get_stage() == 2:
+		# 	self.set_random_odor_set()
+		# 	# env.set_relevant_cue(CueType.LIGHT)
+		# 	print(
+		# 		"Stage {}: {} (Odors: {}, Correct:{})".format(self.get_stage(), self.stage_names[self.get_stage()],
+		# 													  [np.argmax(encoding) for encoding in
+		# 													   self.get_odor_cues()],
+		# 													  np.argmax(self.get_correct_cue_value())))
 
-		elif self.get_stage() == 3:
+		elif self.get_stage() == 2:
 			self.set_relevant_cue(CueType.LIGHT)
 			self.set_random_odor_set()
 			print("Stage {}: {} (Lights: {}. Correct {})".format(self.get_stage(),
