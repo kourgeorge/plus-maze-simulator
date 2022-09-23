@@ -44,15 +44,12 @@ class UniformAttentionNetwork(AbstractNetworkModel):
 	def get_model_metrics(self):
 		return {'colors': np.linalg.norm(self.colors.weight.detach()),
 				'odors':  np.linalg.norm(self.odors.weight.detach()),
-				'spatial':  np.linalg.norm(self.spatial.detach()),
-				'phi': scipy.stats.entropy(torch.softmax(self.phi, axis=-1).detach())}
+				'spatial':  np.linalg.norm(self.spatial.detach())}
 
 	def get_model_diff(self, network2):
 		return {'d(colors)': np.linalg.norm(self.colors.weight.detach() - network2.colors.weight.detach()),
 				'd(odors)': np.linalg.norm(self.odors.weight.detach() - network2.odors.weight.detach()),
-				'd(spatial)': np.linalg.norm(self.spatial.detach() - network2.spatial.detach()),
-				'd(phi)': scipy.stats.entropy(pk=torch.softmax(self.phi, axis=-1).detach(),
-											  qk=torch.softmax(network2.phi, axis=-1).detach())}
+				'd(spatial)': np.linalg.norm(self.spatial.detach() - network2.spatial.detach())}
 
 
 class AttentionAtChoiceAndLearningNetwork(UniformAttentionNetwork):
@@ -62,8 +59,8 @@ class AttentionAtChoiceAndLearningNetwork(UniformAttentionNetwork):
 		self.phi = nn.Parameter(torch.ones(size=(3,1)), requires_grad=True)
 
 	def get_model_metrics(self):
-		return {'color_attn': self.phi[0].detach().numpy(),
-				'odor_attn': self.phi[1].detach().numpy(),
+		return {'odor_attn': self.phi[0].detach().numpy(),
+				'color_attn': self.phi[1].detach().numpy(),
 				'spatial_attn': self.phi[2].detach().numpy()}
 
 	def get_model_diff(self, model2):
