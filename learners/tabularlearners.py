@@ -1,12 +1,11 @@
 __author__ = 'gkour'
 
 import numpy as np
-import torch
+import copy
 
+import utils
 from learners.abstractlearner import AbstractLearner
-from models.tabularmodels import *
-
-torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+from models.tabularmodels import TabularQ, UniformAttentionTabular, AttentionAtChoiceAndLearningTabular
 
 
 class TD(AbstractLearner):
