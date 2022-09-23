@@ -4,9 +4,9 @@ import pandas as pd
 import matplotlib.pyplot as plt
 
 from fitting import fitting_utils
-from fitting.fitting_config import MAZE_ANIMAL_DATA_PATH, maze_models
 from matplotlib.ticker import MaxNLocator
 import seaborn as sns
+
 
 stages = ['ODOR1', 'ODOR2', 'EDShift(Light)']
 
@@ -39,7 +39,7 @@ def models_fitting_quality_over_times(data_file_path):
 		for stage_day in stage_transition_days:
 			axis.axvline(x=stage_day + 0.5, alpha=0.5, dashes=(5, 2, 1, 2), lw=2)
 
-		axis.set_ylim(0.1, 0.85)
+		axis.set_ylim(0.1, 1)
 		axis.axhline(y=0.25, alpha=0.7, lw=1, color='grey', linestyle='--')
 
 	handles, labels = axis.get_legend_handles_labels()
@@ -180,7 +180,7 @@ def show_likelihood_trials_scatter(data_file_path):
 	plt.subplots_adjust(left=0.1, bottom=0.05, right=0.95, top=0.9, wspace=0.2, hspace=0.5)
 
 
-	plt.savefig('fitting/Results/figures/likelihood_trial_scatter_{}'.format(fitting_utils.get_timestamp()))
+	plt.savefig('fitting/Results/figures/trial_likelihood_dispersion_{}'.format(fitting_utils.get_timestamp()))
 	plt.show()
 
 
@@ -261,13 +261,34 @@ def stage_transition_model_quality(data_file_path):
 # # plots.plot_objective(brain_results['results'], plot_dims=['nmr', 'lr'])
 
 
+def show_fitting_parameters(data_file_path):
+	df = pd.read_csv(data_file_path)
+	df = df[['subject', 'model', 'parameters']].copy()
+	df = df.groupby(['subject', 'model', 'parameters'], sort=False).any().reset_index()
+	aaa = df.parameters.apply(lambda row: fitting_utils.string2list(row))
+	parameters= aaa.apply(pd.Series)
+	df = df.join(parameters)
+	df = df.rename(columns={0: "beta", 1: "lr",  2: "batch_size"})
+	df = df[df['model'].str.contains('Tabular')]
+	df['subject'] = df['subject'].astype('category')
+	simple2 = df[df.model.str.contains('Simple2')]
+	simple = df[df.model.str.endswith('Simple')]
+	ax = sns.scatterplot(x=list(simple.beta), y=list(simple2.beta), alpha=1, s=75)
+
+	#ax = sns.scatterplot(x='lr', y='beta', hue='subject', style='model', data=df, alpha=1, s=75)
+	ax = sns.scatterplot(x='lr', y='beta', hue='model', data=df, alpha=1, s=75)
+	ax.set(xscale="log", yscale="log")
+
+
 if __name__ == '__main__':
-	file_path = '/Users/gkour/repositories/plusmaze/fitting/Results/Rats-Results/fitting_results_50_2022_09_19_22_55.csv'
-	models_fitting_quality_over_times(file_path)
-	compare_neural_tabular_models(file_path)
-	compare_model_subject_learning_curve(file_path)
-	plot_models_fitting_result_per_stage(file_path)
-	show_likelihood_trials_scatter(file_path)
-	stage_transition_model_quality(file_path)
+	file_path = '/Users/gkour/repositories/plusmaze/fitting/Results/Rats-Results/fitting_results_all_models.csv'
+	# models_fitting_quality_over_times(file_path)
+	#compare_neural_tabular_models(file_path)
+	# compare_model_subject_learning_curve(file_path)
+	#
+	#plot_models_fitting_result_per_stage(file_path)
+	# show_likelihood_trials_scatter(file_path)
+	# stage_transition_model_quality(file_path)
+	show_fitting_parameters(file_path)
 
 	x = 1
