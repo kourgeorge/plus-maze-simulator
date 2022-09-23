@@ -88,12 +88,13 @@ def episode_rollout(env, agent):
     return steps, total_reward, act_dist
 
 
-
 def unsupervised_dimensionality(samples_embedding, explained_variance=0.95):
-    num_pcs = min(len(samples_embedding), len(samples_embedding[0]))
-    pca = decomposition.PCA(n_components=num_pcs).fit(samples_embedding)
-    dimensionality = np.cumsum(pca.explained_variance_ratio_)
-    return (np.argmax(dimensionality > explained_variance) + 1)
+	num_pcs = min(len(samples_embedding), len(samples_embedding[0]))
+	if num_pcs < 2:
+		return np.linalg.norm(samples_embedding)
+	pca = decomposition.PCA(n_components=num_pcs).fit(samples_embedding)
+	dimensionality = np.cumsum(pca.explained_variance_ratio_)
+	return (np.argmax(dimensionality > explained_variance) + 1)
 
 
 def normalized_norm(u, ord=None):
