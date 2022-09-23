@@ -13,7 +13,7 @@ from brains.fixeddoorattentionbrain import FixedDoorAttentionBrain
 from brains.motivationdependantbrain import MotivationDependantBrain
 from PlusMazeExperiment import PlusMazeExperiment, ExperimentStatus
 from behavioral_analysis import plot_days_per_stage, plot_behavior_results
-from brains.consolidationbrain import ConsolidationBrain, RandomBrain
+from brains.consolidationbrain import ConsolidationBrain
 from rewardtype import RewardType
 from brains.tdbrain import TDBrain
 
@@ -33,7 +33,7 @@ brains = [(TDBrain, TD, TabularQ),
 
 
 def run_simulation(env):
-    repetitions = 2
+    repetitions = 50
 
     brains_reports = []
     for agent_spec in brains:
