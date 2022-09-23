@@ -96,7 +96,7 @@ class MazeBayesianModelFitting:
 
 				results_df = results_df.append(rat_data_with_likelihood, ignore_index=True)
 			results_df.to_csv('fitting/Results/Rats-Results/fitting_results{}_tmp.csv'.format(timestamp))
-		results_df.to_csv('fitting/Results/Rats-Results/fitting_results_{}_{}.csv'.format(n_calls,timestamp))
+		results_df.to_csv('fitting/Results/Rats-Results/fitting_results_{}_{}.csv'.format(timestamp, n_calls))
 		return fitting_results
 
 
