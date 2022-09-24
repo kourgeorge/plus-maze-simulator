@@ -5,11 +5,11 @@ import copy
 
 import utils
 from learners.abstractlearner import AbstractLearner
-from models.tabularmodels import TabularQ, UniformAttentionTabular, AttentionAtChoiceAndLearningTabular
+from models.tabularmodels import QTable, FTable
 
 
 class TD(AbstractLearner):
-	def __init__(self, model: TabularQ, learning_rate=0.01):
+	def __init__(self, model: QTable, learning_rate=0.01):
 		super().__init__(model=model, optimizer={'learning_rate': learning_rate})
 
 	def learn(self, state_batch, action_batch, reward_batch, action_values, nextstate_batch):
@@ -25,8 +25,8 @@ class TD(AbstractLearner):
 		return np.mean(deltas)
 
 
-class TDUniformAttention(AbstractLearner):
-	def __init__(self, model: UniformAttentionTabular, learning_rate=0.01):
+class IAL(AbstractLearner):
+	def __init__(self, model: FTable, learning_rate=0.01):
 		super().__init__(model=model, optimizer={'learning_rate': learning_rate})
 
 	def learn(self, state_batch, action_batch, reward_batch, action_values, nextstate_batch):
@@ -54,8 +54,8 @@ class TDUniformAttention(AbstractLearner):
 		return deltas
 
 
-class TDAttentionAtLearning(TDUniformAttention):
-	def __init__(self, model, alpha_phi, *args, **kwargs):
+class MAL(IAL):
+	def __init__(self, model, alpha_phi=0.1, *args, **kwargs):
 		super().__init__(model, *args, **kwargs)
 		self.alpha_phi = alpha_phi
 
@@ -99,13 +99,13 @@ class TDAttentionAtLearning(TDUniformAttention):
 		:param phi_s: the normalized attention
 		:return: delta_phi
 		"""
-		return np.array([2 * delta_v * np.matmul(V, [1 - phi_s[0], -phi_s[1], -phi_s[2]]),
+		return -np.array([2 * delta_v * np.matmul(V, [1 - phi_s[0], -phi_s[1], -phi_s[2]]),
 						 2 * delta_v * np.matmul(V, [-phi_s[0], 1 - phi_s[1], -phi_s[2]]),
 						 2 * delta_v * np.matmul(V, [-phi_s[0], -phi_s[1], 1 - phi_s[2]])])
 
 
-class TDAttentionAtLearningSimple(TDAttentionAtLearning):
+class MALSimple(MAL):
 	def calc_delta_phi(self, delta_v, reward, V, phi_s):
-		return -delta_v * (reward - V)
+		return delta_v * (reward - V)
 
 

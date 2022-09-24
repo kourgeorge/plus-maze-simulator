@@ -14,7 +14,7 @@ from fitting import fitting_utils
 from fitting.fitting_config import maze_models, MAZE_ANIMAL_DATA_PATH
 from fitting.PlusMazeExperimentFitting import PlusMazeExperimentFitting
 from fitting.fitting_utils import blockPrint, enablePrint
-from learners.tabularlearners import TDAttentionAtLearning
+from learners.tabularlearners import MAL
 from motivatedagent import MotivatedAgent
 from rewardtype import RewardType
 
@@ -33,7 +33,7 @@ class MazeBayesianModelFitting:
 		(brain, learner, model) = self.model
 		model_instance = model(self.env.stimuli_encoding_size(), 2, self.env.num_actions())
 
-		if issubclass(learner, TDAttentionAtLearning):
+		if issubclass(learner, MAL):
 			(beta, lr, attention_lr) = parameters
 			learner_instance = learner(model_instance, learning_rate=lr, alpha_phi=attention_lr)
 		else:
@@ -57,7 +57,7 @@ class MazeBayesianModelFitting:
 		model = self.model
 
 		experiment_stats, rat_data_with_likelihood = self._run_model(parameters)
-		likelihood_stage = list(rat_data_with_likelihood.groupby('stage').mean()['likelihood'])
+		likelihood_stage = list(rat_data_with_likelihood.groupby(['stage','day in stage']).mean()['likelihood'])
 		y = np.nanmean(likelihood_stage)
 
 		print("{}.\tx={},\t\ty={:.3f},\tstages={} \toverall_mean={:.3f}".format(fitting_utils.brain_name(model),
@@ -109,7 +109,6 @@ class MazeBayesianModelFitting:
 
 
 if __name__ == '__main__':
-
 	MazeBayesianModelFitting.all_subjects_all_models_optimization(
 		PlusMazeOneHotCues2ActiveDoors(relevant_cue=CueType.ODOR, stimuli_encoding=10),
 		MAZE_ANIMAL_DATA_PATH, maze_models, n_calls=35)
