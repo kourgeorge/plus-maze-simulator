@@ -7,6 +7,7 @@ from fitting import fitting_utils
 from matplotlib.ticker import MaxNLocator
 import seaborn as sns
 
+#sns.set(font_scale=0.6)
 
 stages = ['ODOR1', 'ODOR2', 'EDShift(Light)']
 
@@ -28,7 +29,7 @@ def models_fitting_quality_over_times(data_file_path):
 			model_subject_df = df_sub_model.groupby(['subject', 'model', 'stage', 'day in stage'], sort=False).mean().reset_index()
 
 			days = list(model_subject_df.index + 1)
-			axis.plot(days, model_subject_df.likelihood, label=model.split('.')[-1], alpha=0.7)
+			axis.plot(days, model_subject_df.likelihood, label=model, alpha=0.7)
 			axis.xaxis.set_major_locator(MaxNLocator(integer=True))
 			axis.set_yticklabels(['']) if i % 3 != 0 else 0
 
@@ -261,6 +262,44 @@ def stage_transition_model_quality(data_file_path):
 # # plots.plot_objective(brain_results['results'], plot_dims=['nmr', 'lr'])
 
 
+def show_BIC(data_file_path):
+	df = pd.read_csv(data_file_path)
+	df = df[['subject', 'model', 'likelihood', 'parameters', 'stage', 'reward']].copy()
+	#df = df.groupby(['subject', 'model', 'parameters'], sort=False).average().reset_index()
+	df.likelihood = -df.likelihood
+
+	# df = df.groupby(['subject', 'model', 'parameters', 'stage']).agg({'reward': 'count', 'likelihood': 'mean'}).reset_index()
+	# df = df.rename(columns={'reward': 'n', 'likelihood': 'L'})
+	# df['k'] = df.apply(lambda row: len(fitting_utils.string2list(row['parameters'])), axis=1)
+	# df = df.groupby(['subject', 'model', 'parameters']).sum().reset_index()
+	# df['BIC'] = np.log(df.n) * df.k - 2 * df.L
+	#
+
+	df = df.groupby(['subject', 'model', 'parameters']).agg({'reward': 'count', 'likelihood': 'sum'}).reset_index()
+	df = df.rename(columns={'reward': 'n', 'likelihood': 'L'})
+	df['k'] = df.apply(lambda row: len(fitting_utils.string2list(row['parameters'])), axis=1)
+	#df = df.groupby(['subject', 'model', 'parameters']).sum().reset_index()
+	df['BIC'] = np.log(df.n) * df.k - 2 * df.L
+	df['AIC'] = -2 * df.L / df.n + 2 * df.k / df.n
+
+	for criterion in ['AIC', 'BIC']:
+		sns.set(font_scale=0.6)
+		fig = plt.figure(figsize=(35, 7), dpi=120, facecolor='w')
+		for subject in set(np.unique(df.subject)).difference(['TD.QT']):
+			axis = fig.add_subplot(3, 3, subject + 1)
+			subject_model_df = df[(df.subject == subject)]
+			sns.barplot(x='model', y=criterion, data=subject_model_df, ax=axis)
+			axis.set_title('Subject:{}'.format(subject+1))
+			minn = np.min(subject_model_df[criterion])
+			maxx=np.max(subject_model_df[criterion])
+			delta = 0.1*(maxx-minn)
+			axis.set_ylim([minn-delta,maxx+delta])
+			axis.set_xlabel("")
+		plt.subplots_adjust(left=0.1, bottom=0.05, right=0.95, top=0.9, wspace=0.2, hspace=0.5)
+		plt.savefig('fitting/Results/figures/{}_{}'.format(criterion, fitting_utils.get_timestamp()))
+
+
+
 def show_fitting_parameters(data_file_path):
 	df = pd.read_csv(data_file_path)
 	df = df[['subject', 'model', 'parameters']].copy()
@@ -281,14 +320,14 @@ def show_fitting_parameters(data_file_path):
 
 
 if __name__ == '__main__':
-	file_path = '/Users/gkour/repositories/plusmaze/fitting/Results/Rats-Results/fitting_results_all_models.csv'
+	file_path = '/Users/gkour/repositories/plusmaze/fitting/Results/Rats-Results/fitting_results2022_09_24_09_44_tmp.csv'
+
 	# models_fitting_quality_over_times(file_path)
-	#compare_neural_tabular_models(file_path)
+	# compare_neural_tabular_models(file_path)
 	# compare_model_subject_learning_curve(file_path)
-	#
-	#plot_models_fitting_result_per_stage(file_path)
+	# plot_models_fitting_result_per_stage(file_path)
 	# show_likelihood_trials_scatter(file_path)
 	# stage_transition_model_quality(file_path)
-	show_fitting_parameters(file_path)
-
+	# show_fitting_parameters(file_path)
+	show_BIC(file_path)
 	x = 1
