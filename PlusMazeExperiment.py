@@ -77,7 +77,8 @@ def PlusMazeExperiment(env: PlusMaze, agent:MotivatedAgent, dashboard=False):
             current_criterion = np.mean(stats.reports[-1].correct)
             reward = np.mean(stats.reports[-1].reward)
             if current_criterion > config.SUCCESS_CRITERION_THRESHOLD:# and reward > 0.6:
-                #print(agent.get_brain().get_model().V)
+                #print(agent.get_brain().get_model().phi)
+                #print(torch.softmax(agent.get_brain().get_model().phi, axis=0))
                 env.set_next_stage(agent)
 
     stats.metadata['experiment_status'] = ExperimentStatus.COMPLETED

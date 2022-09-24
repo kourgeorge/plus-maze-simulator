@@ -17,9 +17,9 @@ from brains.consolidationbrain import ConsolidationBrain
 from rewardtype import RewardType
 from brains.tdbrain import TDBrain
 
-brains = [(TDBrain, TD, QTable),
-          (TDBrain, IAL, FTable),
-          (TDBrain, MAL, FTable),
+brains = [(TDBrain, QLearner, QTable),
+          (TDBrain, IALearner, FTable),
+          (TDBrain, MALearner, FTable),
           (ConsolidationBrain, DQN, UniformAttentionNetwork),
           (ConsolidationBrain, DQN, AttentionAtChoiceAndLearningNetwork),
           (ConsolidationBrain, DQN, FullyConnectedNetwork),

@@ -5,10 +5,10 @@ import copy
 
 import utils
 from learners.abstractlearner import AbstractLearner
-from models.tabularmodels import QTable, FTable
+from models.tabularmodels import QTable, FTable, ACFTable
 
 
-class TD(AbstractLearner):
+class QLearner(AbstractLearner):
 	def __init__(self, model: QTable, learning_rate=0.01):
 		super().__init__(model=model, optimizer={'learning_rate': learning_rate})
 
@@ -25,7 +25,7 @@ class TD(AbstractLearner):
 		return np.mean(deltas)
 
 
-class IAL(AbstractLearner):
+class IALearner(AbstractLearner):
 	def __init__(self, model: FTable, learning_rate=0.01):
 		super().__init__(model=model, optimizer={'learning_rate': learning_rate})
 
@@ -40,7 +40,7 @@ class IAL(AbstractLearner):
 		deltas = (reward_batch - selected_action_value)
 		selected_odors, selected_colors = self.model.get_selected_door_stimuli(state_batch, actions)
 
-		phi = utils.softmax(self.model.phi)
+		phi = utils.softmax(self.model.phi) if isinstance(self.model, ACFTable) else [1, 1, 1]
 		for odor in set(np.unique(selected_odors)).difference([self.model.encoding_size]):
 			self.model.V['odors'][odor] = self.model.V['odors'][odor] + \
 										  np.nanmean(learning_rate * phi[0] * deltas[selected_odors == odor])
@@ -54,7 +54,7 @@ class IAL(AbstractLearner):
 		return deltas
 
 
-class MAL(IAL):
+class MALearner(IALearner):
 	def __init__(self, model, alpha_phi=0.1, *args, **kwargs):
 		super().__init__(model, *args, **kwargs)
 		self.alpha_phi = alpha_phi
@@ -104,7 +104,7 @@ class MAL(IAL):
 						 2 * delta_v * np.matmul(V, [-phi_s[0], -phi_s[1], 1 - phi_s[2]])])
 
 
-class MALSimple(MAL):
+class MALearnerSimple(MALearner):
 	def calc_delta_phi(self, delta_v, reward, V, phi_s):
 		return delta_v * (reward - V)
 

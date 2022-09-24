@@ -3,13 +3,13 @@ __author__ = 'gkour'
 import numpy as np
 import config
 from abstractbrain import AbstractBrain
-from learners.tabularlearners import TD
+from learners.tabularlearners import QLearner
 import torch
 
 
 class MotivatedTDBrain(AbstractBrain):
 
-	def __init__(self, learner: TD, beta=1, reward_discount=0, batch_size=config.BATCH_SIZE):
+	def __init__(self, learner: QLearner, beta=1, reward_discount=0, batch_size=config.BATCH_SIZE):
 		super().__init__(reward_discount)
 		self.learner = learner
 		self.batch_size = batch_size

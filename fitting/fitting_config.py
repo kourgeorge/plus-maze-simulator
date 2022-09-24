@@ -27,10 +27,10 @@ attention_lr = Real(name='lr', low=0.0001, high=0.7, prior='log-uniform')
 batch_size = Integer(name='batch_size', low=1, high=20)
 beta = Real(name='beta', low=0.1, high=10)
 
-maze_models = [((TDBrain, TD, QTable), (beta, lr)),
-			   ((TDBrain, IAL, FTable), (beta, lr)),
-			   ((TDBrain, MAL, FTable), (beta, lr, attention_lr)),
-				((TDBrain, MALSimple, FTable), (beta, lr, attention_lr)),
+maze_models = [((TDBrain, QLearner, QTable), (beta, lr)),
+			   ((TDBrain, IALearner, FTable), (beta, lr)),
+			   ((TDBrain, MALearnerSimple, ACFTable), (beta, lr, attention_lr)),
+			   ((TDBrain, MALearner, ACFTable), (beta, lr, attention_lr)),
 			   # ((ConsolidationBrain, DQN, FullyConnectedNetwork), (beta, lr)),
 			   # ((ConsolidationBrain, DQN, UniformAttentionNetwork), (beta, lr)),
 			   # ((ConsolidationBrain, DQN, AttentionAtChoiceAndLearningNetwork), (beta, lr)),

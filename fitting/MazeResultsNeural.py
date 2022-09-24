@@ -7,27 +7,22 @@ import matplotlib.pyplot as plt
 from environment import PlusMazeOneHotCues2ActiveDoors, CueType
 
 from fitting.PlusMazeExperimentFitting import PlusMazeExperimentFitting
-from learners.tabularlearners import MAL
+from learners.tabularlearners import MALearner
 from motivatedagent import MotivatedAgent
 from rewardtype import RewardType
 import config
-
 
 
 def name_to_brain(model_name):
 	for brain in fitting_config.maze_models:
 		if fitting_utils.brain_name(brain[0]) in model_name:
 			return brain[0]
-
 	return None
 
 
 def neural_display_timeline(data_file_path):
 	experiment_data = pd.read_csv(data_file_path)
 
-	#neural_models = [model_name for model_name in np.unique(experiment_data.model) if 'Network' in model_name]
-	neural_models= ['AttentionAtChoiceAndLearningTabularSimple']
-	neural_models = fitting_config.maze_models
 	subject_models_data = pd.DataFrame()
 	for model_name in np.unique(experiment_data.model)[1:2]:
 		fig = plt.figure(figsize=(35, 7), dpi=120, facecolor='w')
@@ -42,7 +37,7 @@ def neural_display_timeline(data_file_path):
 			brain, learner, model = name_to_brain(model_name)
 			model_instance = model(env.stimuli_encoding_size(), 2, env.num_actions())
 
-			if issubclass(learner, MAL):
+			if issubclass(learner, MALearner):
 				(beta, lr, attention_lr) = fitting_utils.string2list(params)
 				learner_instance = learner(model_instance, learning_rate=lr, alpha_phi=attention_lr)
 			else:
