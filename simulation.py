@@ -17,9 +17,9 @@ from brains.consolidationbrain import ConsolidationBrain
 from rewardtype import RewardType
 from brains.tdbrain import TDBrain
 
-brains = [(TDBrain, TD, TabularQ),
-          (TDBrain, TDUniformAttention, UniformAttentionTabular),
-          (TDBrain, TDAttentionAtLearning, AttentionAtChoiceAndLearningTabular),
+brains = [(TDBrain, TD, QTable),
+          (TDBrain, IAL, FTable),
+          (TDBrain, MAL, FTable),
           (ConsolidationBrain, DQN, UniformAttentionNetwork),
           (ConsolidationBrain, DQN, AttentionAtChoiceAndLearningNetwork),
           (ConsolidationBrain, DQN, FullyConnectedNetwork),
@@ -33,7 +33,7 @@ brains = [(TDBrain, TD, TabularQ),
 
 
 def run_simulation(env):
-    repetitions = 50
+    repetitions = 20
 
     brains_reports = []
     for agent_spec in brains:
