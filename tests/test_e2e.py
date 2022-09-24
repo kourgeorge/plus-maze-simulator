@@ -9,7 +9,7 @@ from learners.tabularlearners import *
 from brains.consolidationbrain import ConsolidationBrain
 from motivatedagent import MotivatedAgent
 from PlusMazeExperiment import PlusMazeExperiment
-from models.tabularmodels import UniformAttentionTabular, TabularQ
+from models.tabularmodels import FTable, QTable
 from brains.tdbrain import TDBrain
 
 
@@ -51,11 +51,11 @@ def test_brain(brain):
 if __name__ == '__main__':
     env = PlusMazeOneHotCues(relevant_cue=CueType.ODOR)
 
-    test_brain(TDBrain(TDUniformAttention(learning_rate=0.01,
-                                          model=UniformAttentionTabular(env.stimuli_encoding_size(), 2,
-                                                                               env.num_actions()))))
-    test_brain(TDBrain(TDUniformAttention(learning_rate=0.01,
-                                          model=AttentionAtChoiceAndLearningTabular(env.stimuli_encoding_size(), 2,
+    test_brain(TDBrain(IAL(learning_rate=0.01,
+                           model=FTable(env.stimuli_encoding_size(), 2,
+                                         env.num_actions()))))
+    test_brain(TDBrain(IAL(learning_rate=0.01,
+                           model=AttentionAtChoiceAndLearningTabular(env.stimuli_encoding_size(), 2,
                                                                                env.num_actions()))))
     test_brain(ConsolidationBrain(DQN(learning_rate=0.01,
                                           model=FullyConnectedNetwork(env.stimuli_encoding_size(), 2,
