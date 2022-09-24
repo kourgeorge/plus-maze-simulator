@@ -10,7 +10,7 @@ from utils import compress
 norm = 'fro'
 
 
-class TabularQ:
+class QTable:
 
 	def __init__(self, encoding_size, num_channels, num_actions):
 		self._num_actions = num_actions
@@ -42,9 +42,7 @@ class TabularQ:
 		return self.__class__.__name__
 
 
-class UniformAttentionTabular:
-	def __str__(self):
-		return self.__class__.__name__
+class FTable:
 
 	def __init__(self, encoding_size, num_channels, num_actions):
 		self.encoding_size=encoding_size
@@ -82,23 +80,16 @@ class UniformAttentionTabular:
 		return np.array(self.V['spatial'])[doors]
 
 	def get_model_metrics(self):
-		return {'color': np.linalg.norm(self.V['colors']),
-				'odor':  np.linalg.norm(self.V['odors']),
-				'spatial':  np.linalg.norm(self.V['spatial'])}
+		return {'odor_attn': self.phi[0],
+				'color_attn': self.phi[1],
+				'spatial_attn': self.phi[2],
+				'color': np.linalg.norm(self.V['colors']),
+				'odor': np.linalg.norm(self.V['odors']),
+				'spatial': np.linalg.norm(self.V['spatial'])
+				}
 
 	def get_model_diff(self, brain2):
 		return {'color_change': entropy(self.V['colors'], brain2.V['colors']),
 				'odor_change':  jensenshannon(self.V['odors'], brain2.V['odors']),
 				'spatial_change':  jensenshannon(self.V['spatial'], brain2.V['spatial'])}
-
-
-class AttentionAtChoiceAndLearningTabular(UniformAttentionTabular):
-	def __init__(self,encoding_size, num_channels, num_actions):
-		super().__init__(encoding_size, num_channels, num_actions)
-		#self.phi = np.random.normal(loc=0.0, scale=1.0, size=3)
-
-	def get_model_metrics(self):
-		return {'odor_attn': self.phi[0],
-				'color_attn': self.phi[1],
-				'spatial_attn': self.phi[2]}
 
