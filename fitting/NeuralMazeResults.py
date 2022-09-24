@@ -7,6 +7,7 @@ import matplotlib.pyplot as plt
 from environment import PlusMazeOneHotCues2ActiveDoors, CueType
 
 from fitting.PlusMazeExperimentFitting import PlusMazeExperimentFitting
+from learners.tabularlearners import MAL
 from motivatedagent import MotivatedAgent
 from rewardtype import RewardType
 import config
@@ -28,7 +29,7 @@ def neural_display_timeline(data_file_path):
 	neural_models= ['AttentionAtChoiceAndLearningTabularSimple']
 	neural_models = fitting_config.maze_models
 	subject_models_data = pd.DataFrame()
-	for model_name in neural_models: #np.unique(experiment_data.model):
+	for model_name in np.unique(experiment_data.model)[1:2]:
 		fig = plt.figure(figsize=(35, 7), dpi=120, facecolor='w')
 		fig.suptitle(model_name)
 		for i, subject in enumerate(np.unique(experiment_data.subject)):
@@ -36,11 +37,19 @@ def neural_display_timeline(data_file_path):
 			print(model_name)
 			model_data = experiment_data[(experiment_data.subject == subject) & (experiment_data.model==model_name)]
 			params = list(model_data['parameters'])[0]
-			beta, lr, batch_size = fitting_utils.string2list(params)
-			brain, learner, model = name_to_brain(model_name)
 			env = PlusMazeOneHotCues2ActiveDoors(relevant_cue=CueType.ODOR, stimuli_encoding=10)
-			agent = MotivatedAgent(brain(learner(model(env.stimuli_encoding_size(), 2, env.num_actions()),
-												 learning_rate=lr), batch_size=int(batch_size)),
+
+			brain, learner, model = name_to_brain(model_name)
+			model_instance = model(env.stimuli_encoding_size(), 2, env.num_actions())
+
+			if issubclass(learner, MAL):
+				(beta, lr, attention_lr) = fitting_utils.string2list(params)
+				learner_instance = learner(model_instance, learning_rate=lr, alpha_phi=attention_lr)
+			else:
+				(beta, lr) = fitting_utils.string2list(params)
+				learner_instance = learner(model_instance, learning_rate=lr)
+
+			agent = MotivatedAgent(brain(learner_instance),
 								   motivation=RewardType.WATER, motivated_reward_value=config.MOTIVATED_REWARD,
 								   non_motivated_reward_value=config.NON_MOTIVATED_REWARD)
 			fitting_utils.blockPrint()
@@ -63,11 +72,12 @@ def neural_display_timeline(data_file_path):
 		fig.legend(handles, labels, loc=(0.01, 0.87), prop={'size': 10}, labelspacing=0.3)
 		plt.subplots_adjust(left=0.05, bottom=0.1, right=0.99, top=0.90, wspace=0.1, hspace=0.4)
 
-		plt.savefig('fitting/Results/figures/neural/neural_{}_{}'.format(model_name,fitting_utils.get_timestamp()))
+		plt.savefig('fitting/Results/figures/neural/neural_{}_{}.jpg'.format(model_name.split('.')[0],fitting_utils.get_timestamp()))
 		plt.show()
 
 
 if __name__ == '__main__':
-	file_path = '/Users/gkour/repositories/plusmaze/fitting/Results/Rats-Results/fitting_results_all_models.csv'
+
+	file_path = '/Users/gkour/repositories/plusmaze/fitting/Results/Rats-Results/fitting_results_2022_09_23_19_29_35.csv'
 	neural_display_timeline(file_path)
 
