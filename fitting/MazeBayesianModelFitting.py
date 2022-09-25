@@ -93,7 +93,7 @@ class MazeBayesianModelFitting:
 		fitting_results = {}
 		results_df = pd.DataFrame()
 		for subject_id, curr_rat in enumerate(animal_data):
-			print("Optimizing models for subject: {}".format(subject_id))
+			print("{}".format(subject_id))
 			fitting_results[subject_id] = {}
 			for curr_model in all_models:
 				model, parameters_space = curr_model
@@ -104,7 +104,7 @@ class MazeBayesianModelFitting:
 				rat_data_with_likelihood["parameters"] = [search_result.x] * len(rat_data_with_likelihood)
 
 				results_df = results_df.append(rat_data_with_likelihood, ignore_index=True)
-			results_df.to_csv('fitting/Results/Rats-Results/fitting_results{}_tmp.csv'.format(timestamp))
+			results_df.to_csv('fitting/Results/Rats-Results/fitting_results_{}_{}_tmp.csv'.format(timestamp, n_calls))
 		results_df.to_csv('fitting/Results/Rats-Results/fitting_results_{}_{}.csv'.format(timestamp, n_calls))
 		return fitting_results
 
