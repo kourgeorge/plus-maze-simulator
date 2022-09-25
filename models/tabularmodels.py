@@ -73,14 +73,14 @@ class FTable:
 		return self.V[dimension][feature]
 
 	def get_model_metrics(self):
-		return {'color': np.linalg.norm(self.V['colors']),
-				'odor': np.linalg.norm(self.V['odors']),
+		return {'odor': np.linalg.norm(self.V['odors']),
+				'color': np.linalg.norm(self.V['colors']),
 				'spatial': np.linalg.norm(self.V['spatial'])
 				}
 
 	def get_model_diff(self, brain2):
-		return {'color_diff': entropy(self.V['colors'], brain2.V['colors']),
-				'odor_diff': jensenshannon(self.V['odors'], brain2.V['odors']),
+		return {'odor_diff': jensenshannon(self.V['odors'], brain2.V['odors']),
+				'color_diff': entropy(self.V['colors'], brain2.V['colors']),
 				'spatial_diff': jensenshannon(self.V['spatial'], brain2.V['spatial'])}
 
 
