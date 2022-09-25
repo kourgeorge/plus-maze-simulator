@@ -12,6 +12,8 @@ from motivatedagent import MotivatedAgent
 from rewardtype import RewardType
 import config
 
+np.set_printoptions(suppress=True)
+
 
 def name_to_brain(model_name):
 	for brain in fitting_config.maze_models:
@@ -24,8 +26,9 @@ def neural_display_timeline(data_file_path):
 	experiment_data = pd.read_csv(data_file_path)
 
 	subject_models_data = pd.DataFrame()
-	for model_name in np.unique(experiment_data.model)[1:2]:
+	for model_name in np.unique(experiment_data.model):
 		fig = plt.figure(figsize=(35, 7), dpi=120, facecolor='w')
+		plt.subplots_adjust(left=0.1, bottom=0.1, right=0.99, top=0.90, wspace=0.15, hspace=0.4)
 		fig.suptitle(model_name)
 		for i, subject in enumerate(np.unique(experiment_data.subject)):
 			axis = fig.add_subplot(3, 3, subject + 1)
@@ -38,10 +41,10 @@ def neural_display_timeline(data_file_path):
 			model_instance = model(env.stimuli_encoding_size(), 2, env.num_actions())
 
 			if issubclass(learner, MALearner):
-				(beta, lr, attention_lr) = fitting_utils.string2list(params)
+				(beta, lr, attention_lr) = params= fitting_utils.string2list(params)
 				learner_instance = learner(model_instance, learning_rate=lr, alpha_phi=attention_lr)
 			else:
-				(beta, lr) = fitting_utils.string2list(params)
+				(beta, lr) = params = fitting_utils.string2list(params)
 				learner_instance = learner(model_instance, learning_rate=lr)
 
 			agent = MotivatedAgent(brain(learner_instance),
@@ -58,14 +61,14 @@ def neural_display_timeline(data_file_path):
 
 			subject_models_data = subject_models_data.append(dict, ignore_index=True)
 			axis.plot(model_dev, label=list(stats.reports[0].brain.get_model().get_model_metrics().keys()))
-			axis.set_title('Subject {}'.format(subject+1))
+			axis.set_title('Subject: {}. Params:{}, lik:{}'.format(subject+1, np.round(params,4), np.round(np.mean(model_data.likelihood),2)))
 			days_level_data = model_data.groupby(['stage', 'day in stage']).mean().reset_index()
 			for stage_day in fitting_utils.get_stage_transition_days(days_level_data):
-				axis.axvline(x=stage_day + 0.5, alpha=0.5, dashes=(5, 2, 1, 2), lw=2)
+				axis.axvline(x=stage_day - 0.5, alpha=0.5, dashes=(5, 2, 1, 2), lw=2)
 
 		handles, labels = axis.get_legend_handles_labels()
 		fig.legend(handles, labels, loc=(0.01, 0.87), prop={'size': 10}, labelspacing=0.3)
-		plt.subplots_adjust(left=0.05, bottom=0.1, right=0.99, top=0.90, wspace=0.1, hspace=0.4)
+
 
 		plt.savefig('fitting/Results/figures/neural/neural_{}_{}.jpg'.format(model_name.split('.')[0],fitting_utils.get_timestamp()))
 		plt.show()

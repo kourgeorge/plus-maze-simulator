@@ -60,9 +60,9 @@ def compare_neural_tabular_models(data_file_path):
 	stage_mean_df = df.groupby(['subject', 'model', 'stage', 'day in stage']).median().reset_index()
 	stage_mean_df.likelihood = np.exp(-stage_mean_df.likelihood)
 
-	model_pairs = [('TabularQ', 'FullyConnectedNetwork'),
-				   ('UniformAttentionTabular', 'UniformAttentionNetwork'),
-				   ('AttentionAtChoiceAndLearningTabular', 'AttentionAtChoiceAndLearningNetwork')]
+	model_pairs = [('QLearner', 'IALearner'),
+				   ('IALearner', 'MALearner'),
+				   ('MALearnerSimple', 'MALearner')]
 	stage_mean_df = stage_mean_df[stage_mean_df.model.isin(sum(model_pairs,()))]
 	pairs_df = pd.DataFrame()
 	joined_df = stage_mean_df.merge(stage_mean_df, on=['subject', 'stage', 'day in stage'])
@@ -81,27 +81,28 @@ def compare_neural_tabular_models(data_file_path):
 	for i, stage in enumerate(stages):
 		axis = fig.add_subplot(140 + i + 1)
 		pairs_df_stage = pairs_df[pairs_df['stage'] == i + 1]
-		sns.scatterplot(x='likelihood_x', y='likelihood_y', hue='pair', size='day in stage', data=pairs_df_stage,
+		pairs_df_stage = pairs_df_stage.rename(columns={'likelihood_x': 'Likelihood1', 'likelihood_y': 'Likelihood2'})
+		sns.scatterplot(x='Likelihood1', y='Likelihood2', hue='pair', size='day in stage', data=pairs_df_stage,
 						ax=axis, alpha=0.6, s=20)
 		axis.plot(np.linspace(minn, maxx, 100), np.linspace(minn, maxx, 100), color='grey')
-		axis.set(xlabel='Tabular', ylabel='Neural') if i == 0 else axis.set(xlabel='Tabular', ylabel='')
+		#axis.set(xlabel='Tabular', ylabel='Neural') if i == 0 else axis.set(xlabel='Tabular', ylabel='')
 		axis.set_title(stage)
 		axis.legend([], [], frameon=False)
 		axis.set_ylim(minn, maxx)
 		axis.set_yticklabels(['']) if i > 0 else 0
 
 	axis = fig.add_subplot(144)
-	sns.scatterplot(x='likelihood_x', y='likelihood_y', hue='pair', data=pairs_df, ax=axis, alpha=0.5, s=10)
+	pairs_df = pairs_df.rename(columns={'likelihood_x': 'Likelihood1', 'likelihood_y': 'Likelihood2'})
+	sns.scatterplot(x='Likelihood1', y='Likelihood2', hue='pair', data=pairs_df, ax=axis, alpha=0.5, s=10)
 	axis.plot(np.linspace(minn, maxx, 100), np.linspace(minn, maxx, 100), color='grey')
 	axis.set_title('All Stages')
-	axis.set(xlabel='Tabular', ylabel='')
+	#axis.set(xlabel='Tabular', ylabel='')
 	axis.legend([], [], frameon=False)
 	axis.set_ylim(minn, maxx)
 	axis.set_yticklabels([''])
 
 	handles, labels = axis.get_legend_handles_labels()
-	fig.legend(handles, ["Q vs. FC", "UA Tabular vs. UA Neural", "ACL Tabular vs. ACL Neural"],
-			   loc='upper left', prop={'size': 8.5})
+	fig.legend(handles, labels, loc='upper left', prop={'size': 8.5})
 
 	plt.subplots_adjust(left=0.1, bottom=0.2, right=0.95, top=0.8, wspace=0.2, hspace=0.2)
 	plt.savefig('fitting/Results/figures/neural_tabular_compare_{}'.format(fitting_utils.get_timestamp()))
@@ -153,17 +154,12 @@ def show_likelihood_trials_scatter(data_file_path):
 
 	df.likelihood = np.exp(-df.likelihood)
 
-	model_pairs = [('TabularQ', 'FullyConnectedNetwork'),
-				   ('UniformAttentionTabular', 'UniformAttentionNetwork'),
-				   ('AttentionAtChoiceAndLearningTabular', 'AttentionAtChoiceAndLearningNetwork')]
-
-
 	sns.set_theme(style="whitegrid")
 	fig = plt.figure(figsize=(10, 5), dpi=120, facecolor='w')
 
-	for i, model in enumerate(sum(model_pairs,())):
+	for i, model in enumerate(np.unique(df.model)): #enumerate(sum(model_pairs,())):
 		for s, stage in enumerate(stages):
-			axis = fig.add_subplot(6,3,i*3+s+1)
+			axis = fig.add_subplot(len(np.unique(df.model)),3,i*3+s+1)
 			model_df = df[(df.model==model) & (df.stage==s+1)]
 			sns.histplot(data=model_df, x="likelihood", kde=True)
 			axis.axvline(x=np.mean(model_df.likelihood),
@@ -179,7 +175,6 @@ def show_likelihood_trials_scatter(data_file_path):
 			axis.set_xlim([0,1])
 
 	plt.subplots_adjust(left=0.1, bottom=0.05, right=0.95, top=0.9, wspace=0.2, hspace=0.5)
-
 
 	plt.savefig('fitting/Results/figures/trial_likelihood_dispersion_{}'.format(fitting_utils.get_timestamp()))
 	plt.show()
@@ -262,7 +257,7 @@ def stage_transition_model_quality(data_file_path):
 # # plots.plot_objective(brain_results['results'], plot_dims=['nmr', 'lr'])
 
 
-def show_BIC(data_file_path):
+def compare_fitting_criteria(data_file_path):
 	df = pd.read_csv(data_file_path)
 	df = df[['subject', 'model', 'likelihood', 'parameters', 'stage', 'reward']].copy()
 	#df = df.groupby(['subject', 'model', 'parameters'], sort=False).average().reset_index()
@@ -283,9 +278,9 @@ def show_BIC(data_file_path):
 	df['AIC'] = -2 * df.L / df.n + 2 * df.k / df.n
 
 	for criterion in ['AIC', 'BIC']:
-		sns.set(font_scale=0.6)
 		fig = plt.figure(figsize=(35, 7), dpi=120, facecolor='w')
-		for subject in set(np.unique(df.subject)).difference(['TD.QT']):
+		df = df[df.model!='QLearner']
+		for subject in np.unique(df.subject):
 			axis = fig.add_subplot(3, 3, subject + 1)
 			subject_model_df = df[(df.subject == subject)]
 			sns.barplot(x='model', y=criterion, data=subject_model_df, ax=axis)
@@ -299,7 +294,6 @@ def show_BIC(data_file_path):
 		plt.savefig('fitting/Results/figures/{}_{}'.format(criterion, fitting_utils.get_timestamp()))
 
 
-
 def show_fitting_parameters(data_file_path):
 	df = pd.read_csv(data_file_path)
 	df = df[['subject', 'model', 'parameters']].copy()
@@ -307,20 +301,15 @@ def show_fitting_parameters(data_file_path):
 	aaa = df.parameters.apply(lambda row: fitting_utils.string2list(row))
 	parameters= aaa.apply(pd.Series)
 	df = df.join(parameters)
-	df = df.rename(columns={0: "beta", 1: "lr",  2: "batch_size"})
-	df = df[df['model'].str.contains('Tabular')]
+	df = df.rename(columns={0: "beta", 1: "alpha",  2: "alpha_phi"})
 	df['subject'] = df['subject'].astype('category')
-	simple2 = df[df.model.str.contains('Simple2')]
-	simple = df[df.model.str.endswith('Simple')]
-	ax = sns.scatterplot(x=list(simple.beta), y=list(simple2.beta), alpha=1, s=75)
+	ax = sns.pairplot( hue='model', data=df, diag_kind="hist")
 
-	#ax = sns.scatterplot(x='lr', y='beta', hue='subject', style='model', data=df, alpha=1, s=75)
-	ax = sns.scatterplot(x='lr', y='beta', hue='model', data=df, alpha=1, s=75)
 	ax.set(xscale="log", yscale="log")
 
 
 if __name__ == '__main__':
-	file_path = '/Users/gkour/repositories/plusmaze/fitting/Results/Rats-Results/fitting_results2022_09_24_09_44_tmp.csv'
+	file_path = '/Users/gkour/repositories/plusmaze/fitting/Results/Rats-Results/fitting_results_attatlearning_normalizedatchoiceandlearning.csv'
 
 	# models_fitting_quality_over_times(file_path)
 	# compare_neural_tabular_models(file_path)
@@ -329,5 +318,5 @@ if __name__ == '__main__':
 	# show_likelihood_trials_scatter(file_path)
 	# stage_transition_model_quality(file_path)
 	# show_fitting_parameters(file_path)
-	show_BIC(file_path)
+	compare_fitting_criteria(file_path)
 	x = 1
