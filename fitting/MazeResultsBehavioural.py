@@ -274,23 +274,27 @@ def compare_fitting_criteria(data_file_path):
 	df = df.rename(columns={'reward': 'n', 'likelihood': 'L'})
 	df['k'] = df.apply(lambda row: len(fitting_utils.string2list(row['parameters'])), axis=1)
 	#df = df.groupby(['subject', 'model', 'parameters']).sum().reset_index()
-	df['BIC'] = np.log(df.n) * df.k - 2 * df.L
-	df['AIC'] = -2 * df.L / df.n + 2 * df.k / df.n
+	df['BIC'] = np.log(df.n) * 3 - 2 * df.L
+	df['AIC'] = -2 * df.L / df.n + 2 * 3 / df.n
 
 	for criterion in ['AIC', 'BIC']:
 		fig = plt.figure(figsize=(35, 7), dpi=120, facecolor='w')
-		df = df[df.model!='QLearner']
 		for subject in np.unique(df.subject):
 			axis = fig.add_subplot(3, 3, subject + 1)
 			subject_model_df = df[(df.subject == subject)]
-			sns.barplot(x='model', y=criterion, data=subject_model_df, ax=axis)
+			sns.barplot(x=criterion, y='model', data=subject_model_df, ax=axis, orient = 'h')
 			axis.set_title('Subject:{}'.format(subject+1))
 			minn = np.min(subject_model_df[criterion])
 			maxx=np.max(subject_model_df[criterion])
 			delta = 0.1*(maxx-minn)
-			axis.set_ylim([minn-delta,maxx+delta])
-			axis.set_xlabel("")
-		plt.subplots_adjust(left=0.1, bottom=0.05, right=0.95, top=0.9, wspace=0.2, hspace=0.5)
+			axis.set_xlim([minn-delta,maxx+delta])
+			labels = axis.get_xticklabels()
+			print(labels)
+			axis.set_ylabel("")
+			axis.set_yticklabels("") if subject%3>0 else 0
+			axis.set_xlabel("") if subject <6 else 0
+
+		plt.subplots_adjust(left=0.11, bottom=0.07, right=0.95, top=0.9, wspace=0.2, hspace=0.4)
 		plt.savefig('fitting/Results/figures/{}_{}'.format(criterion, fitting_utils.get_timestamp()))
 
 
