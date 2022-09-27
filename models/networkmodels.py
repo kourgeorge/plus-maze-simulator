@@ -23,7 +23,7 @@ class AbstractNetworkModel(nn.Module):
 		raise NotImplementedError()
 
 
-class UniformAttentionNetwork(AbstractNetworkModel):
+class UANet(AbstractNetworkModel):
 	def __init__(self, encoding_size, num_channels, num_actions):
 		super().__init__()
 		self.odors = nn.Linear(encoding_size, 1, bias=False)
@@ -40,19 +40,18 @@ class UniformAttentionNetwork(AbstractNetworkModel):
 		weighted_vals = torch.matmul(torch.cat([odor_val, light_val, door_val], dim=-1), torch.softmax(self.phi, axis=0))
 		return torch.squeeze(weighted_vals, dim=2)
 
-
 	def get_model_metrics(self):
-		return {'colors': np.linalg.norm(self.colors.weight.detach()),
-				'odors':  np.linalg.norm(self.odors.weight.detach()),
+		return {'odors':  np.linalg.norm(self.odors.weight.detach()),
+				'colors': np.linalg.norm(self.colors.weight.detach()),
 				'spatial':  np.linalg.norm(self.spatial.detach())}
 
 	def get_model_diff(self, network2):
-		return {'d(colors)': np.linalg.norm(self.colors.weight.detach() - network2.colors.weight.detach()),
-				'd(odors)': np.linalg.norm(self.odors.weight.detach() - network2.odors.weight.detach()),
+		return {'d(odors)': np.linalg.norm(self.odors.weight.detach() - network2.odors.weight.detach()),
+				'd(colors)': np.linalg.norm(self.colors.weight.detach() - network2.colors.weight.detach()),
 				'd(spatial)': np.linalg.norm(self.spatial.detach() - network2.spatial.detach())}
 
 
-class AttentionAtChoiceAndLearningNetwork(UniformAttentionNetwork):
+class ACLNet(UANet):
 	def __init__(self, encoding_size, num_channels, num_actions):
 		super().__init__(encoding_size, num_channels, num_actions)
 		#self.phi = nn.Parameter(nn.init.xavier_uniform_(torch.empty(size=(3,1))), requires_grad=True)
@@ -69,7 +68,7 @@ class AttentionAtChoiceAndLearningNetwork(UniformAttentionNetwork):
 				'spatial_attn': self.phi[2].detach().numpy() - model2.phi[2].detach().numpy()}
 
 
-class FullyConnectedNetwork(AbstractNetworkModel):
+class FCNet(AbstractNetworkModel):
 	def __init__(self, encoding_size, num_channels, num_actions):
 		super().__init__()
 		self.affine = nn.Linear(num_channels * num_actions * encoding_size, num_actions, bias=True)
@@ -115,7 +114,7 @@ class Random(AbstractNetworkModel):
 		return {'None':0}
 
 
-class FullyConnectedNetwork2Layers(FullyConnectedNetwork):
+class FC2LayersNet(FCNet):
 	def __init__(self, encoding_size, num_channels, num_actions):
 		super().__init__(encoding_size, num_channels, num_actions)
 		self.controller = nn.Linear(num_actions, num_actions, bias=True)
@@ -262,8 +261,8 @@ class SeparateMotivationAreasFCNetwork(AbstractNetworkModel):
 
 	def __init__(self, encoding_size, num_channels, num_actions):
 		super().__init__()
-		self.model_food = FullyConnectedNetwork(encoding_size, num_channels, num_actions)
-		self.model_water = FullyConnectedNetwork(encoding_size, num_channels, num_actions)
+		self.model_food = FCNet(encoding_size, num_channels, num_actions)
+		self.model_water = FCNet(encoding_size, num_channels, num_actions)
 
 	def forward(self, x, motivation):
 		if motivation == 'water':
