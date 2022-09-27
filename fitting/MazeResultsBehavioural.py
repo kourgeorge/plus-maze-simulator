@@ -7,8 +7,6 @@ from fitting import fitting_utils
 from matplotlib.ticker import MaxNLocator
 import seaborn as sns
 
-#sns.set(font_scale=0.6)
-
 stages = ['ODOR1', 'ODOR2', 'EDShift(Light)']
 
 
@@ -29,7 +27,7 @@ def models_fitting_quality_over_times(data_file_path):
 			model_subject_df = df_sub_model.groupby(['subject', 'model', 'stage', 'day in stage'], sort=False).mean().reset_index()
 
 			days = list(model_subject_df.index + 1)
-			axis.plot(days, model_subject_df.likelihood, label=model, alpha=0.7)
+			axis.plot(days, model_subject_df.likelihood, label=model, alpha=0.6)
 			axis.xaxis.set_major_locator(MaxNLocator(integer=True))
 			axis.set_yticklabels(['']) if i % 3 != 0 else 0
 
@@ -40,7 +38,7 @@ def models_fitting_quality_over_times(data_file_path):
 		for stage_day in stage_transition_days:
 			axis.axvline(x=stage_day + 0.5, alpha=0.5, dashes=(5, 2, 1, 2), lw=2)
 
-		axis.set_ylim(0.1, 1)
+		axis.set_ylim(0.2, .9)
 		axis.axhline(y=0.25, alpha=0.7, lw=1, color='grey', linestyle='--')
 
 	handles, labels = axis.get_legend_handles_labels()
@@ -238,12 +236,12 @@ def stage_transition_model_quality(data_file_path):
 
 	axis1 = fig.add_subplot(121)
 	axis2 = fig.add_subplot(122)
-	sns.pointplot(x='stage', y='likelihood', hue='model', data=transition1_df, ax=axis1)
-	sns.pointplot(x='stage', y='likelihood', hue='model', data=transition2_df, ax=axis2)
+	sns.pointplot(x='stage', y='likelihood', hue='model', data=transition1_df, ax=axis1, alpha=0.7)
+	sns.pointplot(x='stage', y='likelihood', hue='model', data=transition2_df, ax=axis2, alpha=0.7)
 	axis1.legend([], [], frameon=False), axis2.legend([], [], frameon=False)
 
-	axis1.set_ylim(0.1,0.8)
-	axis2.set_ylim(0.1,0.8)
+	axis1.set_ylim(0.1,0.9)
+	axis2.set_ylim(0.1,0.9)
 	handles, labels = axis2.get_legend_handles_labels()
 	fig.legend(handles, labels, loc='upper center', prop={'size': 9.5})
 
