@@ -102,6 +102,13 @@ def normalized_norm(u, ord=None):
     return np.linalg.norm(u, ord=ord)/u.size
 
 
+def normalize(v):
+    norm = np.linalg.norm(v)
+    if norm == 0:
+       return v
+    return v / norm
+
+
 def states_encoding_to_cues(states, encoding_size):
     return np.argmax(states, axis=-1) + encoding_size * np.all(states == 0, axis=-1)
 
