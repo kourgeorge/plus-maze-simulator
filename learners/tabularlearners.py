@@ -85,9 +85,8 @@ class MALearner(IALearner):
 			# delta_phi = 2 * phi_s * v * delta * (1 - phi_s)
 
 			delta_phi = self.calc_delta_phi(delta, reward, V, phi_s)
-
-			alpha = self.alpha_phi
-			self.model.phi = (1-alpha) * self.model.phi + alpha * delta_phi
+			#gradient_direction = utils.normalize(delta_phi)
+			self.model.phi = self.model.phi + self.alpha_phi * delta_phi
 
 		return deltas
 
@@ -99,13 +98,17 @@ class MALearner(IALearner):
 		:param phi_s: the normalized attention
 		:return: delta_phi
 		"""
-		return -np.array([2 * delta_v * np.matmul(V, [1 - phi_s[0], -phi_s[1], -phi_s[2]]),
-						 2 * delta_v * np.matmul(V, [-phi_s[0], 1 - phi_s[1], -phi_s[2]]),
-						 2 * delta_v * np.matmul(V, [-phi_s[0], -phi_s[1], 1 - phi_s[2]])])
+		# return np.array([2 * delta_v * np.matmul(V, [1 - phi_s[0], -phi_s[1], -phi_s[2]]),
+		# 				 2 * delta_v * np.matmul(V, [-phi_s[0], 1 - phi_s[1], -phi_s[2]]),
+		# 				 2 * delta_v * np.matmul(V, [-phi_s[0], -phi_s[1], 1 - phi_s[2]])])
+		# #
+		return np.array([2 * delta_v * phi_s[0] * np.matmul(V, [1 - phi_s[0], -phi_s[1], -phi_s[2]]),
+						 2 * delta_v * phi_s[1] * np.matmul(V, [-phi_s[0], 1 - phi_s[1], -phi_s[2]]),
+						 2 * delta_v * phi_s[2] * np.matmul(V, [-phi_s[0], -phi_s[1], 1 - phi_s[2]])])
 
 
 class MALearnerSimple(MALearner):
 	def calc_delta_phi(self, delta_v, reward, V, phi_s):
-		return delta_v * (reward - V)
+		return -delta_v * (reward - V)
 
 
