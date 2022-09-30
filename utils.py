@@ -19,18 +19,20 @@ def colorify(name):
 			h / 100 % 100 / 100,
 			h / 10000 % 100 / 100]
 
+
 def colorify2(name):
 	colors = cm.rainbow(np.linspace(0, 1, 1000))
 	h = int(hashlib.sha1(bytes(name, 'ascii')).hexdigest(), 16)
 	return colors[h % 1000]
 
+
 def epsilon_greedy(eps, dist):
-    p = np.random.rand()
-    if p < eps:
-        selection = np.random.randint(low=0, high=len(dist))
-    else:
-        selection = np.argmax(dist)
-    return selection
+	p = np.random.rand()
+	if p < eps:
+		selection = np.random.choice(dist.nonzero()[0])
+	else:
+		selection = np.argmax(dist)
+	return selection
 
 
 def dist_selection(dist):
