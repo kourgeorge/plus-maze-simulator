@@ -37,6 +37,9 @@ class IALearner(AbstractLearner):
 		all_action_values = self.model(state_batch)
 		selected_action_value = all_action_values[np.arange(len(all_action_values)), actions]
 
+		if np.any(np.isinf(selected_action_value)):
+			print('Warning! rat Selected inactive door!')
+			return 0
 		deltas = (reward_batch - selected_action_value)
 		selected_odors, selected_colors = self.model.get_selected_door_stimuli(state_batch, actions)
 

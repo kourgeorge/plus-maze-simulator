@@ -90,4 +90,4 @@ def day_passed(trial, rat_data):
 
 
 def completed_trial(rat_data, trial):
-    return not np.isnan(rat_data.iloc[trial].action)
+    return not np.isnan(rat_data.iloc[trial].action) and not rat_data.iloc[trial]["A{}o".format(int(rat_data.iloc[trial].action))]==-1

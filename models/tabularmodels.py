@@ -59,9 +59,10 @@ class FTable:
 		odor = cues[:, 0]  # odor for each door
 		color = cues[:, 1]  # color for each door
 		door = np.array(range(4))
-		action_values = self.stimuli_value('odors', odor) + \
+		action_values = (self.stimuli_value('odors', odor) + \
 						self.stimuli_value('colors', color) + \
-						self.stimuli_value('spatial', door)
+						self.stimuli_value('spatial', door))
+		action_values[odor == self.encoding_size]=-np.inf #avoid selecting inactive doors.
 		return action_values
 
 	def get_selected_door_stimuli(self, states, doors):
@@ -100,7 +101,10 @@ class ACFTable(FTable):
 						 np.repeat(np.expand_dims(self.stimuli_value('spatial', np.array(range(4))), axis=0),
 								   repeats=batch, axis=0)])
 		doors_value = np.matmul(np.expand_dims(utils.softmax(self.phi), axis=0), np.transpose(data, axes=(1, 0, 2)))
-		return np.squeeze(doors_value, axis=1)
+		doors_value = np.squeeze(doors_value, axis=1)
+		doors_value[odor == self.encoding_size] = -np.inf  # avoid selecting inactive doors.
+
+		return doors_value
 
 	def get_selected_door_stimuli(self, states, doors):
 		cues = utils.states_encoding_to_cues(states, self.encoding_size)
