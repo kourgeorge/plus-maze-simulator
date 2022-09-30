@@ -4,6 +4,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 
 from fitting import fitting_utils
+from fitting.fitting_utils import stable_unique
 from matplotlib.ticker import MaxNLocator
 import seaborn as sns
 
@@ -17,11 +18,11 @@ def models_fitting_quality_over_times(data_file_path):
 	df.likelihood = np.exp(-df.likelihood)
 	fig = plt.figure(figsize=(35, 7), dpi=120, facecolor='w')
 
-	for i, subject in enumerate(np.unique(df["subject"])):
+	for i, subject in enumerate(stable_unique(df["subject"])):
 		df_sub = df[df["subject"] == subject]
 		axis = fig.add_subplot(330 + i + 1)
 
-		for model in np.unique(df_sub["model"]):
+		for model in stable_unique(df_sub["model"]):
 			df_sub_model = df_sub[df_sub["model"] == model]
 
 			model_subject_df = df_sub_model.groupby(['subject', 'model', 'stage', 'day in stage'], sort=False).mean().reset_index()
@@ -38,8 +39,8 @@ def models_fitting_quality_over_times(data_file_path):
 		for stage_day in stage_transition_days:
 			axis.axvline(x=stage_day + 0.5, alpha=0.5, dashes=(5, 2, 1, 2), lw=2)
 
-		axis.set_ylim(0.2, .9)
-		axis.axhline(y=0.25, alpha=0.7, lw=1, color='grey', linestyle='--')
+		axis.set_ylim(0.45, .85)
+		axis.axhline(y=0.5, alpha=0.7, lw=1, color='grey', linestyle='--')
 
 	handles, labels = axis.get_legend_handles_labels()
 	fig.legend(handles, labels, loc="upper left", prop={'size': 9}, labelspacing=0.3)  # loc=(0.55,0.1), prop={'size': 7}
@@ -114,11 +115,11 @@ def compare_model_subject_learning_curve(data_file_path):
 	days_info_df = df.groupby(['subject', 'model', 'stage', 'day in stage'], sort=False).mean().reset_index()
 
 	fig = plt.figure(figsize=(35, 7), dpi=120, facecolor='w')
-	for i, subject in enumerate(np.unique(df["subject"])):
+	for i, subject in enumerate(stable_unique(df["subject"])):
 		df_sub = days_info_df[days_info_df["subject"] == subject]
 		axis = fig.add_subplot(330 + i + 1)
 
-		for model in np.unique(df_sub["model"]):
+		for model in stable_unique(df_sub["model"]):
 			model_subject_df = df_sub[df_sub["model"] == model]
 			days = range(len(model_subject_df))
 			axis.plot(days, model_subject_df.model_reward, label=model, alpha=0.7)
@@ -155,9 +156,9 @@ def show_likelihood_trials_scatter(data_file_path):
 	sns.set_theme(style="whitegrid")
 	fig = plt.figure(figsize=(10, 5), dpi=120, facecolor='w')
 
-	for i, model in enumerate(np.unique(df.model)): #enumerate(sum(model_pairs,())):
+	for i, model in enumerate(stable_unique(df.model)): #enumerate(sum(model_pairs,())):
 		for s, stage in enumerate(stages):
-			axis = fig.add_subplot(len(np.unique(df.model)),3,i*3+s+1)
+			axis = fig.add_subplot(len(stable_unique(df.model)), 3, i * 3 + s + 1)
 			model_df = df[(df.model==model) & (df.stage==s+1)]
 			sns.histplot(data=model_df, x="likelihood", kde=True)
 			axis.axvline(x=np.mean(model_df.likelihood),

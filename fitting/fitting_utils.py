@@ -72,3 +72,8 @@ def get_stage_transition_days(experimental_data):
 
 def string2list(string):
 	return [float(x.strip()) for x in re.split(",",string.strip(']['))]
+
+
+def stable_unique(array):
+    uniq, index = np.unique(array, return_index=True)
+    return uniq[index.argsort()]
