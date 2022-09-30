@@ -21,7 +21,7 @@ def test_fitting_FC_motivational():
 	env = PlusMazeOneHotCues(relevant_cue=CueType.ODOR, stimuli_encoding=10)
 	rat_data = pd.read_csv(os.path.join(MOTIVATED_ANIMAL_DATA_PATH,
 										"output_expr1_rat1.csv"))
-	brain, learner, network = (ConsolidationBrain, DQN, FullyConnectedNetwork)
+	brain, learner, network = (ConsolidationBrain, DQN, FCNet)
 	agent = MotivatedAgent(brain(
 		learner(network(env.stimuli_encoding_size(), 2, env.num_actions()), learning_rate=lr),
 		batch_size=batch_size),

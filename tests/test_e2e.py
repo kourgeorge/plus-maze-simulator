@@ -15,7 +15,7 @@ from brains.tdbrain import TDBrain
 
 def test_BasicDQNBrain():
     env = PlusMazeOneHotCues(relevant_cue=CueType.ODOR)
-    network = FullyConnectedNetwork2Layers(env.stimuli_encoding_size(), 2, env.num_actions())
+    network = FC2LayersNet(env.stimuli_encoding_size(), 2, env.num_actions())
     learner = DQN(network)
     brain = ConsolidationBrain(learner=learner)
 
@@ -55,8 +55,7 @@ if __name__ == '__main__':
 								 model=FTable(env.stimuli_encoding_size(), 2,
                                          env.num_actions()))))
     test_brain(TDBrain(IALearner(learning_rate=0.01,
-								 model=AttentionAtChoiceAndLearningTabular(env.stimuli_encoding_size(), 2,
-                                                                               env.num_actions()))))
+								 model=QTable(env.stimuli_encoding_size(), 2, env.num_actions()))))
     test_brain(ConsolidationBrain(DQN(learning_rate=0.01,
-                                          model=FullyConnectedNetwork(env.stimuli_encoding_size(), 2,
-                                                                               env.num_actions()))))
+                                          model=FCNet(env.stimuli_encoding_size(), 2,
+													  env.num_actions()))))
