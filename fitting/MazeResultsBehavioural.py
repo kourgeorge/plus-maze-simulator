@@ -311,6 +311,15 @@ def show_fitting_parameters(data_file_path):
 	ax.set(xscale="log", yscale="log")
 
 
+def print_parameters(data_file_path):
+
+	df = pd.read_csv(data_file_path)
+	df = df[['subject', 'model', 'parameters']].copy()
+	df = df.groupby(['subject', 'model', 'parameters'], sort=False).any().reset_index()
+	aaa = df.parameters.apply(lambda row: np.round(fitting_utils.string2list(row),5))
+	df['parameters'] = aaa
+	print(df)
+
 if __name__ == '__main__':
 	file_path = '/Users/gkour/repositories/plusmaze/fitting/Results/Rats-Results/fitting_results_attatlearning_normalizedatchoiceandlearning.csv'
 
