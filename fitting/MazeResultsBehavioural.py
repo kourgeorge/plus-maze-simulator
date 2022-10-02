@@ -15,7 +15,7 @@ def models_fitting_quality_over_times(data_file_path):
 	df = pd.read_csv(data_file_path)
 	df = df[['subject', 'model', 'stage', 'day in stage', 'trial', 'likelihood', 'reward', 'model_reward']].copy()
 
-	df.likelihood = np.exp(-df.likelihood)
+	df.likelihood = np.exp(-df.likelihood) #convert NLL to L
 	fig = plt.figure(figsize=(35, 7), dpi=120, facecolor='w')
 
 	for i, subject in enumerate(stable_unique(df["subject"])):
@@ -26,7 +26,6 @@ def models_fitting_quality_over_times(data_file_path):
 			df_sub_model = df_sub[df_sub["model"] == model]
 
 			model_subject_df = df_sub_model.groupby(['subject', 'model', 'stage', 'day in stage'], sort=False).mean().reset_index()
-
 			days = list(model_subject_df.index + 1)
 			axis.plot(days, model_subject_df.likelihood, label=model, alpha=0.6)
 			axis.xaxis.set_major_locator(MaxNLocator(integer=True))
@@ -205,13 +204,16 @@ def plot_models_fitting_result_per_stage(data_file_path):
 	g2.set(xlabel='All Stages', ylabel='')
 	g2.set_ylim(g1.get_ylim())
 	g2.legend([], [], frameon=False)
-	plt.subplots_adjust(left=0.1, bottom=0.1, right=0.99, top=0.8, wspace=0.3, hspace=0.3)
+	plt.subplots_adjust(left=0.1, bottom=0.1, right=0.99, top=0.9, wspace=0.3, hspace=0.3)
 
 	handles, labels = g2.get_legend_handles_labels()
 	fig.legend(handles, labels, loc='upper right', prop={'size': 9.5})
 
-	g1.axhline(y=0.25, alpha=0.7, lw=1, color='grey', linestyle='--')
-	g2.axhline(y=0.25, alpha=0.7, lw=1, color='grey', linestyle='--')
+	g1.axhline(y=-np.log(0.5), alpha=0.7, lw=1, color='grey', linestyle='--')
+	g2.axhline(y=-np.log(0.5), alpha=0.7, lw=1, color='grey', linestyle='--')
+
+
+	plt.suptitle(data_file_path.split('/')[-1])
 
 	plt.savefig('fitting/Results/figures/all_models_by_stage_{}'.format(fitting_utils.get_timestamp()))
 	plt.show()
@@ -228,10 +230,12 @@ def stage_transition_model_quality(data_file_path):
 	transition1_before = model_df[(model_df['day in stage'] == 1) & (model_df.stage == 2)]
 	transition1_end = model_df[(model_df.stage == 1)].groupby(['model', 'subject'], sort=False).max('day in stage').reset_index()
 	transition1_df = pd.concat([transition1_before, transition1_end], ignore_index=True)
+	transition1_df.likelihood = np.exp(-transition1_df.likelihood)
 
 	transition2_before = model_df[(model_df['day in stage'] == 1) & (model_df.stage == 3)]
 	transition2_end = model_df[(model_df.stage == 2)].groupby(['model', 'subject'], sort=False).max('day in stage').reset_index()
 	transition2_df = pd.concat([transition2_before, transition2_end], ignore_index=True)
+	transition2_df.likelihood = np.exp(-transition2_df.likelihood)
 
 	fig = plt.figure(figsize=(10, 5), layout="constrained")
 

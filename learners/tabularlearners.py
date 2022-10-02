@@ -58,7 +58,7 @@ class IALearner(AbstractLearner):
 
 
 class MALearner(IALearner):
-	def __init__(self, model, alpha_phi=0.1, *args, **kwargs):
+	def __init__(self, model, alpha_phi=0.005, *args, **kwargs):
 		super().__init__(model, *args, **kwargs)
 		self.alpha_phi = alpha_phi
 
