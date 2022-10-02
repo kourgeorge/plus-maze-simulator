@@ -57,14 +57,17 @@ class MazeBayesianModelFitting:
 		model = self.model
 
 		experiment_stats, rat_data_with_likelihood = self._run_model(parameters)
-		likelihood_stage = list(rat_data_with_likelihood.groupby(['stage','day in stage']).mean()['likelihood'])
-		#likelihood_stage = list(rat_data_with_likelihood.groupby('stage').mean()['likelihood'])
-		y = np.nanmean(likelihood_stage)
+		likelihood_day = rat_data_with_likelihood.groupby(['stage', 'day in stage']).mean().reset_index()
+		likelihood_stage = likelihood_day.groupby('stage').mean()
 
-		print("{}.\tx={},\t\ty={:.3f},\tstages={} \toverall_mean={:.3f}".format(fitting_utils.brain_name(model),
-																				list(np.round(parameters, 4)), y,
-																				np.round(likelihood_stage, 3),
-																				np.mean(rat_data_with_likelihood.likelihood)))
+		items = likelihood_day.likelihood.to_numpy()
+		y = np.nanmean(items)
+
+		print("{}.\tx={},\t\ty={:.3f},\titems={} \toverall_mean={:.3f}".format(fitting_utils.brain_name(model),
+																				list(np.round(parameters, 4)),
+																				y,
+																				np.round(items, 3),
+																				np.mean(items)))
 		return np.clip(y, a_min=0, a_max=50)
 
 	def optimize(self):
