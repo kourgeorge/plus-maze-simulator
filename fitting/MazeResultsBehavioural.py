@@ -181,23 +181,26 @@ def plot_models_fitting_result_per_stage(data_file_path):
 	df = pd.read_csv(data_file_path)
 
 	df = df[['subject', 'model', 'stage', 'day in stage', 'trial', 'likelihood']].copy()
-	df.likelihood = np.exp(-df.likelihood)
-	df_stage = df.groupby(['subject', 'model', 'stage'], sort=False).median().reset_index()
+	df['NLL'] = -np.log(df.likelihood)
+	# first aggregate the information per day
+	df = df.groupby(['subject', 'model', 'stage', 'day in stage'], sort=False).mean().reset_index()
+
+	df_stage = df.groupby(['subject', 'model', 'stage'], sort=False).mean().reset_index()
 	sns.set_theme(style="whitegrid")
-	# _, idx = np.unique(df_stage.model, return_index=True)
-	# order = (df_stage.model[np.sort(idx)])
 
 	fig = plt.figure(figsize=(11, 5), layout="constrained")
 	spec = fig.add_gridspec(1, 3)
 	ax0 = fig.add_subplot(spec[0, 0:2])
 	ax1 = fig.add_subplot(spec[0, 2])
 
-	g1 = sns.boxplot(x='stage', y='likelihood', hue='model', data=df_stage, ax=ax0)
+	g1 = sns.boxplot(x='stage', y='NLL', hue='model', data=df_stage, ax=ax0)
 	g1.set_xticklabels(stages)
 	g1.set(xlabel='', ylabel='Likelihood')
 	g1.legend([], [], frameon=False)
+	g1.set_ylabel('NLL')
 	df['dummy'] = 1
-	df = df.groupby(['subject', 'model'], sort=False).median().reset_index()
+	#g1.set_ylim([0.4, 0.8])
+	df = df.groupby(['subject', 'model'], sort=False).mean().reset_index()
 	g2 = sns.boxplot(x='dummy', y='likelihood', hue='model', data=df, ax=ax1)
 	g2.set_xticklabels([''])
 	g2.set(xlabel='All Stages', ylabel='')
