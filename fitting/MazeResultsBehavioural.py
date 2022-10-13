@@ -262,30 +262,40 @@ def stage_transition_model_quality(data_file_path):
 
 def compare_fitting_criteria(data_file_path):
 	df = pd.read_csv(data_file_path)
-	df = df[['subject', 'model', 'likelihood', 'parameters', 'stage', 'reward']].copy()
+	df = df[['subject', 'model', 'likelihood', 'parameters', 'day in stage', 'stage', 'reward']].copy()
 	#df = df.groupby(['subject', 'model', 'parameters'], sort=False).average().reset_index()
-	df.likelihood = -df.likelihood
+	df['LL'] = np.log(df.likelihood)
 
-	# df = df.groupby(['subject', 'model', 'parameters', 'stage']).agg({'reward': 'count', 'likelihood': 'mean'}).reset_index()
-	# df = df.rename(columns={'reward': 'n', 'likelihood': 'L'})
-	# df['k'] = df.apply(lambda row: len(fitting_utils.string2list(row['parameters'])), axis=1)
-	# df = df.groupby(['subject', 'model', 'parameters']).sum().reset_index()
-	# df['BIC'] = np.log(df.n) * df.k - 2 * df.L
-	#
+	models_order = stable_unique(df.model)
 
-	df = df.groupby(['subject', 'model', 'parameters']).agg({'reward': 'count', 'likelihood': 'sum'}).reset_index()
-	df = df.rename(columns={'reward': 'n', 'likelihood': 'L'})
-	df['k'] = df.apply(lambda row: len(fitting_utils.string2list(row['parameters'])), axis=1)
-	#df = df.groupby(['subject', 'model', 'parameters']).sum().reset_index()
-	df['BIC'] = np.log(df.n) * 3 - 2 * df.L
-	df['AIC'] = -2 * df.L / df.n + 2 * 3 / df.n
+	# optimization average over days.
+	# likelihood_day = df.groupby(['subject', 'model', 'parameters', 'stage', 'day in stage'], sort=False).mean().reset_index()
+	# data = likelihood_day.groupby(['subject', 'model', 'parameters'], sort=False).agg({'day in stage': 'count', 'likelihood':'sum' ,'LL': 'sum'}).reset_index()
+	# data = data.rename(columns={'day in stage': 'n'})
+	# data['k'] = data.apply(lambda row: len(fitting_utils.string2list(row['parameters'])), axis=1)
 
-	for criterion in ['AIC', 'BIC']:
+	# # optimization average over stages
+	# likelihood_day = df.groupby(['subject', 'model', 'parameters', 'stage']).mean().reset_index()
+	# data = likelihood_day.groupby(['subject', 'model', 'parameters']).agg({'stage': 'count', 'loglikelihood': 'sum'}).reset_index()
+	# data = data.rename(columns={'stage': 'n', 'loglikelihood': 'LL'})
+	# data['k'] = data.apply(lambda row: len(fitting_utils.string2list(row['parameters'])), axis=1)
+
+	# # optimization average over trials
+	likelihood_trial = df.groupby(['subject', 'model', 'parameters']).agg({'reward': 'count', 'LL': 'sum'}).reset_index().reset_index()
+	data = likelihood_trial.rename(columns={'reward': 'n'})
+	data['k'] = data.apply(lambda row: len(fitting_utils.string2list(row['parameters'])), axis=1)
+
+	data['AIC'] = - 2 * data.LL + 2 * data.k
+	data['BIC'] = - 2 * data.LL + np.log(data.n) * data.k
+
+	data.LL = -data.LL
+
+	for criterion in ['LL','AIC', 'BIC']:
 		fig = plt.figure(figsize=(35, 7), dpi=120, facecolor='w')
-		for subject in np.unique(df.subject):
+		for subject in stable_unique(data.subject):
 			axis = fig.add_subplot(3, 3, subject + 1)
-			subject_model_df = df[(df.subject == subject)]
-			sns.barplot(x=criterion, y='model', data=subject_model_df, ax=axis, orient = 'h')
+			subject_model_df = data[(data.subject == subject)]
+			sns.barplot(x=criterion, y='model', data=subject_model_df, ax=axis, orient='h', order=models_order)
 			axis.set_title('Subject:{}'.format(subject+1))
 			minn = np.min(subject_model_df[criterion])
 			maxx=np.max(subject_model_df[criterion])
@@ -294,10 +304,10 @@ def compare_fitting_criteria(data_file_path):
 			labels = axis.get_xticklabels()
 			print(labels)
 			axis.set_ylabel("")
-			axis.set_yticklabels("") if subject%3>0 else 0
-			axis.set_xlabel("") if subject <6 else 0
+			axis.set_yticklabels("") if subject % 3 > 0 else 0
+			axis.set_xlabel("") if subject < 6 else 0
 
-		plt.subplots_adjust(left=0.11, bottom=0.07, right=0.95, top=0.9, wspace=0.2, hspace=0.4)
+		plt.subplots_adjust(left=0.13, bottom=0.07, right=0.97, top=0.9, wspace=0.2, hspace=0.4)
 		plt.savefig('fitting/Results/figures/{}_{}'.format(criterion, fitting_utils.get_timestamp()))
 
 
