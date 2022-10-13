@@ -112,9 +112,10 @@ class ACFTable(FTable):
 		return selected_cues[:, 0], selected_cues[:, 1]
 
 	def get_model_metrics(self):
-		return {'odor_attn': self.phi[0],
-				'color_attn': self.phi[1],
-				'spatial_attn': self.phi[2],
+		phi = utils.softmax(self.phi)
+		return {'odor_attn': phi[0],
+				'color_attn': phi[1],
+				'spatial_attn': phi[2],
 				}
 
 	def get_model_diff(self, brain2):
