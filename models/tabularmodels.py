@@ -5,7 +5,6 @@ from scipy.stats import entropy
 from scipy.spatial.distance import jensenshannon
 
 import utils
-from utils import compress
 
 norm = 'fro'
 

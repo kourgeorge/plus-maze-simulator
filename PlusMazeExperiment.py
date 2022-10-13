@@ -52,7 +52,7 @@ def PlusMazeExperiment(env: PlusMaze, agent:MotivatedAgent, dashboard=False):
 
     while env.get_stage() < len(env.stage_names):
 
-        if trial>trials_in_day*max_experiment_length:
+        if trial > trials_in_day * max_experiment_length:
             print("Agent failed to learn.")
             return stats
 
