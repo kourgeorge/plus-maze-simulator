@@ -1,7 +1,6 @@
 __author__ = 'gkour'
 
 import os
-import pickle
 import warnings
 
 import numpy as np
@@ -14,6 +13,7 @@ from fitting import fitting_utils
 from fitting.fitting_config import maze_models, MAZE_ANIMAL_DATA_PATH
 from fitting.PlusMazeExperimentFitting import PlusMazeExperimentFitting
 from fitting.fitting_utils import blockPrint, enablePrint
+from learners.networklearners import DQNAtt
 from learners.tabularlearners import MALearner
 from motivatedagent import MotivatedAgent
 from rewardtype import RewardType
@@ -33,7 +33,7 @@ class MazeBayesianModelFitting:
 		(brain, learner, model) = self.model
 		model_instance = model(self.env.stimuli_encoding_size(), 2, self.env.num_actions())
 
-		if issubclass(learner, MALearner):
+		if issubclass(learner, MALearner) or issubclass(learner, DQNAtt):
 			(beta, lr, attention_lr) = parameters
 			learner_instance = learner(model_instance, learning_rate=lr, alpha_phi=attention_lr)
 		else:
@@ -57,21 +57,23 @@ class MazeBayesianModelFitting:
 		model = self.model
 
 		experiment_stats, rat_data_with_likelihood = self._run_model(parameters)
+		rat_data_with_likelihood['NLL'] = -np.log(rat_data_with_likelihood.likelihood)
 		likelihood_day = rat_data_with_likelihood.groupby(['stage', 'day in stage']).mean().reset_index()
 		likelihood_stage = likelihood_day.groupby('stage').mean()
 
-		items = likelihood_day.likelihood.to_numpy()
+		items = rat_data_with_likelihood.NLL.to_numpy()
 		y = np.nanmean(items)
 
-		print("{}.\tx={},\t\ty={:.3f},\titems={} \toverall_mean={:.3f}".format(fitting_utils.brain_name(model),
+		print("{}.\tx={},\t\ty={:.3f},\titems={} \tmedian={:.3f}".format(fitting_utils.brain_name(model),
 																				list(np.round(parameters, 4)),
 																				y,
 																				np.round(items, 3),
-																				np.mean(items)))
-		return np.clip(y, a_min=0, a_max=50)
+																				np.nanmedian(items)))
+		return np.clip(y, a_min=-50, a_max=50)
 
 	def optimize(self):
 		search_result = gp_minimize(self._calc_experiment_likelihood, self.parameters_space, n_calls=self.n_calls)
+		print("Best Parameters: {}".format(search_result.x))
 		experiment_stats, rat_data_with_likelihood = self._run_model(search_result.x)
 		return search_result, experiment_stats, rat_data_with_likelihood
 
@@ -115,4 +117,4 @@ class MazeBayesianModelFitting:
 if __name__ == '__main__':
 	MazeBayesianModelFitting.all_subjects_all_models_optimization(
 		PlusMazeOneHotCues2ActiveDoors(relevant_cue=CueType.ODOR, stimuli_encoding=10),
-		MAZE_ANIMAL_DATA_PATH, maze_models, n_calls=35)
+		MAZE_ANIMAL_DATA_PATH, maze_models, n_calls=20)
