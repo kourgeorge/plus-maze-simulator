@@ -223,34 +223,34 @@ def plot_models_fitting_result_per_stage(data_file_path):
 
 def stage_transition_model_quality(data_file_path):
 	df = pd.read_csv(data_file_path)
-
 	df = df[['subject', 'model', 'stage', 'day in stage', 'likelihood']].copy()
-	df.likelihood = np.exp(-df.likelihood)
+	df['NLL'] = -np.log(df.likelihood)
 
 	model_df = df.groupby(['model', 'subject', 'stage', 'day in stage'], sort=False).mean().reset_index()
 
 	transition1_before = model_df[(model_df['day in stage'] == 1) & (model_df.stage == 2)]
 	transition1_end = model_df[(model_df.stage == 1)].groupby(['model', 'subject'], sort=False).max('day in stage').reset_index()
 	transition1_df = pd.concat([transition1_before, transition1_end], ignore_index=True)
-	transition1_df.likelihood = np.exp(-transition1_df.likelihood)
 
 	transition2_before = model_df[(model_df['day in stage'] == 1) & (model_df.stage == 3)]
 	transition2_end = model_df[(model_df.stage == 2)].groupby(['model', 'subject'], sort=False).max('day in stage').reset_index()
 	transition2_df = pd.concat([transition2_before, transition2_end], ignore_index=True)
-	transition2_df.likelihood = np.exp(-transition2_df.likelihood)
 
 	fig = plt.figure(figsize=(10, 5), layout="constrained")
 
 	axis1 = fig.add_subplot(121)
 	axis2 = fig.add_subplot(122)
-	sns.pointplot(x='stage', y='likelihood', hue='model', data=transition1_df, ax=axis1, alpha=0.7)
-	sns.pointplot(x='stage', y='likelihood', hue='model', data=transition2_df, ax=axis2, alpha=0.7)
+	g = sns.pointplot(x='stage', y='NLL', hue='model', ci=68, data=transition1_df, ax=axis1)
+	plt.setp(g.collections, alpha=.5)  # for the markers
+	plt.setp(g.lines, alpha=.5)  # for the lines
+
+	sns.pointplot(x='stage', y='likelihood', hue='model', ci=90, data=transition2_df, ax=axis2, plot_kws=dict(alpha=0.3))
 	axis1.legend([], [], frameon=False), axis2.legend([], [], frameon=False)
 
-	axis1.set_ylim(0.1,0.9)
-	axis2.set_ylim(0.1,0.9)
+	axis1.set_ylim(0.45,0.8)
+	axis2.set_ylim(0.45,0.8)
 	handles, labels = axis2.get_legend_handles_labels()
-	fig.legend(handles, labels, loc='upper center', prop={'size': 9.5})
+	fig.legend(handles, labels, loc='upper right', prop={'size': 11})
 
 	axis1.axvline(x=0.5, ymin=0.05, ymax=0.95, alpha=0.5, dashes=(5, 2, 1, 2), lw=2, zorder=0, clip_on=False)
 	axis2.axvline(x=0.5, ymin=0.05, ymax=0.95, alpha=0.5, dashes=(5, 2, 1, 2), lw=2, zorder=0, clip_on=False)
