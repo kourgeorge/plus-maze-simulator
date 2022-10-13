@@ -315,24 +315,17 @@ def show_fitting_parameters(data_file_path):
 	df = pd.read_csv(data_file_path)
 	df = df[['subject', 'model', 'parameters']].copy()
 	df = df.groupby(['subject', 'model', 'parameters'], sort=False).any().reset_index()
-	aaa = df.parameters.apply(lambda row: fitting_utils.string2list(row))
-	parameters= aaa.apply(pd.Series)
+	k = df.parameters.apply(lambda row: fitting_utils.string2list(row))
+	parameters= k.apply(pd.Series)
 	df = df.join(parameters)
 	df = df.rename(columns={0: "beta", 1: "alpha",  2: "alpha_phi"})
 	df['subject'] = df['subject'].astype('category')
-	ax = sns.pairplot( hue='model', data=df, diag_kind="hist")
+	print(df)
 
+	ax = sns.pairplot( hue='model', data=df, diag_kind="hist")
 	ax.set(xscale="log", yscale="log")
 
 
-def print_parameters(data_file_path):
-
-	df = pd.read_csv(data_file_path)
-	df = df[['subject', 'model', 'parameters']].copy()
-	df = df.groupby(['subject', 'model', 'parameters'], sort=False).any().reset_index()
-	aaa = df.parameters.apply(lambda row: np.round(fitting_utils.string2list(row),5))
-	df['parameters'] = aaa
-	print(df)
 
 if __name__ == '__main__':
 	file_path = '/Users/gkour/repositories/plusmaze/fitting/Results/Rats-Results/fitting_results_attatlearning_normalizedatchoiceandlearning.csv'
