@@ -15,7 +15,6 @@ def models_fitting_quality_over_times(data_file_path):
 	df = pd.read_csv(data_file_path)
 	df = df[['subject', 'model', 'stage', 'day in stage', 'trial', 'likelihood', 'reward', 'model_reward']].copy()
 
-	df.likelihood = np.exp(-df.likelihood) #convert NLL to L
 	fig = plt.figure(figsize=(35, 7), dpi=120, facecolor='w')
 
 	for i, subject in enumerate(stable_unique(df["subject"])):
@@ -29,7 +28,7 @@ def models_fitting_quality_over_times(data_file_path):
 			days = list(model_subject_df.index + 1)
 			axis.plot(days, model_subject_df.likelihood, label=model, alpha=0.6)
 			axis.xaxis.set_major_locator(MaxNLocator(integer=True))
-			axis.set_yticklabels(['']) if i % 3 != 0 else 0
+			#axis.set_yticklabels(['']) if i % 3 != 0 else 0
 
 		axis.set_xlabel('Days') if i > 5 else 0
 		axis.set_ylabel("Likelihood") if i % 3 == 0 else 0
@@ -38,7 +37,7 @@ def models_fitting_quality_over_times(data_file_path):
 		for stage_day in stage_transition_days:
 			axis.axvline(x=stage_day + 0.5, alpha=0.5, dashes=(5, 2, 1, 2), lw=2)
 
-		axis.set_ylim(0.45, .85)
+		#axis.set_ylim(0.45, 1)
 		axis.axhline(y=0.5, alpha=0.7, lw=1, color='grey', linestyle='--')
 
 	handles, labels = axis.get_legend_handles_labels()
