@@ -38,6 +38,8 @@ class UANet(AbstractNetworkModel):
 		light_val = self.colors(x_light)
 		door_val = torch.unsqueeze(self.spatial.repeat(x.shape[0], 1), dim=-1)
 		weighted_vals = torch.matmul(torch.cat([odor_val, light_val, door_val], dim=-1), torch.softmax(self.phi, axis=0))
+		weighted_vals[x[:, 1].sum(dim=-1)<1]=-torch.inf
+
 		return torch.squeeze(weighted_vals, dim=2)
 
 	def get_model_metrics(self):
