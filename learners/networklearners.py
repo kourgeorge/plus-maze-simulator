@@ -30,6 +30,33 @@ class DQN(AbstractLearner):
 		return loss.item()
 
 
+class DQNAtt(AbstractLearner):
+	def __init__(self, model: AbstractNetworkModel, optimizer=optim.Adam, learning_rate=0.01, alpha_phi=0.01):
+		super().__init__(model, optimizer)
+
+		phi = [parameter[1] for parameter in self.model.named_parameters() if parameter[0] == 'phi']
+		other = [parameter[1] for parameter in self.model.named_parameters() if parameter[0] != 'phi']
+
+		self.optimizer = optimizer(other, lr=learning_rate)
+		self.optimizer_phi = optimizer(phi, lr=alpha_phi)
+
+	def learn(self, state_batch, action_batch, reward_batch, action_values, nextstate_batch):
+		actions = torch.unsqueeze(torch.argmax(action_batch,dim=-1), dim=1)
+		selected_action_value = torch.squeeze(action_values.gather(1, actions))
+
+		# Compute Huber loss
+		loss = F.mse_loss(selected_action_value, reward_batch.detach())
+
+		# Optimize the model
+		self.optimizer.zero_grad()
+		self.optimizer_phi.zero_grad()
+		loss.backward()
+
+		self.optimizer.step()
+		self.optimizer_phi.step()
+		return loss.item()
+
+
 class PG(AbstractLearner):
 
 	def __init__(self, model: AbstractNetworkModel, optimizer=optim.Adam, learning_rate=0.01):
