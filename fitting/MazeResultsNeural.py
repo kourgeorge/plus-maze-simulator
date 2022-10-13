@@ -61,7 +61,10 @@ def neural_display_timeline(data_file_path):
 
 			subject_models_data = subject_models_data.append(dict, ignore_index=True)
 			axis.plot(model_dev, label=list(stats.reports[0].brain.get_model().get_model_metrics().keys()))
-			axis.set_title('Subject: {}. Params:{}, lik:{}'.format(subject+1, np.round(params,4), np.round(np.mean(model_data.likelihood),2)))
+			axis.set_title('Subject: {}. Params:{}, lik:{}'.format(subject + 1, np.round(params, 4),
+																   np.round(np.mean(np.mean(
+																	   model_data.groupby('stage').mean().likelihood)),
+																			2)))
 			days_level_data = model_data.groupby(['stage', 'day in stage']).mean().reset_index()
 			for stage_day in fitting_utils.get_stage_transition_days(days_level_data):
 				axis.axvline(x=stage_day - 0.5, alpha=0.5, dashes=(5, 2, 1, 2), lw=2)
