@@ -134,7 +134,7 @@ def compare_model_subject_learning_curve(data_file_path):
 			axis.axvline(x=stage_day - 0.5, alpha=0.5, dashes=(5, 2, 1, 2), lw=2)
 
 		axis.plot(days, model_subject_df.reward, label='subject', color='black')
-		axis.axhline(y=0.25, alpha=0.7, lw=1, color='grey', linestyle='--')
+		axis.axhline(y=0.5, alpha=0.7, lw=1, color='grey', linestyle='--')
 
 	handles, labels = axis.get_legend_handles_labels()
 	fig.legend(handles, labels, loc=(0.01, 0.8), prop={'size': 8}, labelspacing=0.3)  # loc=(0.55,0.1), prop={'size': 7}
