@@ -13,6 +13,7 @@ from brains.motivationdependantbrain import MotivationDependantBrain
 from models.networkmodels import *
 from learners.networklearners import *
 from learners.tabularlearners import *
+from models.tabularmodels import PCFTable
 
 REPETITIONS = 3
 MOTIVATED_ANIMAL_DATA_PATH = './fitting/motivation_behavioral_data'
@@ -23,7 +24,7 @@ MAZE_ANIMALS = [0, 1, 2, 3, 4, 5, 6, 7, 8]
 
 nmr = Real(name='nmr', low=-1, high=1)
 lr = Real(name='lr', low=0.0001, high=0.1, prior='log-uniform')
-attention_lr = Real(name='lr', low=0.000001, high=0.1, prior='log-uniform')
+attention_lr = Real(name='lr', low=0.00001, high=0.1, prior='log-uniform')
 batch_size = Integer(name='batch_size', low=1, high=20)
 beta = Real(name='beta', low=0.1, high=10)
 

@@ -121,3 +121,31 @@ class ACFTable(FTable):
 		return {'odor_attn_diff': self.phi[0]-brain2.phi[0],
 				'color_attn_diff': self.phi[1]-brain2.phi[1],
 				'spatial_attn_diff': self.phi[2]-brain2.phi[2],}
+
+
+class PCFTable(ACFTable):
+	def __init__(self, encoding_size, num_channels, num_actions):
+		super().__init__(encoding_size, num_channels, num_actions)
+
+	def __call__(self, *args, **kwargs):
+		states = args[0]
+		batch = states.shape[0]
+
+		cues = utils.states_encoding_to_cues(states, self.encoding_size)
+		odor = cues[:, 0]
+		color = cues[:, 1]
+
+		selected_dim = utils.epsilon_greedy(0.1,self.phi)
+		doors_value = self.stimuli_value('odors', odor) if selected_dim == 0 else \
+			self.stimuli_value('colors', color) if selected_dim == 1 \
+				else self.stimuli_value('spatial', [np.array(range(4))])
+
+		doors_value[odor == self.encoding_size] = -np.inf  # avoid selecting inactive doors.
+
+		return doors_value
+
+	def get_selected_door_stimuli(self, states, doors):
+		cues = utils.states_encoding_to_cues(states, self.encoding_size)
+		selected_cues = cues[np.arange(len(states)), :, doors]
+		return selected_cues[:, 0], selected_cues[:, 1]
+
