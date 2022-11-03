@@ -7,6 +7,7 @@ import matplotlib.pyplot as plt
 from environment import PlusMazeOneHotCues2ActiveDoors, CueType
 
 from fitting.PlusMazeExperimentFitting import PlusMazeExperimentFitting
+from learners.networklearners import DQNAtt
 from learners.tabularlearners import MALearner
 from motivatedagent import MotivatedAgent
 from rewardtype import RewardType
@@ -40,7 +41,7 @@ def neural_display_timeline(data_file_path):
 			brain, learner, model = name_to_brain(model_name)
 			model_instance = model(env.stimuli_encoding_size(), 2, env.num_actions())
 
-			if issubclass(learner, MALearner):
+			if issubclass(learner, MALearner) or issubclass(learner, DQNAtt):
 				(beta, lr, attention_lr) = params= fitting_utils.string2list(params)
 				learner_instance = learner(model_instance, learning_rate=lr, alpha_phi=attention_lr)
 			else:
