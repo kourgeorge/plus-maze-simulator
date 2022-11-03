@@ -45,7 +45,7 @@ class MazeBayesianModelFitting:
 		agent = MotivatedAgent(brain(learner_instance, beta=beta),
 			motivation=RewardType.WATER,
 			motivated_reward_value=config.MOTIVATED_REWARD,
-			non_motivated_reward_value=0)
+			non_motivated_reward_value=0, exploration_param=0)
 
 		experiment_stats, rat_data_with_likelihood = PlusMazeExperimentFitting(self.env, agent, dashboard=False,
 																			   experiment_data=self.experiment_data)
