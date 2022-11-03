@@ -55,6 +55,8 @@ def PlusMazeExperimentFitting(env: PlusMaze, agent: MotivatedAgent, experiment_d
             fitting_info['model_action'].iloc[trial] = model_action
             fitting_info['model_reward'].iloc[trial] = agent.evaluate_outcome(model_action_outcome)
 
+            loss = agent.smarten()
+
         if day_passed(trial, fitting_info):
             stats.update_stats_from_agent(agent, trial, config.REPORTING_INTERVAL)
             pre_stage_transition_update()
