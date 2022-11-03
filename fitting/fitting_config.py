@@ -23,10 +23,10 @@ MOTIVATED_ANIMAL_BATCHES = {1: [1, 2], 2: [1], 4: [6, 7, 8], 5: [1, 2], 6: [10, 
 MAZE_ANIMALS = [0, 1, 2, 3, 4, 5, 6, 7, 8]
 
 nmr = Real(name='nmr', low=-1, high=1)
-lr = Real(name='lr', low=0.0001, high=0.1, prior='log-uniform')
-attention_lr = Real(name='lr', low=0.00001, high=0.1, prior='log-uniform')
 batch_size = Integer(name='batch_size', low=1, high=20)
-beta = Real(name='beta', low=0.1, high=10)
+lr = Real(name='lr', low=0.0001, high=0.2, prior='log-uniform')
+attention_lr = Real(name='attention_lr', low=0.00001, high=0.2, prior='log-uniform')
+beta = Real(name='beta', low=1, high=3.5, prior='uniform')
 
 maze_models = [((TDBrain, QLearner, QTable), (beta, lr)),
 			   ((TDBrain, IALearner, FTable), (beta, lr)),
