@@ -55,7 +55,7 @@ def episode_rollout_on_real_data(env: PlusMazeOneHotCues, agent: MotivatedAgent,
 		info.network_outcome = model_action_outcome
 
 		state = new_state
-	return steps, total_reward, act_dist, model_action_dist, likelihood, model_action_outcome
+	return steps, total_reward, act_dist, model_action_dist, info.model_action+1, likelihood, model_action_outcome
 
 
 def blockPrint():

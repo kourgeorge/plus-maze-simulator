@@ -16,8 +16,10 @@ def PlusMazeExperimentFitting(env: PlusMaze, agent: MotivatedAgent, experiment_d
 
     fitting_info = experiment_data.copy()
     fitting_info['model_reward'] = np.nan
-    #fitting_info['model_action_dist'] = np.nan
-    fitting_info['likelihood']=np.nan
+    fitting_info['model_action_dist'] = np.nan
+    fitting_info['model_action'] = np.nan
+    fitting_info['model_action_dist'] = fitting_info['model_action_dist'].astype(object)
+    fitting_info['likelihood'] = np.nan
     env.reset()
     stats = FittingStats(metadata={'brain': str(agent.get_brain()),
                                 'network': str(agent.get_brain().get_model()),
@@ -44,12 +46,13 @@ def PlusMazeExperimentFitting(env: PlusMaze, agent: MotivatedAgent, experiment_d
     model_action_dists = np.empty([1, env.num_actions()])
     while trial < len(fitting_info):
         if completed_trial(fitting_info, trial):
-            _, _, _, model_action_dist, likelihood, model_action_outcome = fitting_utils.episode_rollout_on_real_data(env, agent,
+            _, _, _, model_action_dist, model_action, likelihood, model_action_outcome = fitting_utils.episode_rollout_on_real_data(env, agent,
                                                                                                                       fitting_info.iloc[trial])
             model_action_dists = np.append(model_action_dists, np.expand_dims(model_action_dist, axis=0), axis=0)
-            loss = agent.smarten()
+
             fitting_info['likelihood'].iloc[trial] = likelihood
-            #fitting_info['model_action_dist'].iloc[trial] = model_action_dist
+            fitting_info['model_action_dist'].iloc[trial] = np.round(model_action_dist,3)
+            fitting_info['model_action'].iloc[trial] = model_action
             fitting_info['model_reward'].iloc[trial] = agent.evaluate_outcome(model_action_outcome)
 
         if day_passed(trial, fitting_info):
