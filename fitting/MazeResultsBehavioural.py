@@ -14,10 +14,9 @@ stages = ['ODOR1', 'ODOR2', 'EDShift(Light)']
 def models_fitting_quality_over_times(data_file_path):
 	df = pd.read_csv(data_file_path)
 	df = df[['subject', 'model', 'stage', 'day in stage', 'trial', 'likelihood', 'reward', 'model_reward']].copy()
+	df['NLL'] = -np.log(df.likelihood)
 
 	fig = plt.figure(figsize=(35, 7), dpi=120, facecolor='w')
-	df['NLL']=-np.log(df.likelihood)
-
 	for i, subject in enumerate(stable_unique(df["subject"])):
 		df_sub = df[df["subject"] == subject]
 		axis = fig.add_subplot(330 + i + 1)
@@ -27,7 +26,8 @@ def models_fitting_quality_over_times(data_file_path):
 
 			model_subject_df = df_sub_model.groupby(['subject', 'model', 'stage', 'day in stage'], sort=False).mean().reset_index()
 			days = list(model_subject_df.index + 1)
-			axis.plot(days, model_subject_df.likelihood, label=model, alpha=0.6)
+			model_subject_df['ML'] = np.exp(-model_subject_df.NLL)
+			axis.plot(days, model_subject_df.ML, label=model, alpha=0.6)
 			axis.xaxis.set_major_locator(MaxNLocator(integer=True))
 			#axis.set_yticklabels(['']) if i % 3 != 0 else 0
 
@@ -189,12 +189,15 @@ def plot_models_fitting_result_per_stage(data_file_path):
 	df_stage = df.groupby(['subject', 'model', 'stage'], sort=False).mean().reset_index()
 	sns.set_theme(style="whitegrid")
 
+	df['ML'] = np.exp(-df.NLL)
+	df_stage['ML'] = np.exp(-df_stage.NLL)
+
 	fig = plt.figure(figsize=(11, 5), layout="constrained")
 	spec = fig.add_gridspec(1, 3)
 	ax0 = fig.add_subplot(spec[0, 0:2])
 	ax1 = fig.add_subplot(spec[0, 2])
 
-	g1 = sns.boxplot(x='stage', y='NLL', hue='model', data=df_stage, ax=ax0)
+	g1 = sns.boxplot(x='stage', y='ML', hue='model', data=df_stage, ax=ax0)
 	g1.set_xticklabels(stages)
 	g1.set(xlabel='', ylabel='Likelihood')
 	g1.legend([], [], frameon=False)
@@ -202,7 +205,7 @@ def plot_models_fitting_result_per_stage(data_file_path):
 	df['dummy'] = 1
 	#g1.set_ylim([0.4, 0.8])
 	df = df.groupby(['subject', 'model'], sort=False).mean().reset_index()
-	g2 = sns.boxplot(x='dummy', y='likelihood', hue='model', data=df, ax=ax1)
+	g2 = sns.boxplot(x='dummy', y='ML', hue='model', data=df, ax=ax1)
 	g2.set_xticklabels([''])
 	g2.set(xlabel='All Stages', ylabel='')
 	g2.set_ylim(g1.get_ylim())
@@ -212,9 +215,8 @@ def plot_models_fitting_result_per_stage(data_file_path):
 	handles, labels = g2.get_legend_handles_labels()
 	fig.legend(handles, labels, loc='upper right', prop={'size': 9.5})
 
-	g1.axhline(y=-np.log(0.5), alpha=0.7, lw=1, color='grey', linestyle='--')
-	g2.axhline(y=-np.log(0.5), alpha=0.7, lw=1, color='grey', linestyle='--')
-
+	g1.axhline(y=0.5, alpha=0.7, lw=1, color='grey', linestyle='--')
+	g2.axhline(y=0.5, alpha=0.7, lw=1, color='grey', linestyle='--')
 
 	plt.suptitle(data_file_path.split('/')[-1])
 
@@ -229,6 +231,8 @@ def stage_transition_model_quality(data_file_path):
 
 	model_df = df.groupby(['model', 'subject', 'stage', 'day in stage'], sort=False).mean().reset_index()
 
+	model_df['ML'] = np.exp(-model_df.NLL)
+
 	transition1_before = model_df[(model_df['day in stage'] == 1) & (model_df.stage == 2)]
 	transition1_end = model_df[(model_df.stage == 1)].groupby(['model', 'subject'], sort=False).max('day in stage').reset_index()
 	transition1_df = pd.concat([transition1_before, transition1_end], ignore_index=True)
@@ -241,15 +245,17 @@ def stage_transition_model_quality(data_file_path):
 
 	axis1 = fig.add_subplot(121)
 	axis2 = fig.add_subplot(122)
-	g = sns.pointplot(x='stage', y='NLL', hue='model', ci=68, data=transition1_df, ax=axis1)
-	plt.setp(g.collections, alpha=.5)  # for the markers
-	plt.setp(g.lines, alpha=.5)  # for the lines
+	g1 = sns.pointplot(x='stage', y='ML', hue='model', ci=90, data=transition1_df, ax=axis1)
+	plt.setp(g1.collections, alpha=.5)  # for the markers
+	plt.setp(g1.lines, alpha=.5)  # for the lines
 
-	sns.pointplot(x='stage', y='likelihood', hue='model', ci=90, data=transition2_df, ax=axis2, plot_kws=dict(alpha=0.3))
+	g2= sns.pointplot(x='stage', y='ML', hue='model', ci=90, data=transition2_df, ax=axis2, plot_kws=dict(alpha=0.3))
 	axis1.legend([], [], frameon=False), axis2.legend([], [], frameon=False)
+	plt.setp(g2.collections, alpha=.5)  # for the markers
+	plt.setp(g2.lines, alpha=.5)  # for the lines
 
-	axis1.set_ylim(0.45,0.8)
-	axis2.set_ylim(0.45,0.8)
+	axis1.set_ylim(0.45, 0.7)
+	axis2.set_ylim(0.45, 0.7)
 	handles, labels = axis2.get_legend_handles_labels()
 	fig.legend(handles, labels, loc='upper right', prop={'size': 11})
 
