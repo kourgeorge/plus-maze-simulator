@@ -16,6 +16,7 @@ def models_fitting_quality_over_times(data_file_path):
 	df = df[['subject', 'model', 'stage', 'day in stage', 'trial', 'likelihood', 'reward', 'model_reward']].copy()
 
 	fig = plt.figure(figsize=(35, 7), dpi=120, facecolor='w')
+	df['NLL']=-np.log(df.likelihood)
 
 	for i, subject in enumerate(stable_unique(df["subject"])):
 		df_sub = df[df["subject"] == subject]
@@ -314,17 +315,21 @@ def compare_fitting_criteria(data_file_path):
 
 
 def show_fitting_parameters(data_file_path):
-	df = pd.read_csv(data_file_path)
-	df = df[['subject', 'model', 'parameters']].copy()
-	df = df.groupby(['subject', 'model', 'parameters'], sort=False).any().reset_index()
+	df_all = pd.read_csv(data_file_path)
+	df = df_all[['subject', 'model', 'parameters', 'likelihood']].copy()
+	df = df.groupby(['subject', 'model', 'parameters'], sort=False).mean().reset_index()
 	k = df.parameters.apply(lambda row: fitting_utils.string2list(row))
-	parameters= k.apply(pd.Series)
+	parameters = k.apply(pd.Series)
 	df = df.join(parameters)
 	df = df.rename(columns={0: "beta", 1: "alpha",  2: "alpha_phi"})
 	df['subject'] = df['subject'].astype('category')
 	print(df)
 
-	ax = sns.pairplot( hue='model', data=df, diag_kind="hist")
+	ax = sns.scatterplot(data=df, x='alpha', y='alpha_phi', hue='model')
+
+	ax.set_xlim([-0.01, 0.1])
+	ax.set_ylim([-0.01, 0.1])
+	ax = sns.pairplot(hue='model', data=df, diag_kind="hist")
 	ax.set(xscale="log", yscale="log")
 
 
