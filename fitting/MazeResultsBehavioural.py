@@ -119,8 +119,8 @@ def compare_model_subject_learning_curve(data_file_path):
 		axis = fig.add_subplot(330 + i + 1)
 
 		for model in stable_unique(df_sub["model"]):
-			model_subject_df = df_sub[df_sub["model"] == model]
-			days = range(len(model_subject_df))
+			model_subject_df = df_sub[df_sub["model"] == model].reset_index()
+			days = list(model_subject_df.index + 1)
 			axis.plot(days, model_subject_df.model_reward, label=model, alpha=0.7)
 			axis.xaxis.set_major_locator(MaxNLocator(integer=True))
 
@@ -131,10 +131,11 @@ def compare_model_subject_learning_curve(data_file_path):
 
 		stage_transition_days = np.where(model_subject_df['day in stage'] == 1)[0][1:]
 		for stage_day in stage_transition_days:
-			axis.axvline(x=stage_day - 0.5, alpha=0.5, dashes=(5, 2, 1, 2), lw=2)
+			axis.axvline(x=stage_day + 0.5, alpha=0.5, dashes=(5, 2, 1, 2), lw=2)
 
 		axis.plot(days, model_subject_df.reward, label='subject', color='black')
 		axis.axhline(y=0.5, alpha=0.7, lw=1, color='grey', linestyle='--')
+		axis.axhline(y=0.75, alpha=0.5, lw=0.7, color='blue', linestyle='--')
 
 	handles, labels = axis.get_legend_handles_labels()
 	fig.legend(handles, labels, loc=(0.01, 0.8), prop={'size': 8}, labelspacing=0.3)  # loc=(0.55,0.1), prop={'size': 7}
