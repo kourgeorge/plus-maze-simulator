@@ -61,10 +61,16 @@ class MazeBayesianModelFitting:
 		likelihood_day = rat_data_with_likelihood.groupby(['stage', 'day in stage']).mean().reset_index()
 		likelihood_stage = likelihood_day.groupby('stage').mean()
 
-		items = rat_data_with_likelihood.NLL.to_numpy()
-		y = np.nanmean(items)
+		NLL = rat_data_with_likelihood.NLL.to_numpy()
+		L = rat_data_with_likelihood.likelihood.to_numpy()
+		meanNLL = np.nanmean(NLL)
+		meanL = np.nanmean(rat_data_with_likelihood.likelihood)
+		geomeanL = scipy.stats.mstats.gmean(rat_data_with_likelihood.likelihood, nan_policy='omit')
+		np.testing.assert_almost_equal(np.exp(-meanNLL), geomeanL)
 
-		print("{}.\tx={},\t\ty={:.3f},\titems={} \tmedian={:.3f}".format(fitting_utils.brain_name(model),
+		y = np.nansum(NLL)
+
+		print("{}.\tx={},\t(meanNLL={:.3f}, medianNLL={:.3f}, sumNLL={:.3f}), \t(meanL={:.3f}, medianL={:.3f}), \tgmeanL={:.3f}".format(fitting_utils.brain_name(model),
 																				list(np.round(parameters, 4)),
 																				y,
 																				np.round(items, 3),
