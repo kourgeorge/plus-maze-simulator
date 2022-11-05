@@ -156,20 +156,18 @@ def show_likelihood_trials_scatter(data_file_path):
 	sns.set_theme(style="whitegrid")
 	fig = plt.figure(figsize=(10, 5), dpi=120, facecolor='w')
 
-	for i, model in enumerate(stable_unique(df.model)): #enumerate(sum(model_pairs,())):
+	for i, model in enumerate(stable_unique(df.model)):
 		for s, stage in enumerate(stages):
 			axis = fig.add_subplot(len(stable_unique(df.model)), 3, i * 3 + s + 1)
-			model_df = df[(df.model==model) & (df.stage==s+1)]
+			model_df = df[(df.model == model) & (df.stage == s + 1)]
 			sns.histplot(data=model_df, x="likelihood", kde=True)
-			axis.axvline(x=np.mean(model_df.likelihood),
-						color='red')
-			axis.axvline(x=np.median(model_df.likelihood),
-						 color='green')
+			axis.axvline(x=np.mean(model_df.likelihood), color='red', label='mean')
+			axis.axvline(x=np.median(model_df.likelihood), color='green', label='median')
 
-			axis.set_title(model) if s==0 else 0
+			axis.set_title(model) if s == 0 else 0
 			axis.set_xticklabels(['']) if s == 0 else 0
 			axis.set_xlabel('')
-			axis.set_ylabel('') if s>0 else 0
+			axis.set_ylabel('') if s > 0 else 0
 
 			axis.set_xlim([0,1])
 
