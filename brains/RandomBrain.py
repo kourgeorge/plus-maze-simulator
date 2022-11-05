@@ -4,7 +4,7 @@ import numpy as np
 import torch
 
 import config
-import utils
+import scipy
 from brains.abstractbrain import AbstractBrain
 from learners.abstractlearner import AbstractLearner
 
@@ -19,7 +19,9 @@ class RandomBrain(AbstractBrain):
 		print("{}. Num parameters: {}".format(str(self), self.num_trainable_parameters()))
 
 	def think(self, obs, agent):
-		return torch.softmax(torch.rand(1,4),  dim=1)
+		actions = np.random.rand(1,4)
+		actions[np.sum(obs[:, 1, :], axis=-1) < 1] = -np.inf
+		return torch.tensor(scipy.special.softmax(actions))
 
 	def consolidate(self, memory, agent, iterations=config.CONSOLIDATION_REPLAYS):
 		return 0
