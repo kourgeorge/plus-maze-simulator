@@ -23,6 +23,10 @@ class QTable:
 			if obs.tostring() not in self.Q.keys():
 				self.Q[obs.tostring()] = 0.5 * np.ones(self._num_actions)
 			state_actions_value.append(self.Q[obs.tostring()])
+		cues = utils.states_encoding_to_cues(state, self.encoding_size)
+		odor = cues[:, 0]  # odor for each door
+		state_actions_value = np.array(state_actions_value)
+		state_actions_value[odor == self.encoding_size] = -np.inf
 		return state_actions_value
 
 	def set_state_action_value(self, state, action, value):

@@ -79,7 +79,9 @@ class FCNet(AbstractNetworkModel):
 		)
 
 	def forward(self, x):
-		return self.model(torch.flatten(x, start_dim=1))
+		state_action_values = self.model(torch.flatten(x, start_dim=1))
+		state_action_values[x[:, 1].sum(dim=-1) < 1] = -torch.inf
+		return state_action_values
 
 	def get_model_metrics(self):
 		return {'affine': utils.normalized_norm(self.affine.weight.detach().numpy()),
