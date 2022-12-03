@@ -312,6 +312,15 @@ class PlusMazeOneHotCues2ActiveDoors(PlusMazeOneHotCues):
 		self._state = state
 		return state
 
+	def format_state(self, state):
+		dict = {}
+		for arm in range(4):
+			arm_odor = state[0, arm, :]
+			arm_color = state[1, arm, :]
+			dict['A{}o'.format(arm+1)] = -1 if not np.any(arm_odor) else 0 if np.array_equal(arm_odor, self.get_odor_cues()[0]) else 1
+			dict['A{}c'.format(arm+1)] = -1 if not np.any(arm_color) else 0 if np.array_equal(arm_color, self.get_light_cues()[0]) else 1
+		return dict
+
 	def random_state(self):
 		active_doors = random.sample(range(0, 4), 2)
 		non_active_doors = list(set(range(0, 4)).difference(active_doors))
@@ -346,7 +355,6 @@ class PlusMazeOneHotCues2ActiveDoors(PlusMazeOneHotCues):
 		print('---------------------------------------------------------------------')
 		if self.get_stage() == 1:
 			self.set_random_odor_set()
-			# env.set_relevant_cue(CueType.LIGHT)
 			print(
 				"Stage {}: {} (Odors: {}, Correct:{})".format(self.get_stage(), self.stage_names[self.get_stage()],
 															  [np.argmax(encoding) for encoding in

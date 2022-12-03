@@ -48,7 +48,7 @@ def run_simulation(env):
                                                  learning_rate=config.LEARNING_RATE), batch_size=config.BATCH_SIZE),
                                    motivation=RewardType.WATER, motivated_reward_value=config.MOTIVATED_REWARD,
                                    non_motivated_reward_value=config.NON_MOTIVATED_REWARD)
-            experiment_stats = PlusMazeExperiment(env, agent, dashboard=False)
+            experiment_stats, experiment_data = PlusMazeExperiment(env, agent, dashboard=False)
             if experiment_stats.metadata['experiment_status'] == ExperimentStatus.COMPLETED:
                 brain_repetition_reports[completed_experiments] = experiment_stats
                 completed_experiments += 1

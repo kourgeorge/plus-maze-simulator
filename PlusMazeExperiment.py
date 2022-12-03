@@ -1,5 +1,7 @@
 __author__ = 'gkour'
 
+import pandas as pd
+
 from brains.consolidationbrain import ConsolidationBrain
 from environment import PlusMaze, PlusMazeOneHotCues, CueType
 from motivatedagent import MotivatedAgent
@@ -25,6 +27,7 @@ class ExperimentStatus(Enum):
 def PlusMazeExperiment(env: PlusMaze, agent:MotivatedAgent, dashboard=False):
     max_experiment_length = len(env.stage_names) * 10  # days
     env.reset()
+    experiment_data = pd.DataFrame()
     stats = Stats(metadata={'brain': str(agent.get_brain()),
                                 'network': str(agent.get_brain().get_model()),
                                 'brain_params': agent.get_brain().num_trainable_parameters() if isinstance(agent.get_brain(), ConsolidationBrain) else 0,
@@ -54,10 +57,20 @@ def PlusMazeExperiment(env: PlusMaze, agent:MotivatedAgent, dashboard=False):
 
         if trial > trials_in_day * max_experiment_length:
             print("Agent failed to learn.")
-            return stats
+            return stats, experiment_data
 
         trial += 1
-        utils.episode_rollout(env, agent)
+        state, action, outcome, reward = utils.episode_rollout(env, agent)
+        trial_dict = env.format_state(state)
+
+        trial_dict['trial'] = trial % trials_in_day
+        trial_dict['stage'] = env.get_stage() + 1
+        trial_dict['action'] = action + 1
+        trial_dict['reward'] = reward
+        trial_dict['day in stage'] = trial // trials_in_day + 1
+        #experiment_data = experiment_data.append(trial_dict, ignore_index=True)
+        experiment_data = pd.concat([experiment_data, pd.DataFrame.from_records([trial_dict])])
+
         loss = agent.smarten()
         if trial % trials_in_day == 0:
             stats.update_stats_from_agent(agent, trial, trials_in_day)
@@ -77,11 +90,11 @@ def PlusMazeExperiment(env: PlusMaze, agent:MotivatedAgent, dashboard=False):
             current_criterion = np.mean(stats.reports[-1].correct)
             reward = np.mean(stats.reports[-1].reward)
             if current_criterion > config.SUCCESS_CRITERION_THRESHOLD:# and reward > 0.6:
-                #print(agent.get_brain().get_model().phi)
+                print(agent.get_brain().get_model().phi)
                 #print(torch.softmax(agent.get_brain().get_model().phi, axis=0))
                 env.set_next_stage(agent)
 
     stats.metadata['experiment_status'] = ExperimentStatus.COMPLETED
-    return stats
+    return stats, experiment_data
 
 
