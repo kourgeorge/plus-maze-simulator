@@ -11,7 +11,7 @@ torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 
 class DQN(AbstractLearner):
-	def __init__(self, model: AbstractNetworkModel, optimizer=optim.Adam, learning_rate=0.01):
+	def __init__(self, model: AbstractNetworkModel, optimizer=optim.SGD, learning_rate=0.01):
 		super().__init__(model, optimizer)
 		self.optimizer = optimizer(self.model.parameters(), lr=learning_rate)
 
@@ -31,7 +31,7 @@ class DQN(AbstractLearner):
 
 
 class DQNAtt(AbstractLearner):
-	def __init__(self, model: AbstractNetworkModel, optimizer=optim.Adam, learning_rate=0.01, alpha_phi=0.01):
+	def __init__(self, model: AbstractNetworkModel, optimizer=optim.SGD, learning_rate=0.01, alpha_phi=0.01):
 		super().__init__(model, optimizer)
 
 		phi = [parameter[1] for parameter in self.model.named_parameters() if parameter[0] == 'phi']
@@ -59,7 +59,7 @@ class DQNAtt(AbstractLearner):
 
 class PG(AbstractLearner):
 
-	def __init__(self, model: AbstractNetworkModel, optimizer=optim.Adam, learning_rate=0.01):
+	def __init__(self, model: AbstractNetworkModel, optimizer=optim.SGD, learning_rate=0.01):
 		super().__init__(model, optimizer)
 		self.optimizer = optimizer(self.model.parameters(), lr=learning_rate)
 
