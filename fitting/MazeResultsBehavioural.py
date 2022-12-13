@@ -297,8 +297,8 @@ def compare_fitting_criteria(data_file_path):
 	data['BIC'] = - 2 * data.LL + np.log(data.n) * data.k
 
 	data.LL = -data.LL
-
-	for criterion in ['LL','AIC', 'BIC']:
+	sum_df = data.groupby(['model']).mean().reset_index()
+	for criterion in ['LL', 'AIC', 'BIC']:
 		fig = plt.figure(figsize=(35, 7), dpi=120, facecolor='w')
 		for subject in stable_unique(data.subject):
 			axis = fig.add_subplot(3, 3, subject + 1)
@@ -314,6 +314,14 @@ def compare_fitting_criteria(data_file_path):
 			axis.set_ylabel("")
 			axis.set_yticklabels("") if subject % 3 > 0 else 0
 			axis.set_xlabel("") if subject < 6 else 0
+
+		#plot the average fitting quality for the entire population.
+		plt.figure(dpi=120, facecolor='w')
+		sns.barplot(x=criterion, y='model', data=sum_df, orient='h', order=models_order)
+		minn = np.min(sum_df[criterion])
+		maxx = np.max(sum_df[criterion])
+		delta = 0.1 * (maxx - minn)
+		plt.xlim([minn - delta, maxx + delta])
 
 		plt.subplots_adjust(left=0.13, bottom=0.07, right=0.97, top=0.9, wspace=0.2, hspace=0.4)
 		plt.savefig('fitting/Results/figures/{}_{}'.format(criterion, fitting_utils.get_timestamp()))
