@@ -77,3 +77,20 @@ def string2list(string):
 def stable_unique(array):
     uniq, index = np.unique(array, return_index=True)
     return uniq[index.argsort()]
+
+
+def maze_experimental_data_preprocessing(experiment_data):
+	df = experiment_data.groupby(['stage', 'day in stage'], sort=False).agg({'reward': 'mean'}).reset_index()
+	#max_stage3 = np.max(df[(df['stage'] == 3)]['reward'])
+	#threshold_day_stage3 = df[(df['stage'] == 3) & (df['reward'] >= max_stage3)].iloc[0]['day in stage']
+	#threshold_day_stage3 = np.min([threshold_day_stage3, 5])
+
+	# Take at most 5 days from the last stage.
+	threshold_day_stage3 = 5
+	experiment_data_processed = experiment_data[
+		~((experiment_data['stage'] == 3) & (experiment_data['day in stage'] > threshold_day_stage3))]
+
+	print("Processing behavioral data: Original:{}, removed:{}\nDays in stage 3:{}".format(len(experiment_data),
+																		 len(experiment_data)-len(experiment_data_processed), threshold_day_stage3))
+
+	return experiment_data_processed
