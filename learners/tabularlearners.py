@@ -35,27 +35,62 @@ class IALearner(AbstractLearner):
 		learning_rate = self.optimizer['learning_rate']
 		actions = np.argmax(action_batch, axis=1)
 
+		# Calculate the Q function for all actions
 		all_action_values = self.model(state_batch)
+
+		# calculate the Q function for selected action
 		selected_action_value = all_action_values[np.arange(len(all_action_values)), actions]
 
 		if np.any(np.isinf(selected_action_value)):
 			print('Warning! rat Selected inactive door!')
 			return 0
-		deltas = (reward_batch - selected_action_value)
+		delta = (reward_batch - selected_action_value)
 		selected_odors, selected_colors = self.model.get_selected_door_stimuli(state_batch, actions)
 
 		phi = utils.softmax(self.model.phi) if isinstance(self.model, ACFTable) else [1, 1, 1]
+		#phi = self.model.phi # self.model.phi if isinstance(self.model, ACFTable) else [1, 1, 1]
 		for odor in set(np.unique(selected_odors)).difference([self.model.encoding_size]):
-			self.model.V['odors'][odor] = self.model.V['odors'][odor] + \
-										  np.nanmean(learning_rate * phi[0] * deltas[selected_odors == odor])
+			self.model.V['odors'][odor] += learning_rate * phi[0] * np.nanmean(delta[selected_odors == odor])
 		for color in set(np.unique(selected_colors)).difference([self.model.encoding_size]):
-			self.model.V['colors'][color] = self.model.V['colors'][color] + \
-											np.nanmean(learning_rate * phi[1] * deltas[selected_colors == color])
+			self.model.V['colors'][color] += learning_rate * phi[1] * np.nanmean(delta[selected_colors == color])
 		for door in np.unique(actions):
-			self.model.V['spatial'][door] = self.model.V['spatial'][door] + \
-											np.nanmean(learning_rate * phi[2] * deltas[actions == door])
+			self.model.V['spatial'][door] += learning_rate * phi[2] * np.nanmean(delta[actions == door])
 
-		return deltas
+		return delta
+
+
+class IAAluisiLearner(AbstractLearner):
+	def __init__(self, model: FTable, learning_rate=0.01):
+		super().__init__(model=model, optimizer={'learning_rate': learning_rate})
+
+	def learn(self, state_batch, action_batch, reward_batch, action_values, nextstate_batch):
+
+		learning_rate = self.optimizer['learning_rate']
+		actions = np.argmax(action_batch, axis=1)
+
+		# Calculate the Q function for all actions
+		all_action_values = self.model(state_batch)
+
+		# calculate the Q function for selected action
+		selected_action_value = all_action_values[np.arange(len(all_action_values)), actions]
+
+		if np.any(np.isinf(selected_action_value)):
+			print('Warning! rat Selected inactive door!')
+			return 0
+		delta = (reward_batch - selected_action_value)
+		selected_odors, selected_colors = self.model.get_selected_door_stimuli(state_batch, actions)
+
+		for odor in set(np.unique(selected_odors)).difference([self.model.encoding_size]):
+			self.model.V['odors'][odor] += \
+				learning_rate * np.nanmean(reward_batch[selected_odors == odor] - self.model.V['odors'][odor])
+		for color in set(np.unique(selected_colors)).difference([self.model.encoding_size]):
+			self.model.V['colors'][color] += \
+				learning_rate * np.nanmean(reward_batch[selected_colors == color] - self.model.V['colors'][color])
+		for door in np.unique(actions):
+			self.model.V['spatial'][door] += \
+				 learning_rate * np.nanmean(reward_batch[actions == door] - self.model.V['spatial'][door])
+
+		return delta
 
 
 class MALearner(IALearner):
