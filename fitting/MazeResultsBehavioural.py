@@ -204,7 +204,6 @@ def plot_models_fitting_result_per_stage(data_file_path):
 	g1.set_xticklabels(stages)
 	g1.set(xlabel='', ylabel='Likelihood')
 	g1.legend([], [], frameon=False)
-	g1.set_ylabel('NLL')
 	df['dummy'] = 1
 	#g1.set_ylim([0.4, 0.8])
 	df = df.groupby(['subject', 'model'], sort=False).mean().reset_index()
