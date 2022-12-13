@@ -24,7 +24,7 @@ def name_to_brain(model_name):
 
 
 def neural_display_timeline(data_file_path):
-	experiment_data = pd.read_csv(data_file_path)
+	experiment_data = pd.read_csv(data_file_path, index_col=0)
 
 	subject_models_data = pd.DataFrame()
 	for model_name in np.unique(experiment_data.model):
@@ -34,7 +34,8 @@ def neural_display_timeline(data_file_path):
 		for i, subject in enumerate(np.unique(experiment_data.subject)):
 			axis = fig.add_subplot(3, 3, subject + 1)
 			print(model_name)
-			model_data = experiment_data[(experiment_data.subject == subject) & (experiment_data.model==model_name)]
+			model_data = experiment_data[(experiment_data.subject == subject) & (experiment_data.model == model_name)]
+			model_data.reset_index(inplace=True, drop=True)
 			params = list(model_data['parameters'])[0]
 			env = PlusMazeOneHotCues2ActiveDoors(relevant_cue=CueType.ODOR, stimuli_encoding=10)
 
