@@ -172,7 +172,10 @@ def show_likelihood_trials_scatter(data_file_path):
 
 			axis.set_xlim([0,1])
 
-	plt.subplots_adjust(left=0.1, bottom=0.05, right=0.95, top=0.9, wspace=0.2, hspace=0.5)
+	handles, labels = axis.get_legend_handles_labels()
+	fig.legend(handles, labels, loc=(0.01, 0.95), prop={'size': 10}, labelspacing=0.3)  # loc=(0.55,0.1), prop={'size': 7}
+
+	plt.subplots_adjust(left=0.1, bottom=0.05, right=0.9, top=0.9, wspace=0.2, hspace=0.5)
 
 	plt.savefig('fitting/Results/figures/trial_likelihood_dispersion_{}'.format(fitting_utils.get_timestamp()))
 	plt.show()
