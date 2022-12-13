@@ -251,7 +251,7 @@ def stage_transition_model_quality(data_file_path):
 	plt.setp(g1.collections, alpha=.5)  # for the markers
 	plt.setp(g1.lines, alpha=.5)  # for the lines
 
-	g2= sns.pointplot(x='stage', y='ML', hue='model', ci=90, data=transition2_df, ax=axis2, plot_kws=dict(alpha=0.3))
+	g2= sns.pointplot(x='stage', y='ML', hue='model', ci=90, data=transition2_df, ax=axis2)
 	axis1.legend([], [], frameon=False), axis2.legend([], [], frameon=False)
 	plt.setp(g2.collections, alpha=.5)  # for the markers
 	plt.setp(g2.lines, alpha=.5)  # for the lines
