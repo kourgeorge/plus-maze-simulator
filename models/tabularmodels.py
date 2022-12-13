@@ -103,7 +103,8 @@ class ACFTable(FTable):
 		data = np.stack([self.stimuli_value('odors', odor), self.stimuli_value('colors', color),
 						 np.repeat(np.expand_dims(self.stimuli_value('spatial', np.array(range(4))), axis=0),
 								   repeats=batch, axis=0)])
-		doors_value = np.matmul(np.expand_dims(utils.softmax(self.phi), axis=0), np.transpose(data, axes=(1, 0, 2)))
+		attention = np.expand_dims(utils.softmax(self.phi), axis=0)
+		doors_value = np.matmul(attention, np.transpose(data, axes=(1, 0, 2)))
 		doors_value = np.squeeze(doors_value, axis=1)
 		doors_value[odor == self.encoding_size] = -np.inf  # avoid selecting inactive doors.
 
