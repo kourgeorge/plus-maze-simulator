@@ -26,7 +26,7 @@ class Stats:
         self.reports += [report]
         stats = self.dataframe_report(trial, report)
         temp_df = pd.DataFrame([stats], columns=stats.keys())
-        self.epoch_stats_df = pd.concat([self.epoch_stats_df, pd.DataFrame.from_records([temp_df])])
+        self.epoch_stats_df = pd.concat([self.epoch_stats_df, temp_df])
 
     def dataframe_report(self, trial, report):
 
