@@ -17,18 +17,21 @@ from brains.consolidationbrain import ConsolidationBrain
 from rewardtype import RewardType
 from brains.tdbrain import TDBrain
 
-brains = [(TDBrain, QLearner, QTable),
-          (TDBrain, IALearner, FTable),
-          (TDBrain, MALearner, FTable),
-          (ConsolidationBrain, DQN, UniformAttentionNetwork),
-          (ConsolidationBrain, DQN, AttentionAtChoiceAndLearningNetwork),
-          (ConsolidationBrain, DQN, FullyConnectedNetwork),
-          (ConsolidationBrain, DQN, FullyConnectedNetwork2Layers),
-          (ConsolidationBrain, DQN, EfficientNetwork),
-          (FixedDoorAttentionBrain, DQN, EfficientNetwork),
-          (MotivationDependantBrain, DQN, SeparateMotivationAreasNetwork),
-          (MotivationDependantBrain, DQN, SeparateMotivationAreasFCNetwork),
-          (LateOutcomeEvaluationBrain, DQN, SeparateMotivationAreasNetwork)
+brains = [#(TDBrain, QLearner, QTable),
+        (TDBrain, OptionsLearner, OptionsTable),
+        #(TDBrain, IAAluisiLearner, ACFTable),
+        #(TDBrain, IALearner, ACFTable),
+        #(TDBrain, MALearner, ACFTable),
+         #(TDBrain, MALearnerSimple, ACFTable),
+          # (ConsolidationBrain, DQN, UniformAttentionNetwork),
+          #(ConsolidationBrain, DQN, AttentionAtChoiceAndLearningNetwork),
+          # (ConsolidationBrain, DQN, FullyConnectedNetwork),
+          #(ConsolidationBrain, DQN, FC2LayersNet),
+          # (ConsolidationBrain, DQN, EfficientNetwork),
+          # (FixedDoorAttentionBrain, DQN, EfficientNetwork),
+          # (MotivationDependantBrain, DQN, SeparateMotivationAreasNetwork),
+          # (MotivationDependantBrain, DQN, SeparateMotivationAreasFCNetwork),
+          # (LateOutcomeEvaluationBrain, DQN, SeparateMotivationAreasNetwork)
           ]
 
 
