@@ -80,17 +80,34 @@ def stable_unique(array):
 
 
 def maze_experimental_data_preprocessing(experiment_data):
-	df = experiment_data.groupby(['stage', 'day in stage'], sort=False).agg({'reward': 'mean'}).reset_index()
-	#max_stage3 = np.max(df[(df['stage'] == 3)]['reward'])
-	#threshold_day_stage3 = df[(df['stage'] == 3) & (df['reward'] >= max_stage3)].iloc[0]['day in stage']
-	#threshold_day_stage3 = np.min([threshold_day_stage3, 5])
 
-	# Take at most 5 days from the last stage.
-	threshold_day_stage3 = 5
-	experiment_data_processed = experiment_data[
-		~((experiment_data['stage'] == 3) & (experiment_data['day in stage'] > threshold_day_stage3))]
+	# remove trials with non-active doors selection:
+	experiment_data['completed'] = experiment_data.apply(
+		lambda x: False if np.isnan(x.action) else x["A{}o".format(int(x.action))] != -1, axis='columns')
+	experiment_data = experiment_data[experiment_data.completed == True]
+	experiment_data.drop('completed', axis='columns', inplace=True)
 
-	print("Processing behavioral data: Original:{}, removed:{}\nDays in stage 3:{}".format(len(experiment_data),
-																		 len(experiment_data)-len(experiment_data_processed), threshold_day_stage3))
+	df_sum = experiment_data.groupby(['stage', 'day in stage'], sort=False).agg({'reward': 'mean', 'action':'count'}).reset_index()
 
-	return experiment_data_processed
+	# Take at most 7 days from the last stage.
+	df = experiment_data.copy()
+	df = df[~((df.stage == 3) & (df['day in stage'] > 7))]
+
+
+	# criteria_days = []
+	# for st in [1,2,3]:
+	# 	stage_data = df_sum[df_sum.stage==st]
+	# 	first_criterion_day = np.where(np.array(stage_data.reward) >= .74)
+	#
+	# 	criterion_day =len(stage_data.reward) if len(first_criterion_day[0]) == 0 else first_criterion_day[0][0]+1
+	# 	criteria_days += [criterion_day]
+	#
+	# df = experiment_data.copy()
+	# df = df[~((df.stage == 1) & (df['day in stage'] > criteria_days[0]))]
+	# df = df[~((df.stage == 2) & (df['day in stage'] > criteria_days[1]))]
+	# df = df[~((df.stage == 3) & (df['day in stage'] > np.min ([criteria_days[2],7])))]
+
+	print("Processing behavioral data: Original:{}, removed:{}".format(len(experiment_data),
+																		 len(experiment_data)-len(df)))
+
+	return df
