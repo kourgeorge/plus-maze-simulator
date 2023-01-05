@@ -137,12 +137,9 @@ class MALearner(IALearner):
 			V = np.array([self.model.V['odors'][selected_odor],
 						  self.model.V['colors'][selected_color],
 						  self.model.V['spatial'][selected_door]])
-
-			# delta_phi = 2 * phi_s * v * delta * (1 - phi_s)
-
 			delta_phi = self.calc_delta_phi(delta, reward, V, phi_s)
-			#gradient_direction = utils.normalize(delta_phi)
-			self.model.phi = self.model.phi + self.alpha_phi * delta_phi
+
+			self.model.phi += self.alpha_phi * delta * phi_s * delta_phi
 
 		return deltas
 
@@ -158,9 +155,9 @@ class MALearner(IALearner):
 		# 				 2 * delta_v * np.matmul(V, [-phi_s[0], 1 - phi_s[1], -phi_s[2]]),
 		# 				 2 * delta_v * np.matmul(V, [-phi_s[0], -phi_s[1], 1 - phi_s[2]])])
 		# #
-		return np.array([2 * delta_v * phi_s[0] * np.matmul(V, [1 - phi_s[0], -phi_s[1], -phi_s[2]]),
-						 2 * delta_v * phi_s[1] * np.matmul(V, [-phi_s[0], 1 - phi_s[1], -phi_s[2]]),
-						 2 * delta_v * phi_s[2] * np.matmul(V, [-phi_s[0], -phi_s[1], 1 - phi_s[2]])])
+		return np.array([np.matmul(V, [1 - phi_s[0], -phi_s[1], -phi_s[2]]),
+								 np.matmul(V, [-phi_s[0], 1 - phi_s[1], -phi_s[2]]),
+								 np.matmul(V, [-phi_s[0], -phi_s[1], 1 - phi_s[2]])])
 
 
 class MALearnerSimple(MALearner):
