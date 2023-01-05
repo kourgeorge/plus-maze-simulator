@@ -20,6 +20,7 @@ def PlusMazeExperimentFitting(env: PlusMaze, agent: MotivatedAgent, experiment_d
     fitting_info['model_action'] = np.nan
     fitting_info['model_action_dist'] = fitting_info['model_action_dist'].astype(object)
     fitting_info['likelihood'] = np.nan
+    fitting_info['model_variables'] = np.nan
     env.reset()
     stats = FittingStats(metadata={'brain': str(agent.get_brain()),
                                 'network': str(agent.get_brain().get_model()),
@@ -62,6 +63,7 @@ def PlusMazeExperimentFitting(env: PlusMaze, agent: MotivatedAgent, experiment_d
             fitting_info.at[trial, 'model_action_dist'] = np.round(model_action_dist,3)
             fitting_info.at[trial, 'model_action'] = model_action
             fitting_info.at[trial, 'model_reward'] = agent.evaluate_outcome(model_action_outcome)
+            fitting_info.at[trial, 'model_variables'] = agent.get_brain().get_model().get_model_metrics()
 
             loss = agent.smarten()
 
