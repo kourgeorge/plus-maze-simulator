@@ -15,6 +15,7 @@ from fitting.FittingStats import FittingStats
 def PlusMazeExperimentFitting(env: PlusMaze, agent: MotivatedAgent, experiment_data, dashboard=False):
 
     fitting_info = experiment_data.copy()
+    fitting_info = fitting_info.reset_index()
     fitting_info['model_reward'] = np.nan
     fitting_info['model_action_dist'] = np.nan
     fitting_info['model_action'] = np.nan
