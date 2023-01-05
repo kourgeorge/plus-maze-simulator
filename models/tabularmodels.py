@@ -5,6 +5,7 @@ from scipy.stats import entropy
 from scipy.spatial.distance import jensenshannon
 
 import utils
+from collections import defaultdict
 
 norm = 'fro'
 
@@ -39,6 +40,47 @@ class QTable:
 	def get_model_diff(self, brain2):
 		diff = [np.linalg.norm(self.Q[state] - brain2.Q[state]) for state in
 				set(self.Q.keys()).intersection(brain2.Q.keys())]
+		return {'table_change': np.mean(diff) * 100}
+
+	def __str__(self):
+		return self.__class__.__name__
+
+
+class OptionsTable:
+
+	def __init__(self, encoding_size, num_channels, num_actions, use_location_cue=True, initial_option_value=0.5):
+		self._num_actions = num_actions
+		self.C = defaultdict(lambda: initial_option_value) # familiar options are stored as tupples (color, odor and possibly, location).
+		self.encoding_size = encoding_size
+		self.use_location_cue = use_location_cue
+
+	def __call__(self, *args, **kwargs):
+		states = args[0]
+		state_actions_value = []
+		for state in states:
+			obs_action_value = []
+			for option in self.get_cues_combinations(state):
+				obs_action_value += [self.C[option]] if option[0] != self.encoding_size else [-np.inf]
+			state_actions_value.append(obs_action_value)
+		return np.array(state_actions_value)
+
+	def set_option_value(self, state, action, value):
+		option = self.get_cues_combinations(state)
+		self.C[option[action]] = value
+
+	def get_cues_combinations(self, state):
+		state_cues = utils.states_encoding_to_cues(state, self.encoding_size)
+		cues = list(zip(*state_cues))
+		if self.use_location_cue:
+			cues = [option+(a+1,) for a, option in enumerate(cues)]
+		return cues
+
+	def get_model_metrics(self):
+		return {'num_entries': len(self.C.keys())}
+
+	def get_model_diff(self, brain2):
+		diff = [np.linalg.norm(self.C[state] - brain2.C[state]) for state in
+				set(self.C.keys()).intersection(brain2.C.keys())]
 		return {'table_change': np.mean(diff) * 100}
 
 	def __str__(self):
