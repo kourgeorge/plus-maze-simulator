@@ -129,6 +129,9 @@ class FTable:
 				'color_diff': entropy(self.V['colors'], brain2.V['colors']),
 				'spatial_diff': jensenshannon(self.V['spatial'], brain2.V['spatial'])}
 
+	def __str__(self):
+		return self.__class__.__name__
+
 
 class ACFTable(FTable):
 	def __init__(self, encoding_size, num_channels, num_actions):
