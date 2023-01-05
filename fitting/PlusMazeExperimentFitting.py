@@ -45,6 +45,14 @@ def PlusMazeExperimentFitting(env: PlusMaze, agent: MotivatedAgent, experiment_d
                                                                                              np.argmax(env.get_correct_cue_value())))
     model_action_dists = np.empty([1, env.num_actions()])
     while trial < len(fitting_info):
+
+        if should_pass_to_next_stage(fitting_info, trial):
+            env.set_next_stage(agent)
+
+        if new_day(trial, fitting_info):
+            stats.update_stats_from_agent(agent, trial, config.REPORTING_INTERVAL)
+            pre_stage_transition_update()
+
         if completed_trial(fitting_info, trial):
             _, _, _, model_action_dist, model_action, likelihood, model_action_outcome = fitting_utils.episode_rollout_on_real_data(env, agent,
                                                                                                                       fitting_info.iloc[trial])
@@ -57,28 +65,7 @@ def PlusMazeExperimentFitting(env: PlusMaze, agent: MotivatedAgent, experiment_d
 
             loss = agent.smarten()
 
-        if day_passed(trial, fitting_info):
-            stats.update_stats_from_agent(agent, trial, config.REPORTING_INTERVAL)
-            pre_stage_transition_update()
-
-            print(
-                'Trial: {}, Action Dist:{}, Model Dist:{}, Corr.:{}, Rew.:{}, loss={}, likelihood:{}'.format(stats.epoch_stats_df['Trial'].to_numpy()[-1],
-                                                                                stats.epoch_stats_df['ActionDist'].to_numpy()[-1],
-                                                                                np.round(np.mean(model_action_dists, axis=0),2),
-                                                                                stats.epoch_stats_df['Correct'].to_numpy()[-1],
-                                                                                stats.epoch_stats_df['Reward'].to_numpy()[-1],
-                                                                                round(loss, 2),
-                                                                                round(stats.epoch_stats_df['Likelihood'].to_numpy()[-1],3)))
-
-            print(
-                'WPI:{}, WC: {}, FC:{}'.format(stats.epoch_stats_df['WaterPreference'].to_numpy()[-1], stats.epoch_stats_df['WaterCorrect'].to_numpy()[-1],
-                                                stats.epoch_stats_df['FoodCorrect'].to_numpy()[-1]))
-            model_action_dists = np.empty([1, env.num_actions()])
-
         trial += 1
-        if should_pass_to_next_stage(fitting_info, trial):
-            env.set_next_stage(agent)
-
     print("Likelihood - Average:{}, Median:{}".format(np.mean(fitting_info.likelihood), np.median(fitting_info.likelihood)))
     stats.metadata['experiment_status'] = ExperimentStatus.COMPLETED
     return stats, fitting_info
@@ -88,11 +75,12 @@ def should_pass_to_next_stage(rat_data, trial):
     return trial < len(rat_data) and rat_data.iloc[trial]['stage'] > rat_data.iloc[trial - 1]['stage']
 
 
-def day_passed(trial, rat_data):
+def new_day(trial, rat_data):
     return 0 < trial < len(rat_data) and \
            (rat_data.iloc[trial]['day in stage'] != rat_data.iloc[trial - 1]['day in stage'] or  # day change
              rat_data.iloc[trial]['stage'] != rat_data.iloc[trial - 1]['stage'])  # stage change
 
 
 def completed_trial(rat_data, trial):
+    # Make sure that action is taken and that active door is selected.
     return not np.isnan(rat_data.iloc[trial].action) and not rat_data.iloc[trial]["A{}o".format(int(rat_data.iloc[trial].action))]==-1
