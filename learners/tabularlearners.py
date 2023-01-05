@@ -64,7 +64,7 @@ class IALearner(AbstractLearner):
 		delta = (reward_batch - selected_action_value)
 		selected_odors, selected_colors = self.model.get_selected_door_stimuli(state_batch, actions)
 
-		phi = utils.softmax(self.model.phi) if isinstance(self.model, ACFTable) else [1, 1, 1]
+		phi = utils.softmax(self.model.phi) if isinstance(self.model, ACFTable) else [1/3, 1/3, 1/3]
 		#phi = self.model.phi # self.model.phi if isinstance(self.model, ACFTable) else [1, 1, 1]
 		for odor in set(np.unique(selected_odors)).difference([self.model.encoding_size]):
 			self.model.V['odors'][odor] += learning_rate * phi[0] * np.nanmean(delta[selected_odors == odor])
