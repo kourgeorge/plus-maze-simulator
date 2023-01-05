@@ -28,19 +28,23 @@ lr = Real(name='lr', low=0.0001, high=0.2, prior='log-uniform')
 attention_lr = Real(name='attention_lr', low=0.0001, high=0.5, prior='log-uniform')
 beta = Real(name='beta', low=0.1, high=30, prior='log-uniform')
 
-maze_models = [((TDBrain, QLearner, QTable), (beta, lr)),
-			   ((TDBrain, IALearner, FTable), (beta, lr)),
-			   ((TDBrain, MALearnerSimple, ACFTable), (beta, lr, attention_lr)),
-			   ((TDBrain, MALearner, ACFTable), (beta, lr, attention_lr)),
-			   # ((ConsolidationBrain, DQN, FullyConnectedNetwork), (beta, lr)),
-			   # ((ConsolidationBrain, DQN, UniformAttentionNetwork), (beta, lr)),
-			   # ((ConsolidationBrain, DQN, AttentionAtChoiceAndLearningNetwork), (beta, lr)),
-			   # ((ConsolidationBrain, DQN, FullyConnectedNetwork2Layers), (beta, lr)),
+maze_models = [#((TDBrain, QLearner, QTable), (beta, lr)),
+			    ((TDBrain, OptionsLearner, OptionsTable), (beta, lr)),
+			   # ((TDBrain, IALearner, ACFTable), (beta, lr)),
+			   # ((TDBrain, IAAluisiLearner, ACFTable), (beta, lr)),
+			   #((TDBrain, MALearner, ACFTable), (beta, lr, attention_lr)),
+			   # ((TDBrain, MALearnerSimple, ACFTable), (beta, lr, attention_lr)),
+			   #((TDBrain, MALearner, PCFTable), (beta, lr, attention_lr)),
+			   # ((ConsolidationBrain, DQN, FCNet), (beta, lr)),
+			   # ((ConsolidationBrain, DQN, UANet), (beta, lr)),
+			   # ((ConsolidationBrain, DQN, ACLNet), (beta, lr)),
+			   # ((ConsolidationBrain, DQNAtt, ACLNet), (beta, lr, attention_lr)),
+			   # ((ConsolidationBrain, DQN, FC2LayersNet), (beta, lr)),
 				# ((ConsolidationBrain, PG, FullyConnectedNetwork), (beta, lr)),
 				# ((ConsolidationBrain, PG, UniformAttentionNetwork), (beta, lr)),
 				# ((ConsolidationBrain, PG, AttentionAtChoiceAndLearningNetwork), (beta, lr)),
 				# ((ConsolidationBrain, PG, FullyConnectedNetwork2Layers), (beta, lr)),
-			   # ((RandomBrain, DQN, Random), (beta, lr))
+			   #((RandomBrain, DQN, Random), (beta, lr))
 			   ]
 
 motivational_models = maze_models + [((ConsolidationBrain, DQN, EfficientNetwork), (beta, lr, batch_size)),
