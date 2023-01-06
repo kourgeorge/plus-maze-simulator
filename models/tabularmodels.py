@@ -4,6 +4,7 @@ import numpy as np
 from scipy.stats import entropy
 from scipy.spatial.distance import jensenshannon
 
+import config
 import utils
 from collections import defaultdict
 
@@ -12,17 +13,18 @@ norm = 'fro'
 
 class QTable:
 
-	def __init__(self, encoding_size, num_channels, num_actions):
+	def __init__(self, encoding_size, num_channels, num_actions, initial_value=config.INITIAL_FEATURE_VALUE):
 		self._num_actions = num_actions
 		self.Q = dict()
 		self.encoding_size = encoding_size
+		self.initial_value = initial_value
 
 	def __call__(self, *args, **kwargs):
 		state = args[0]
 		state_actions_value = []
 		for obs in utils.states_encoding_to_cues(state, self.encoding_size):
 			if obs.tostring() not in self.Q.keys():
-				self.Q[obs.tostring()] = 0.5 * np.ones(self._num_actions)
+				self.Q[obs.tostring()] = self.initial_value * np.ones(self._num_actions)
 			state_actions_value.append(self.Q[obs.tostring()])
 		cues = utils.states_encoding_to_cues(state, self.encoding_size)
 		odor = cues[:, 0]  # odor for each door
@@ -48,7 +50,7 @@ class QTable:
 
 class OptionsTable:
 
-	def __init__(self, encoding_size, num_channels, num_actions, use_location_cue=True, initial_option_value=0.5):
+	def __init__(self, encoding_size, num_channels, num_actions, use_location_cue=True, initial_option_value=config.INITIAL_FEATURE_VALUE):
 		self._num_actions = num_actions
 		self.C = defaultdict(lambda: initial_option_value) # familiar options are stored as tupples (color, odor and possibly, location).
 		self.encoding_size = encoding_size
@@ -89,13 +91,13 @@ class OptionsTable:
 
 class FTable:
 
-	def __init__(self, encoding_size, num_channels, num_actions):
+	def __init__(self, encoding_size, num_channels, num_actions, initial_value=config.INITIAL_FEATURE_VALUE):
 		self.encoding_size = encoding_size
 		self._num_actions = num_actions
 		self.V = dict()
-		self.V['odors'] = np.zeros([encoding_size + 1])
-		self.V['colors'] = np.zeros([encoding_size + 1])
-		self.V['spatial'] = np.zeros([4])
+		self.V['odors'] = initial_value*np.ones([encoding_size + 1])
+		self.V['colors'] = initial_value*np.ones([encoding_size + 1])
+		self.V['spatial'] = initial_value*np.ones([4])
 
 	def __call__(self, *args, **kwargs):
 		states = args[0]
