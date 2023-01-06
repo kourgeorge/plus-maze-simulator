@@ -18,10 +18,10 @@ from rewardtype import RewardType
 from brains.tdbrain import TDBrain
 
 brains = [#(TDBrain, QLearner, QTable),
-        (TDBrain, OptionsLearner, OptionsTable),
+        #(TDBrain, OptionsLearner, OptionsTable),
         #(TDBrain, IAAluisiLearner, ACFTable),
         #(TDBrain, IALearner, ACFTable),
-        #(TDBrain, MALearner, ACFTable),
+        (TDBrain, MALearner, ACFTable),
          #(TDBrain, MALearnerSimple, ACFTable),
           # (ConsolidationBrain, DQN, UniformAttentionNetwork),
           #(ConsolidationBrain, DQN, AttentionAtChoiceAndLearningNetwork),

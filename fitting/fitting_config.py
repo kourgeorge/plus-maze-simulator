@@ -24,8 +24,8 @@ MAZE_ANIMALS = [0, 1, 2, 3, 4, 5, 6, 7, 8]
 
 nmr = Real(name='nmr', low=-1, high=1)
 batch_size = Integer(name='batch_size', low=1, high=20)
-lr = Real(name='lr', low=0.0001, high=0.2, prior='log-uniform')
-attention_lr = Real(name='attention_lr', low=0.0001, high=0.5, prior='log-uniform')
+lr = Real(name='lr', low=0.001, high=0.2, prior='log-uniform')
+attention_lr = Real(name='attention_lr', low=0.001, high=0.2, prior='log-uniform')
 beta = Real(name='beta', low=0.1, high=30, prior='log-uniform')
 
 maze_models = [#((TDBrain, QLearner, QTable), (beta, lr)),
