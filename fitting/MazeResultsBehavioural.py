@@ -2,7 +2,6 @@ import numpy as np
 
 import pandas as pd
 import matplotlib.pyplot as plt
-
 from fitting import fitting_utils
 from fitting.fitting_utils import stable_unique
 from matplotlib.ticker import MaxNLocator
@@ -13,18 +12,17 @@ plt.rcParams.update({'font.size': 16})
 
 stages = ['ODOR1', 'ODOR2', 'LED']
 
-friendly_models_name_map = {'QLearner.QTable': 'NT',
-							'CLearner.CTable': 'NF',
-							'IALearner.ACFTable': 'UA',
-							'IAAluisiLearner.ACFTable': 'MUA',
-							'MALearner.ACFTable': 'AAM'}
+friendly_models_name_map = {'QLearner.QTable': 'SARL',
+							'OptionsLearner.OptionsTable': 'ORL',
+							'IALearner.ACFTable': 'FRL',
+							'IAAluisiLearner.ACFTable': 'MFRL',
+							'MALearner.ACFTable': 'AARL'}
 
 def rename_models(model_df):
 	model_df["model"] = model_df.model.map(
 		lambda x: friendly_models_name_map[x] if x in friendly_models_name_map.keys() else x)
 	return model_df
 
-stages = ['ODOR1', 'ODOR2', 'EDShift(Light)']
 
 def models_fitting_quality_over_times_average(data_file_path):
 	df = pd.read_csv(data_file_path)
@@ -103,11 +101,10 @@ def compare_neural_tabular_models(data_file_path):
 	df = rename_models(df)
 
 	stage_mean_df = df.groupby(['subject', 'model', 'stage', 'day in stage']).median().reset_index()
-	stage_mean_df.likelihood = np.exp(-stage_mean_df.likelihood)
 
-	model_pairs = [('QLearner', 'IALearner'),
-				   ('IALearner', 'MALearner'),
-				   ('MALearnerSimple', 'MALearner')]
+	model_pairs = [('TLR', 'NRL'),
+				   ('UA', 'MUA'),
+				   ('MUA', 'AAM')]
 	stage_mean_df = stage_mean_df[stage_mean_df.model.isin(sum(model_pairs,()))]
 	pairs_df = pd.DataFrame()
 	joined_df = stage_mean_df.merge(stage_mean_df, on=['subject', 'stage', 'day in stage'])
@@ -298,7 +295,7 @@ def show_likelihood_trials_scatter(data_file_path):
 	plt.subplots_adjust(left=0.1, bottom=0.05, right=0.9, top=0.9, wspace=0.2, hspace=0.5)
 
 	plt.savefig('fitting/Results/figures/trial_likelihood_dispersion_{}'.format(fitting_utils.get_timestamp()))
-	plt.show()
+	#plt.show()
 
 
 def plot_models_fitting_result_per_stage(data_file_path):
@@ -321,7 +318,7 @@ def plot_models_fitting_result_per_stage(data_file_path):
 	df['ML'] = np.exp(-df.NLL)
 	df_stage['ML'] = np.exp(-df_stage.NLL)
 
-	fig = plt.figure(figsize=(11, 5), layout="constrained")
+	fig = plt.figure(figsize=(11, 3.5), layout="constrained")
 	spec = fig.add_gridspec(1, 3)
 	ax0 = fig.add_subplot(spec[0, 0:2])
 	ax1 = fig.add_subplot(spec[0, 2])
@@ -344,8 +341,8 @@ def plot_models_fitting_result_per_stage(data_file_path):
 	handles, labels = g2.get_legend_handles_labels()
 	fig.legend(handles, labels, loc='upper right', prop={'size': 11})
 
-	g1.axhline(y=0.5, alpha=0.7, lw=1, color='grey', linestyle='--')
-	g2.axhline(y=0.5, alpha=0.7, lw=1, color='grey', linestyle='--')
+	# g1.axhline(y=0.5, alpha=0.7, lw=1, color='grey', linestyle='--')
+	# g2.axhline(y=0.5, alpha=0.7, lw=1, color='grey', linestyle='--')
 
 	plt.savefig('fitting/Results/figures/all_models_by_stage_{}'.format(fitting_utils.get_timestamp()))
 	#plt.show()
@@ -356,7 +353,7 @@ def stage_transition_model_quality(data_file_path):
 	df = df[['subject', 'model', 'stage', 'day in stage', 'likelihood']].copy()
 	df['NLL'] = -np.log(df.likelihood)
 
-	model_df = df.groupby(['model', 'subject', 'stage', 'day in stage'], sort=False).mean().reset_index()
+	model_df = df.groupby(['model', 'subject', 'stage', 'day in stage'], sort=False).median().reset_index()
 
 	model_df['ML'] = np.exp(-model_df.NLL)
 
@@ -389,7 +386,6 @@ def stage_transition_model_quality(data_file_path):
 	axis1.axvline(x=0.5, ymin=0.05, ymax=0.95, alpha=0.5, dashes=(5, 2, 1, 2), lw=2, zorder=0, clip_on=False)
 	axis2.axvline(x=0.5, ymin=0.05, ymax=0.95, alpha=0.5, dashes=(5, 2, 1, 2), lw=2, zorder=0, clip_on=False)
 	plt.savefig('fitting/Results/figures/stage_transition_{}'.format(fitting_utils.get_timestamp()))
-	plt.show()
 
 # # plots.plot_histogram(result=brain_results, dimension_identifier='lr', bins=20)
 # # plots.plot_objective_2D(brain_results['results'], 'lr', 'batch_size')
@@ -433,7 +429,6 @@ def compare_fitting_criteria(data_file_path):
 	data['BIC'] = - 2 * data.LL + np.log(data.n) * data.k
 
 	data.LL = -data.LL
-	sum_df = data.groupby(['model']).mean().reset_index()
 	for criterion in ['AIC','BIC',]:
 		fig = plt.figure(figsize=(35, 7), dpi=120, facecolor='w')
 		for subject in stable_unique(data.subject):
@@ -446,20 +441,22 @@ def compare_fitting_criteria(data_file_path):
 			delta = 0.1*(maxx-minn)
 			axis.set_xlim([minn-delta,maxx+delta])
 			labels = axis.get_xticklabels()
-			print(labels)
 			axis.set_ylabel("")
 			axis.set_yticklabels("") if subject % 3 > 0 else 0
 			axis.set_xlabel("") if subject < 6 else 0
 
+		plt.subplots_adjust(left=0.15, bottom=0.1, right=0.97, top=0.9, wspace=0.2, hspace=0.4)
+
 		#plot the average fitting quality for the entire population.
-		plt.figure(dpi=120, facecolor='w')
+		sum_df = data.groupby(['model']).mean().reset_index()
+		plt.figure(figsize=(4.5, 4), dpi=120, facecolor='w')
 		axis=sns.barplot(x='model', y=criterion, data=sum_df, order=models_order) #orient='v'
 		minn = np.min(sum_df[criterion])
 		maxx = np.max(sum_df[criterion])
 		delta = 0.1 * (maxx - minn)
 		plt.ylim([minn - delta, maxx + delta])
 
-		plt.subplots_adjust(left=0.15, bottom=0.1, right=0.97, top=0.9, wspace=0.2, hspace=0.4)
+		plt.subplots_adjust(left=0.21, bottom=0.1, right=0.97, top=0.95, wspace=0.2, hspace=0.4)
 		axis.spines['top'].set_visible(False)
 		axis.spines['right'].set_visible(False)
 
@@ -471,13 +468,21 @@ def compare_fitting_criteria(data_file_path):
 def show_fitting_parameters(data_file_path):
 	df_all = pd.read_csv(data_file_path)
 	df = df_all[['subject', 'model', 'parameters', 'likelihood']].copy()
+	df = rename_models(df)
 	df = df.groupby(['subject', 'model', 'parameters'], sort=False).mean().reset_index()
 	k = df.parameters.apply(lambda row: fitting_utils.string2list(row))
 	parameters = k.apply(pd.Series)
 	df = df.join(parameters)
 	df = df.rename(columns={0: "beta", 1: "alpha",  2: "alpha_phi"})
 	df['subject'] = df['subject'].astype('category')
-	print(df)
+
+	param_mean = df.groupby(['model']).mean().reset_index()
+	param_std = df.groupby(['model']).sem().reset_index()
+
+	params_info = param_mean.merge(param_std, on=['model'])
+	params_info = params_info.sort_values(['model'], ascending=False)
+
+	print(params_info)
 
 	# ax = sns.scatterplot(data=df, x='alpha', y='alpha_phi', hue='model')
 	# ax.set_xlim([-0.01, 0.1])
@@ -515,8 +520,9 @@ def model_parameters_development(data_file_path):
 		df_model['ind'] = df_model.stage + 0.1 * df_model['day in stage']
 		df_model['ind'] = df_model['ind'].astype(str)
 
-		fig = plt.figure(figsize=(7.5, 4), dpi=120)
+		fig = plt.figure(figsize=(7.5, 4), dpi=120, facecolor='w')
 
+		sns.set_palette("Set2", n_colors=3)
 		axis = fig.add_subplot(111)
 		for variable_name in variables_names:
 			sns.lineplot(x="ind", y=variable_name, data=df_model, errorbar="se", err_style='band', ax=axis, label=variable_name.split('_')[0], marker='o')
@@ -551,11 +557,11 @@ def model_parameters_development(data_file_path):
 			for stage_day in [3, 5]:
 				axis.axvline(x=stage_day + 0.5, alpha=0.5, dashes=(5, 2, 1, 2), lw=2)
 
-
+	x = 1
 
 if __name__ == '__main__':
 	file_path = '/Users/gkour/repositories/plusmaze/fitting/Results/Rats-Results/fitting_results_2022_12_29_03_38_50.csv' #reported
-	file_path = '/Users/gkour/repositories/plusmaze/fitting/Results/Rats-Results/fitting_results_2022_12_29_14_48_50_tmp.csv'
+	file_path = '/Users/gkour/repositories/plusmaze/fitting/Results/Rats-Results/fitting_results_2023_01_06_23_58_50.csv'
 	#learning_curve_behavioral_boxplot('/Users/gkour/repositories/plusmaze/fitting/Results/Rats-Results/fitting_results_2022_10_13_19_05_35.csv')
 	#models_fitting_quality_over_times_average(file_path)
 	#models_fitting_quality_over_times(file_path)
@@ -565,7 +571,7 @@ if __name__ == '__main__':
 	#show_likelihood_trials_scatter(file_path)
 	#stage_transition_model_quality(file_path)
 	show_fitting_parameters(file_path)
-	#compare_fitting_criteria(file_path)
+	compare_fitting_criteria(file_path)
 	#compare_neural_tabular_models(file_path)
 	model_parameters_development(file_path)
 	x = 1
