@@ -130,6 +130,7 @@ class MazeBayesianModelFitting:
 		results_df = pd.DataFrame()
 		for subject_id, curr_rat in enumerate(animal_data):
 			print("{}".format(subject_id))
+			curr_rat = fitting_utils.maze_experimental_data_preprocessing(curr_rat)
 			fitting_results[subject_id] = {}
 			for curr_model in all_models:
 				model, parameters_space = curr_model
@@ -154,4 +155,4 @@ class MazeBayesianModelFitting:
 if __name__ == '__main__':
 	MazeBayesianModelFitting.all_subjects_all_models_optimization(
 		PlusMazeOneHotCues2ActiveDoors(relevant_cue=CueType.ODOR, stimuli_encoding=10),
-		MAZE_ANIMAL_DATA_PATH, maze_models, n_calls=20)
+		MAZE_ANIMAL_DATA_PATH, maze_models, n_calls=50)
