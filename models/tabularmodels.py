@@ -15,7 +15,7 @@ class QTable:
 
 	def __init__(self, encoding_size, num_channels, num_actions, initial_value=config.INITIAL_FEATURE_VALUE):
 		self._num_actions = num_actions
-		self.Q = dict()
+		self.Q = defaultdict(lambda: self.initial_value * np.ones(self._num_actions))
 		self.encoding_size = encoding_size
 		self.initial_value = initial_value
 
@@ -23,8 +23,6 @@ class QTable:
 		state = args[0]
 		state_actions_value = []
 		for obs in utils.states_encoding_to_cues(state, self.encoding_size):
-			if obs.tostring() not in self.Q.keys():
-				self.Q[obs.tostring()] = self.initial_value * np.ones(self._num_actions)
 			state_actions_value.append(self.Q[obs.tostring()])
 		cues = utils.states_encoding_to_cues(state, self.encoding_size)
 		odor = cues[:, 0]  # odor for each door
@@ -50,9 +48,9 @@ class QTable:
 
 class OptionsTable:
 
-	def __init__(self, encoding_size, num_channels, num_actions, use_location_cue=True, initial_option_value=config.INITIAL_FEATURE_VALUE):
+	def __init__(self, encoding_size, num_channels, num_actions, use_location_cue=True, initial_value=config.INITIAL_FEATURE_VALUE):
 		self._num_actions = num_actions
-		self.C = defaultdict(lambda: initial_option_value) # familiar options are stored as tupples (color, odor and possibly, location).
+		self.C = defaultdict(lambda: initial_value) # familiar options are stored as tupples (color, odor and possibly, location).
 		self.encoding_size = encoding_size
 		self.use_location_cue = use_location_cue
 
@@ -136,8 +134,8 @@ class FTable:
 
 
 class ACFTable(FTable):
-	def __init__(self, encoding_size, num_channels, num_actions):
-		super().__init__(encoding_size, num_channels, num_actions)
+	def __init__(self, *args, **kwargs):
+		super().__init__(*args, **kwargs)
 		self.phi = np.ones([3]) / 3
 
 	def __call__(self, *args, **kwargs):
