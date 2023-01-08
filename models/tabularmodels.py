@@ -155,11 +155,6 @@ class ACFTable(FTable):
 
 		return doors_value
 
-	def get_selected_door_stimuli(self, states, doors):
-		cues = utils.states_encoding_to_cues(states, self.encoding_size)
-		selected_cues = cues[np.arange(len(states)), :, doors]
-		return selected_cues[:, 0], selected_cues[:, 1]
-
 	def get_model_metrics(self):
 		phi = utils.softmax(self.phi)
 		return {'odor_attn': phi[0],
@@ -193,9 +188,4 @@ class PCFTable(ACFTable):
 		doors_value[odor == self.encoding_size] = -np.inf  # avoid selecting inactive doors.
 
 		return doors_value
-
-	def get_selected_door_stimuli(self, states, doors):
-		cues = utils.states_encoding_to_cues(states, self.encoding_size)
-		selected_cues = cues[np.arange(len(states)), :, doors]
-		return selected_cues[:, 0], selected_cues[:, 1]
 
