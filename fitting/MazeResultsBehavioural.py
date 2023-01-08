@@ -326,14 +326,18 @@ def plot_models_fitting_result_per_stage(data_file_path):
 	ax0 = fig.add_subplot(spec[0, 0:2])
 	ax1 = fig.add_subplot(spec[0, 2])
 
-	g1 = sns.boxplot(x='stage', y='ML', hue='model', data=df_stage, ax=ax0)
+	y='ML'
+	#g1 = sns.boxplot(x='stage', y='likelihood', hue='model', data=df_stage, ax=ax0)
+	g1 = sns.barplot(x='stage', y=y, hue='model', data=df_stage, ax=ax0, errorbar='se', errwidth=1, capsize=.05)
+	g1.set_ylim([0.5,0.585])
 	g1.set_xticklabels(stages)
 	g1.set(xlabel='', ylabel='Average Likelihood')
 	g1.legend([], [], frameon=False)
 	df['dummy'] = 1
 	#g1.set_ylim([0.4, 0.8])
 	df = df.groupby(['subject', 'model'], sort=False).mean().reset_index()
-	g2 = sns.boxplot(x='dummy', y='ML', hue='model', data=df, ax=ax1)
+	#g2 = sns.boxplot(x='dummy', y='ML', hue='model', data=df, ax=ax1)
+	g2 = sns.barplot(x='dummy', y=y, hue='model', data=df, ax=ax1, errorbar='se', errwidth=1, capsize=.05)
 
 	g2.set_xticklabels([''])
 	g2.set(xlabel='All Stages', ylabel='')
@@ -342,7 +346,7 @@ def plot_models_fitting_result_per_stage(data_file_path):
 	plt.subplots_adjust(left=0.1, bottom=0.1, right=0.99, top=0.9, wspace=0.3, hspace=0.3)
 
 	handles, labels = g2.get_legend_handles_labels()
-	fig.legend(handles, labels, loc='upper right', prop={'size': 11})
+	g1.legend(handles, labels, loc='upper left', prop={'size': 11})
 
 	# g1.axhline(y=0.5, alpha=0.7, lw=1, color='grey', linestyle='--')
 	# g2.axhline(y=0.5, alpha=0.7, lw=1, color='grey', linestyle='--')
