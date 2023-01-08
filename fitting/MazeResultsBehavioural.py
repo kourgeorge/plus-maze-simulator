@@ -11,12 +11,15 @@ import json
 plt.rcParams.update({'font.size': 16})
 
 stages = ['ODOR1', 'ODOR2', 'LED']
+num_days_reported = [4,2,6]
 
 friendly_models_name_map = {'QLearner.QTable': 'SARL',
 							'OptionsLearner.OptionsTable': 'ORL',
 							'IALearner.ACFTable': 'FRL',
 							'IAAluisiLearner.ACFTable': 'MFRL',
-							'MALearner.ACFTable': 'AARL'}
+							'MALearner.ACFTable': 'AARL',
+							'MALearnerSimple.ACFTable':'MAARL'}
+
 
 def rename_models(model_df):
 	model_df["model"] = model_df.model.map(
@@ -34,9 +37,9 @@ def models_fitting_quality_over_times_average(data_file_path):
 
 	model_df = rename_models(model_df)
 
-	model_df = model_df[~((model_df.stage == 1) & (model_df['day in stage'] > 4))]
-	model_df = model_df[~((model_df.stage == 2) & (model_df['day in stage'] > 2))]
-	model_df = model_df[~((model_df.stage == 3) & (model_df['day in stage'] > 7))]
+	model_df = model_df[~((model_df.stage == 1) & (model_df['day in stage'] > num_days_reported[0]))]
+	model_df = model_df[~((model_df.stage == 2) & (model_df['day in stage'] > num_days_reported[1]))]
+	model_df = model_df[~((model_df.stage == 3) & (model_df['day in stage'] > num_days_reported[2]))]
 
 	model_df['ind'] = model_df.stage+0.1*model_df['day in stage']
 	model_df['ind'] = model_df['ind'].astype(str)
@@ -157,9 +160,9 @@ def compare_model_subject_learning_curve_average(data_file_path):
 	model_df = df.groupby(['subject', 'model', 'stage', 'day in stage'], sort=False).mean().reset_index()
 
 	model_df = rename_models(model_df)
-	model_df = model_df[~((model_df.stage == 1) & (model_df['day in stage'] > 4))]
-	model_df = model_df[~((model_df.stage == 2) & (model_df['day in stage'] > 2))]
-	model_df = model_df[~((model_df.stage == 3) & (model_df['day in stage'] > 7))]
+	model_df = model_df[~((model_df.stage == 1) & (model_df['day in stage'] > num_days_reported[0]))]
+	model_df = model_df[~((model_df.stage == 2) & (model_df['day in stage'] > num_days_reported[1]))]
+	model_df = model_df[~((model_df.stage == 3) & (model_df['day in stage'] > num_days_reported[2]))]
 
 	model_df['ind'] = model_df.stage+0.1*model_df['day in stage']
 	model_df['ind'] = model_df['ind'].astype(str)
@@ -302,9 +305,9 @@ def plot_models_fitting_result_per_stage(data_file_path):
 	df = pd.read_csv(data_file_path)
 	df = rename_models(df)
 
-	df = df[~((df.stage == 1) & (df['day in stage'] > 4))]
-	df = df[~((df.stage == 2) & (df['day in stage'] > 2))]
-	df = df[~((df.stage == 3) & (df['day in stage'] > 7))]
+	df = df[~((df.stage == 1) & (df['day in stage'] > num_days_reported[0]))]
+	df = df[~((df.stage == 2) & (df['day in stage'] > num_days_reported[1]))]
+	df = df[~((df.stage == 3) & (df['day in stage'] > num_days_reported[2]))]
 
 	df = df[['subject', 'model', 'stage', 'day in stage', 'trial', 'likelihood']].copy()
 	df['NLL'] = -np.log(df.likelihood)
@@ -399,9 +402,9 @@ def compare_fitting_criteria(data_file_path):
 
 	df = rename_models(df)
 
-	df = df[~((df.stage == 1) & (df['day in stage'] > 4))]
-	df = df[~((df.stage == 2) & (df['day in stage'] > 2))]
-	df = df[~((df.stage == 3) & (df['day in stage'] > 7))]
+	df = df[~((df.stage == 1) & (df['day in stage'] > num_days_reported[0]))]
+	df = df[~((df.stage == 2) & (df['day in stage'] > num_days_reported[1]))]
+	df = df[~((df.stage == 3) & (df['day in stage'] > num_days_reported[2]))]
 
 	df['LL'] = np.log(df.likelihood)
 
@@ -502,9 +505,9 @@ def model_parameters_development(data_file_path):
 	df['model_variables'] = df['model_variables'].apply(json.loads)
 
 	#remove irrelevant trials
-	df = df[~((df.stage == 1) & (df['day in stage'] > 4))]
-	df = df[~((df.stage == 2) & (df['day in stage'] > 2))]
-	df = df[~((df.stage == 3) & (df['day in stage'] > 7))]
+	df = df[~((df.stage == 1) & (df['day in stage'] > num_days_reported[0]))]
+	df = df[~((df.stage == 2) & (df['day in stage'] > num_days_reported[1]))]
+	df = df[~((df.stage == 3) & (df['day in stage'] > num_days_reported[2]))]
 
 	for model in ['MALearner.ACFTable']:
 		df_model = df[df.model == model]
