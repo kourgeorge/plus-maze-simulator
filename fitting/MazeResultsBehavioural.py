@@ -414,52 +414,44 @@ def compare_fitting_criteria(data_file_path):
 
 	models_order = stable_unique(df.model)
 
-	# optimization average over days.
-	# likelihood_day = df.groupby(['subject', 'model', 'parameters', 'stage', 'day in stage'], sort=False).mean().reset_index()
-	# data = likelihood_day.groupby(['subject', 'model', 'parameters'], sort=False).agg({'day in stage': 'count', 'likelihood':'sum' ,'LL': 'sum'}).reset_index()
-	# data = data.rename(columns={'day in stage': 'n'})
-	# data['k'] = data.apply(lambda row: len(fitting_utils.string2list(row['parameters'])), axis=1)
-
-	# # optimization average over stages
-	# likelihood_day = df.groupby(['subject', 'model', 'parameters', 'stage']).mean().reset_index()
-	# data = likelihood_day.groupby(['subject', 'model', 'parameters']).agg({'stage': 'count', 'loglikelihood': 'sum'}).reset_index()
-	# data = data.rename(columns={'stage': 'n', 'loglikelihood': 'LL'})
-	# data['k'] = data.apply(lambda row: len(fitting_utils.string2list(row['parameters'])), axis=1)
-
 	# # optimization average over trials
-	likelihood_trial = df.groupby(['subject', 'model', 'parameters']).agg({'reward': 'count', 'LL': 'sum'}).reset_index()
+	likelihood_trial = df.groupby(['model']).agg({'reward': 'count', 'LL': 'sum', 'likelihood': 'mean'}).reset_index()
 	data = likelihood_trial.rename(columns={'reward': 'n'})
 
-	data['k'] = data.apply(lambda row: len(fitting_utils.string2list(row['parameters'])), axis=1)
+	#data['k'] = data.apply(lambda row: len(fitting_utils.string2list(row['parameters'])), axis=1)
+	data['k'] = data.apply(lambda row: 3 if row.model=='AARL' else 2, axis=1)
 
 	data['AIC'] = - 2 * data.LL/data.n + 2 * data.k/data.n
 	data['BIC'] = - 2 * data.LL + np.log(data.n) * data.k
+	data['LPT'] = data.likelihood
 
 	data.LL = -data.LL
-	for criterion in ['AIC','BIC',]:
-		fig = plt.figure(figsize=(35, 7), dpi=120, facecolor='w')
-		for subject in stable_unique(data.subject):
-			axis = fig.add_subplot(3, 3, subject + 1)
-			subject_model_df = data[(data.subject == subject)]
-			sns.barplot(x=criterion, y='model', data=subject_model_df, ax=axis, orient='h', order=models_order)
-			axis.set_title('Subject:{}'.format(subject+1))
-			minn = np.min(subject_model_df[criterion])
-			maxx=np.max(subject_model_df[criterion])
-			delta = 0.1*(maxx-minn)
-			axis.set_xlim([minn-delta,maxx+delta])
-			labels = axis.get_xticklabels()
-			axis.set_ylabel("")
-			axis.set_yticklabels("") if subject % 3 > 0 else 0
-			axis.set_xlabel("") if subject < 6 else 0
-
-		plt.subplots_adjust(left=0.15, bottom=0.1, right=0.97, top=0.9, wspace=0.2, hspace=0.4)
+	for criterion in ['AIC','BIC','LPT']:
+		# fig = plt.figure(figsize=(35, 7), dpi=120, facecolor='w')
+		# for subject in stable_unique(data.subject):
+		# 	axis = fig.add_subplot(3, 3, subject + 1)
+		# 	subject_model_df = data[(data.subject == subject)]
+		# 	sns.barplot(x=criterion, y='model', data=subject_model_df, ax=axis, orient='h', order=models_order)
+		# 	axis.set_title('Subject:{}'.format(subject+1))
+		# 	minn = np.min(subject_model_df[criterion])
+		# 	maxx=np.max(subject_model_df[criterion])
+		# 	delta = 0.1*(maxx-minn)
+		# 	axis.set_xlim([minn-delta,maxx+delta])
+		# 	labels = axis.get_xticklabels()
+		# 	axis.set_ylabel("")
+		# 	axis.set_yticklabels("") if subject % 3 > 0 else 0
+		# 	axis.set_xlabel("") if subject < 6 else 0
+		#
+		# plt.subplots_adjust(left=0.15, bottom=0.1, right=0.97, top=0.9, wspace=0.2, hspace=0.4)
 
 		#plot the average fitting quality for the entire population.
-		sum_df = data.groupby(['model']).mean().reset_index()
+		#sum_df = likelihood_trial.groupby(['model']).mean().reset_index()
+
+
 		plt.figure(figsize=(4.5, 4), dpi=120, facecolor='w')
-		axis=sns.barplot(x='model', y=criterion, data=sum_df, order=models_order) #orient='v'
-		minn = np.min(sum_df[criterion])
-		maxx = np.max(sum_df[criterion])
+		axis=sns.barplot(x='model', y=criterion, data=data, order=models_order) #orient='v'
+		minn = np.min(data[criterion])
+		maxx = np.max(data[criterion])
 		delta = 0.1 * (maxx - minn)
 		plt.ylim([minn - delta, maxx + delta])
 
