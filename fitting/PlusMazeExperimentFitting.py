@@ -6,6 +6,7 @@ import time
 import config
 from PlusMazeExperiment import ExperimentStatus
 from environment import PlusMazeOneHotCues, CueType, PlusMaze
+from models.tabularmodels import FTable
 from motivatedagent import MotivatedAgent
 import fitting.fitting_utils as fitting_utils
 from Dashboard import Dashboard
@@ -50,6 +51,8 @@ def PlusMazeExperimentFitting(env: PlusMaze, agent: MotivatedAgent, experiment_d
 
         if should_pass_to_next_stage(fitting_info, trial):
             env.set_next_stage(agent)
+            if isinstance(agent.get_brain().get_model(), FTable):
+                    agent.get_brain().get_model().reset_feature_values()
 
         if new_day(trial, fitting_info):
             stats.update_stats_from_agent(agent, trial, config.REPORTING_INTERVAL)

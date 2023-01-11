@@ -18,7 +18,7 @@ from models.tabularmodels import PCFTable
 REPETITIONS = 3
 MOTIVATED_ANIMAL_DATA_PATH = './fitting/motivation_behavioral_data'
 MAZE_ANIMAL_DATA_PATH = './fitting/maze_behavioral_data'
-
+BAYESIAN_OPTIMIZATION = False
 MOTIVATED_ANIMAL_BATCHES = {1: [1, 2], 2: [1], 4: [6, 7, 8], 5: [1, 2], 6: [10, 11]}
 MAZE_ANIMALS = [0, 1, 2, 3, 4, 5, 6, 7, 8]
 
@@ -27,24 +27,30 @@ batch_size = Integer(name='batch_size', low=1, high=20)
 lr = Real(name='lr', low=0.001, high=0.2, prior='log-uniform')
 attention_lr = Real(name='attention_lr', low=0.001, high=0.2, prior='log-uniform')
 beta = Real(name='beta', low=0.1, high=30, prior='log-uniform')
+initial_value = Real(name='initial', low=0, high=0.1, prior='uniform')
 
-maze_models = [#((TDBrain, QLearner, QTable), (beta, lr)),
-			    ((TDBrain, OptionsLearner, OptionsTable), (beta, lr)),
-			   # ((TDBrain, IALearner, ACFTable), (beta, lr)),
+lr = (0.001,0.2)
+attention_lr=(0.001,0.2)
+beta = (0,30)
+initial_value=(0,0.15)
+
+maze_models = [((TDBrain, QLearner, QTable), (beta, lr)),
+			   # ((TDBrain, OptionsLearner, OptionsTable), (beta, lr)),
+			   ((TDBrain, IALearner, ACFTable), (beta, lr)),
 			   # ((TDBrain, IAAluisiLearner, ACFTable), (beta, lr)),
-			   #((TDBrain, MALearner, ACFTable), (beta, lr, attention_lr)),
+			   ((TDBrain, MALearner, ACFTable), (beta, lr, attention_lr)),
 			   # ((TDBrain, MALearnerSimple, ACFTable), (beta, lr, attention_lr)),
-			   #((TDBrain, MALearner, PCFTable), (beta, lr, attention_lr)),
-			   # ((ConsolidationBrain, DQN, FCNet), (beta, lr)),
-			   # ((ConsolidationBrain, DQN, UANet), (beta, lr)),
-			   # ((ConsolidationBrain, DQN, ACLNet), (beta, lr)),
-			   # ((ConsolidationBrain, DQNAtt, ACLNet), (beta, lr, attention_lr)),
+			   # ((TDBrain, MALearner, PCFTable), (beta, lr, attention_lr)),
+			   ((ConsolidationBrain, DQN, FCNet), (beta, lr)),
+			   ((ConsolidationBrain, DQN, UANet), (beta, lr)),
+			   ((ConsolidationBrain, DQN, ACLNet), (beta, lr)),
+			   ((ConsolidationBrain, DQNAtt, ACLNet), (beta, lr, attention_lr)),
 			   # ((ConsolidationBrain, DQN, FC2LayersNet), (beta, lr)),
 				# ((ConsolidationBrain, PG, FullyConnectedNetwork), (beta, lr)),
 				# ((ConsolidationBrain, PG, UniformAttentionNetwork), (beta, lr)),
 				# ((ConsolidationBrain, PG, AttentionAtChoiceAndLearningNetwork), (beta, lr)),
 				# ((ConsolidationBrain, PG, FullyConnectedNetwork2Layers), (beta, lr)),
-			   #((RandomBrain, DQN, Random), (beta, lr))
+			   # ((RandomBrain, DQN, Random), (beta, lr))
 			   ]
 
 motivational_models = maze_models + [((ConsolidationBrain, DQN, EfficientNetwork), (beta, lr, batch_size)),

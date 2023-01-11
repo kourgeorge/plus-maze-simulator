@@ -15,15 +15,15 @@ class QTable:
 
 	def __init__(self, encoding_size, num_channels, num_actions, initial_value=config.INITIAL_FEATURE_VALUE):
 		self._num_actions = num_actions
-		self.Q = defaultdict(lambda: self.initial_value * np.ones(self._num_actions))
+		self.Q = defaultdict(lambda: initial_value * np.ones(self._num_actions))
 		self.encoding_size = encoding_size
-		self.initial_value = initial_value
 
 	def __call__(self, *args, **kwargs):
 		state = args[0]
 		state_actions_value = []
 		for obs in utils.states_encoding_to_cues(state, self.encoding_size):
-			state_actions_value.append(self.Q[obs.tostring()])
+			#state_actions_value.append(self.Q[obs.tostring()])
+			state_actions_value.append(self.Q[np.array2string(obs)])
 		cues = utils.states_encoding_to_cues(state, self.encoding_size)
 		odor = cues[:, 0]  # odor for each door
 		state_actions_value = np.array(state_actions_value)
@@ -32,7 +32,7 @@ class QTable:
 
 	def set_state_action_value(self, state, action, value):
 		obs = utils.states_encoding_to_cues(state, self.encoding_size)
-		self.Q[obs.tostring()][action] = value
+		self.Q[np.array2string(obs)][action] = value
 
 	def get_model_metrics(self):
 		return {'num_entries': len(self.Q.keys())}
@@ -96,6 +96,7 @@ class FTable:
 		self.V['odors'] = initial_value*np.ones([encoding_size + 1])
 		self.V['colors'] = initial_value*np.ones([encoding_size + 1])
 		self.V['spatial'] = initial_value*np.ones([4])
+		self.initial_value = initial_value
 
 	def __call__(self, *args, **kwargs):
 		states = args[0]
@@ -110,6 +111,12 @@ class FTable:
 		action_values[odor == self.encoding_size]=-np.inf #avoid selecting inactive doors.
 		return action_values
 
+	def reset_feature_values(self):
+		self.V['odors'] = self.initial_value * np.ones([self.encoding_size + 1])
+		self.V['colors'] = self.initial_value * np.ones([self.encoding_size + 1])
+		self.V['spatial'] = self.initial_value * np.ones([4])
+
+
 	def get_selected_door_stimuli(self, states, doors):
 		cues = utils.states_encoding_to_cues(states, self.encoding_size)
 		selected_cues = cues[np.arange(len(states)), :, doors]
@@ -119,14 +126,15 @@ class FTable:
 		return self.V[dimension][feature]
 
 	def get_model_metrics(self):
-		return {'odor': np.linalg.norm(self.V['odors']),
-				'color': np.linalg.norm(self.V['colors']),
-				'spatial': np.linalg.norm(self.V['spatial'])
+		print("odor:{}\ncolor:{},\nspatial:{}".format(self.V['odors'], self.V['colors'], self.V['spatial']))
+		return {'odor': entropy(self.V['odors'])/entropy(np.ones_like(self.V['odors']))/np.count_nonzero(self.V['odors']),
+				'color': entropy(self.V['colors'])/entropy(np.ones_like(self.V['colors']))/np.count_nonzero(self.V['colors']),
+				'spatial': entropy(self.V['spatial'])/entropy(np.ones_like(self.V['spatial']))/np.count_nonzero(self.V['spatial'])
 				}
 
 	def get_model_diff(self, brain2):
 		return {'odor_diff': jensenshannon(self.V['odors'], brain2.V['odors']),
-				'color_diff': entropy(self.V['colors'], brain2.V['colors']),
+				'color_diff': jensenshannon(self.V['colors'], brain2.V['colors']),
 				'spatial_diff': jensenshannon(self.V['spatial'], brain2.V['spatial'])}
 
 	def __str__(self):
@@ -156,6 +164,7 @@ class ACFTable(FTable):
 		return doors_value
 
 	def get_model_metrics(self):
+		print("odor:{}\ncolor:{},\nspatial:{}".format(self.V['odors'], self.V['colors'], self.V['spatial']))
 		phi = utils.softmax(self.phi)
 		return {'odor_attn': phi[0],
 				'color_attn': phi[1],

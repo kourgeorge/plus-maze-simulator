@@ -71,7 +71,12 @@ def get_stage_transition_days(experimental_data):
 
 
 def string2list(string):
-	return [float(x.strip()) for x in re.split(",",string.strip(']['))]
+	try:
+		params= [float(x.strip()) for x in re.split(" +",string.strip(' ]['))]
+	except Exception:
+		params= [float(x.strip()) for x in re.split(",",string.strip(']['))]
+	return params
+
 
 
 def stable_unique(array):
@@ -91,7 +96,7 @@ def maze_experimental_data_preprocessing(experiment_data):
 
 	# Take at most 7 days from the last stage.
 	df = experiment_data.copy()
-	df = df[~((df.stage == 3) & (df['day in stage'] > 7))]
+	df = df[~((df.stage == 3) & (df['day in stage'] > 10))]
 
 
 	# criteria_days = []

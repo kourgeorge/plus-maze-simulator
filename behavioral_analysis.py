@@ -58,8 +58,9 @@ def plot_behavior_results(brain_type_stats, dirname=None):
 	days_each_stage = days_to_consider_in_each_stage(brain_type_stats)
 	b_signals = ['Correct', 'Reward', 'WaterPreference', 'WaterCorrect', 'FoodCorrect']
 	#b_signals = ['Correct', 'CorrectNetwork', 'Likelihood']
-	n_signals = list(brain_type_stats[0].reports[0].brain.get_model().get_model_metrics().keys()) + \
-				list(brain_type_stats[0].reports[0].brain.get_model().get_model_diff(brain_type_stats[0].reports[0].brain.get_model()).keys())
+	# n_signals = list(brain_type_stats[0].reports[0].brain.get_model().get_model_metrics().keys()) + \
+	# 			list(brain_type_stats[0].reports[0].brain.get_model().get_model_diff(brain_type_stats[0].reports[0].brain.get_model()).keys())
+	n_signals = list(brain_type_stats[0].reports[0].brain.get_model().get_model_metrics().keys())
 
 	results_dict = {}
 	for signal in b_signals+n_signals:
