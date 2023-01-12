@@ -85,7 +85,7 @@ def maze_experimental_data_preprocessing(experiment_data):
 
 	# remove trials with non-active doors selection:
 	experiment_data['completed'] = experiment_data.apply(
-		lambda x: False if np.isnan(x.action) else x["A{}o".format(int(x.action))] != -1, axis='columns')
+		lambda x: False if np.isnan(x.action) or np.isnan(x.reward) else x["A{}o".format(int(x.action))] != -1, axis='columns')
 	experiment_data = experiment_data[experiment_data.completed == True]
 	experiment_data.drop('completed', axis='columns', inplace=True)
 

@@ -1,9 +1,11 @@
 from operator import index
+
+import numpy as np
 import pandas as pd
 from glob import glob
 from datetime import datetime
 
-data_path = './MED data/'
+data_path = '/Users/gkour/repositories/plusmaze/fitting/motivation_behavioral_data_raw/'
 stages = ['odor1_WR', 'odor2_WR', 'odor2_XFR', 'odor3_WR', 'spatial_WR']
 
 
@@ -65,7 +67,7 @@ def add_stage_index_and_day_to_df(df, stage_index, day_index):
 def parse_table_stage_by_odor(df):
     df = set_odor_and_color_column(df)
     df['action'] = df.apply(lambda row: row.chosen_arm, axis=1)
-    df['reward'] = df.apply(lambda row: 1 if row.trial_outcome == 1 else 0, axis=1)
+    df['reward'] = df.apply(lambda row: 1 if row.trial_outcome == 1 else None if np.isnan(row.trial_outcome) or np.isnan(row.trial_outcome) else 0, axis=1)
     df['reward_type'] = df.apply(lambda row: int(reward_type(row)), axis=1)
     return df[['stage', 'day in stage', 'trial', 'A1o', 'A1c', 'A2o', 'A2c', 'A3o', 'A3c', 'A4o', 'A4c', 'action', 'reward', 'reward_type']]
 
