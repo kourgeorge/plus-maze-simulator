@@ -19,6 +19,9 @@ class AbstractBrain:
     def get_model(self):
         raise NotImplementedError()
 
+    def get_learner(self):
+        raise NotImplementedError()
+
     def save_model(self, path):
         raise NotImplementedError()
 

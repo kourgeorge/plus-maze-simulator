@@ -23,6 +23,9 @@ class TDBrain(AbstractBrain):
     def get_model(self):
         return self.learner.model
 
+    def get_learner(self):
+        return self.learner
+
     def consolidate(self, memory, agent, replays=config.CONSOLIDATION_REPLAYS):
         minibatch_size = min(self.batch_size, len(memory))
         if minibatch_size == 0:
