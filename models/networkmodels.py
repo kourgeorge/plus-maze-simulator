@@ -42,6 +42,11 @@ class UANet(AbstractNetworkModel):
 
 		return torch.squeeze(weighted_vals, dim=2)
 
+	def reset_feature_values(self):
+		torch.nn.init.xavier_uniform(self.odors.weight)
+		torch.nn.init.xavier_uniform(self.colors.weight)
+		torch.nn.init.xavier_uniform(self.spatial)
+
 	def get_model_metrics(self):
 		return {'odors':  np.linalg.norm(self.odors.weight.detach()),
 				'colors': np.linalg.norm(self.colors.weight.detach()),
@@ -60,9 +65,9 @@ class ACLNet(UANet):
 		self.phi = nn.Parameter(torch.ones(size=(3,1)), requires_grad=True)
 
 	def get_model_metrics(self):
-		return {'odor_attn': self.phi[0].detach().numpy(),
-				'color_attn': self.phi[1].detach().numpy(),
-				'spatial_attn': self.phi[2].detach().numpy()}
+		return {'odor_attn': self.phi[0].detach().numpy()[0],
+				'color_attn': self.phi[1].detach().numpy()[0],
+				'spatial_attn': self.phi[2].detach().numpy()[0]}
 
 	def get_model_diff(self, model2):
 		return {'color_attn': self.phi[0].detach().numpy() - model2.phi[0].detach().numpy(),
