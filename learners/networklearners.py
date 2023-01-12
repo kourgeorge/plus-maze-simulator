@@ -20,7 +20,7 @@ class DQN(AbstractLearner):
 		selected_action_value = torch.squeeze(action_values.gather(1, actions))
 
 		# Compute Huber loss
-		loss = F.mse_loss(selected_action_value, reward_batch.detach())
+		loss = F.mse_loss(selected_action_value.view(-1), reward_batch.detach().view(-1))
 
 		# Optimize the model
 		self.optimizer.zero_grad()
