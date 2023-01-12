@@ -345,6 +345,9 @@ class PlusMazeOneHotCues2ActiveDoors(PlusMazeOneHotCues):
 		return self._state, RewardType.NONE, 1, self._get_step_info(RewardType.NONE)
 
 	def set_next_stage(self, agent: MotivatedAgent):
+		if isinstance(agent.get_brain().get_model(), FTable) or isinstance(agent.get_brain().get_model(), UANet):
+			agent.get_brain().get_model().reset_feature_values()
+
 		self.set_stage(self.get_stage() + 1)
 		print('---------------------------------------------------------------------')
 		if self.get_stage() == 1:
