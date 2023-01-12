@@ -24,15 +24,17 @@ MAZE_ANIMALS = [0, 1, 2, 3, 4, 5, 6, 7, 8]
 
 nmr = Real(name='nmr', low=-1, high=1)
 batch_size = Integer(name='batch_size', low=1, high=20)
-lr = Real(name='lr', low=0.001, high=0.2, prior='log-uniform')
-attention_lr = Real(name='attention_lr', low=0.001, high=0.2, prior='log-uniform')
-beta = Real(name='beta', low=0.1, high=30, prior='log-uniform')
-initial_value = Real(name='initial', low=0, high=0.1, prior='uniform')
 
-lr = (0.001,0.2)
-attention_lr=(0.001,0.2)
-beta = (0,30)
-initial_value=(0,0.15)
+if BAYESIAN_OPTIMIZATION:
+	lr = Real(name='lr', low=0.001, high=0.2, prior='log-uniform')
+	attention_lr = Real(name='attention_lr', low=0.001, high=0.2, prior='log-uniform')
+	beta = Real(name='beta', low=0.1, high=30, prior='log-uniform')
+	initial_value = Real(name='initial', low=0, high=0.1, prior='uniform')
+else:
+	lr = (0.001, 0.2)
+	attention_lr = (0.001, 0.2)
+	beta = (0, 30)
+	initial_value = (0, 0.15)
 
 maze_models = [((TDBrain, QLearner, QTable), (beta, lr)),
 			   # ((TDBrain, OptionsLearner, OptionsTable), (beta, lr)),
@@ -68,3 +70,15 @@ configs = [{'br': br, 'lr': lr, 'non_motivated_reward': nmr} for br, lr, nmr in 
 
 def extract_configuration_params(params):
 	return params['br'][0], params['br'][1], params['br'][2], params['lr'], params['non_motivated_reward']
+
+
+friendly_models_name_map = {'QLearner.QTable': 'SARL',
+							'OptionsLearner.OptionsTable': 'ORL',
+							'IALearner.ACFTable': 'FRL',
+							'IAAluisiLearner.ACFTable': 'MFRL',
+							'MALearner.ACFTable': 'AARL',
+							'MALearnerSimple.ACFTable':'MAARL',
+							'DQN.FCNet':'FCNet',
+							'DQN.UANet':'UANet',
+							'DQN.ACLNet':'ACLNet',
+							'DQNAtt.ACLNet':'ACLNet2'}
