@@ -285,6 +285,15 @@ class PlusMazeOneHotCues(PlusMaze):
 			c1, c2 = random.sample(range(0, encoding_size), 2)
 		return [np.eye(encoding_size)[c1], np.eye(encoding_size)[c2]]
 
+	def format_state(self, state):
+		dict = {}
+		for arm in range(4):
+			arm_odor = state[0, arm, :]
+			arm_color = state[1, arm, :]
+			dict['A{}o'.format(arm+1)] = -1 if not np.any(arm_odor) else 0 if np.array_equal(arm_odor, self.get_odor_cues()[0]) else 1
+			dict['A{}c'.format(arm+1)] = -1 if not np.any(arm_color) else 0 if np.array_equal(arm_color, self.get_light_cues()[0]) else 1
+		return dict
+
 
 class PlusMazeOneHotCues2ActiveDoors(PlusMazeOneHotCues):
 	#stage_names = ['ODOR1', 'ODOR2', 'ODOR3', 'EDShift(Light)']
@@ -306,14 +315,6 @@ class PlusMazeOneHotCues2ActiveDoors(PlusMazeOneHotCues):
 		self._state = state
 		return state
 
-	def format_state(self, state):
-		dict = {}
-		for arm in range(4):
-			arm_odor = state[0, arm, :]
-			arm_color = state[1, arm, :]
-			dict['A{}o'.format(arm+1)] = -1 if not np.any(arm_odor) else 0 if np.array_equal(arm_odor, self.get_odor_cues()[0]) else 1
-			dict['A{}c'.format(arm+1)] = -1 if not np.any(arm_color) else 0 if np.array_equal(arm_color, self.get_light_cues()[0]) else 1
-		return dict
 
 	def random_state(self):
 		active_doors = random.sample(range(0, 4), 2)
