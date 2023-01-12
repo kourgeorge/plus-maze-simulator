@@ -3,6 +3,8 @@ __author__ = 'gkour'
 import random
 import numpy as np
 import utils
+from models.networkmodels import UANet
+from models.tabularmodels import FTable
 from motivatedagent import MotivatedAgent
 from rewardtype import RewardType
 from enum import Enum
@@ -15,7 +17,7 @@ class CueType(Enum):
 
 
 class PlusMaze:
-	stage_names = ['Baseline', 'IDshift', 'Mshift(Food)', 'MShift(Water)+IDshift', 'EDShift(Light)', 'EDshift(Spatial)']
+	stage_names = ['Baseline', 'IDshift', 'Mshift(Food)', 'MShift(Water)+IDshift', 'EDshift(Spatial)']
 
 	def __init__(self, relevant_cue: CueType = CueType.ODOR):
 		# relevant_cue: 0 is odor, 1 is light
@@ -29,7 +31,7 @@ class PlusMaze:
 		self._used_light_cues = []
 		self._odor_cues = None
 		self._light_cues = None
-		self._correct_spatial_cues = [1, 3]
+		self._correct_spatial_cues = [0, 3]
 		self._stage = 0
 		# self.set_random_odor_set()
 		# self.set_random_light_set()
@@ -165,7 +167,6 @@ class PlusMaze:
 		print('---------------------------------------------------------------------')
 		if env.get_stage() == 1:
 			env.set_random_odor_set()
-			# env.set_relevant_cue(CueType.LIGHT)
 			print("Stage {}: {} (Odors: {}, Correct:{})".format(env._stage, env.stage_names[env._stage],
 																[np.argmax(encoding) for encoding in
 																 env.get_odor_cues()],
@@ -183,13 +184,6 @@ class PlusMaze:
 																 env.get_odor_cues()],
 																np.argmax(env.get_correct_cue_value())))
 		elif env.get_stage() == 4:
-			env.set_relevant_cue(CueType.LIGHT)
-			env.set_random_odor_set()
-			print("Stage {}: {} (Lights: {}. Correct {})".format(env._stage, env.stage_names[env._stage],
-																 [np.argmax(encoding) for encoding in
-																  env.get_light_cues()],
-																 np.argmax(env.get_correct_cue_value())))
-		elif env.get_stage() == 5:
 			env._relevant_cue = CueType.SPATIAL
 			env.set_random_odor_set()
 			print("Stage {}: {} (Correct Doors: {})".format(env._stage, env.stage_names[env._stage],
