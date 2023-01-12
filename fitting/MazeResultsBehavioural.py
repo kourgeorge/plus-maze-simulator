@@ -552,16 +552,16 @@ def model_parameters_development(data_file_path):
 	df = rename_models(df)
 	#format the model_variables entry
 	df = df[df['model_variables'].notna()].reset_index()
-	df['model_variables'] = df['model_variables'].apply(lambda s: s.replace("\'", "\""))
-	df['model_variables'] = df['model_variables'].apply(json.loads)
 
 	#remove irrelevant trials
 	df = df[~((df.stage == 1) & (df['day in stage'] > num_days_reported[0]))]
 	df = df[~((df.stage == 2) & (df['day in stage'] > num_days_reported[1]))]
 	df = df[~((df.stage == 3) & (df['day in stage'] > reported_days_in_stage3))]
 
-	for model in ['MALearner.ACFTable']:
+	for model in ['AARL']:
 		df_model = df[df.model == model]
+		df_model['model_variables'] = df_model['model_variables'].apply(lambda s: s.replace("\'", "\""))
+		df_model['model_variables'] = df_model['model_variables'].apply(json.loads)
 
 		variables_names = df_model['model_variables'].tolist()[0].keys()
 		df_variables = pd.DataFrame(df_model['model_variables'].tolist())
