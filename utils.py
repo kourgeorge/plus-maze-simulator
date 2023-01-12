@@ -62,6 +62,15 @@ def dot_lists(V1, V2):
     return sum([x * y for x, y in zip(V1, V2)])
 
 
+def brain_name(architecture):
+	return "{}.{}".format(architecture[1].__name__, architecture[2].__name__)
+
+
+def get_timestamp():
+	import datetime
+	return datetime.datetime.now().strftime("%Y_%m_%d_%H_%M")
+
+
 def episode_rollout(env, agent):
 	state = env.reset()
 	# state = np.concatenate((env_state,agent.get_internal_state()))

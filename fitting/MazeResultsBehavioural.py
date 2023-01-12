@@ -4,8 +4,9 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from statannotations.Annotator import Annotator
 
+import utils
 from fitting import fitting_utils
-from fitting.fitting_utils import stable_unique
+from fitting.fitting_utils import stable_unique, rename_models, models_order_df
 from matplotlib.ticker import MaxNLocator
 import seaborn as sns
 import json
@@ -14,23 +15,6 @@ plt.rcParams.update({'font.size': 16})
 
 stages = ['ODOR1', 'ODOR2', 'LED']
 num_days_reported = [4, 2, 10]
-
-friendly_models_name_map = {'QLearner.QTable': 'SARL',
-							'OptionsLearner.OptionsTable': 'ORL',
-							'IALearner.ACFTable': 'FRL',
-							'IAAluisiLearner.ACFTable': 'MFRL',
-							'MALearner.ACFTable': 'AARL',
-							'MALearnerSimple.ACFTable':'MAARL'}
-
-
-def models_order_df(df):
-	models_in_df = np.unique(df.model)
-	return [model for model in friendly_models_name_map.values() if model in models_in_df]
-
-def rename_models(model_df):
-	model_df["model"] = model_df.model.map(
-		lambda x: friendly_models_name_map[x] if x in friendly_models_name_map.keys() else x)
-	return model_df
 
 
 def despine(axis):
@@ -202,7 +186,7 @@ def compare_model_subject_learning_curve_average(data_file_path):
 	axis.spines['right'].set_visible(False)
 	plt.subplots_adjust(left=0.12, bottom=0.15, right=0.98, top=0.98, wspace=0.2, hspace=0.1)
 
-	plt.savefig('fitting/Results/paper_figures/learning_curve_{}'.format(fitting_utils.get_timestamp()))
+	plt.savefig('fitting/Results/paper_figures/learning_curve_{}'.format(utils.get_timestamp()))
 
 
 def learning_curve_behavioral_boxplot(data_file_path):
@@ -394,7 +378,7 @@ def plot_models_fitting_result_per_stage(data_file_path):
 	handles, labels = g2.get_legend_handles_labels()
 	g2.legend(handles, labels, loc='lower left', prop={'size': 11}, labelspacing=0.2)
 
-	plt.savefig('fitting/Results/figures/all_models_by_stage_{}'.format(fitting_utils.get_timestamp()))
+	plt.savefig('fitting/Results/figures/all_models_by_stage_{}'.format(utils.get_timestamp()))
 
 
 def stage_transition_model_quality(data_file_path):
@@ -497,7 +481,7 @@ def compare_fitting_criteria(data_file_path):
 
 
 		plt.figure(figsize=(4.5, 4), dpi=120, facecolor='w')
-		axis=sns.barplot(x='model', y=criterion, data=data, order=list(friendly_models_name_map.values())[:5]) #orient='v'
+		axis=sns.barplot(x='model', y=criterion, data=data, order=models_order_df(data)) #orient='v'
 		minn = np.min(data[criterion])
 		maxx = np.max(data[criterion])
 		delta = 0.1 * (maxx - minn)
@@ -509,7 +493,7 @@ def compare_fitting_criteria(data_file_path):
 
 		axis.set_xlabel('')
 
-		plt.savefig('fitting/Results/figures/{}_{}'.format(criterion, fitting_utils.get_timestamp()))
+		plt.savefig('fitting/Results/figures/{}_{}'.format(criterion, utils.get_timestamp()))
 
 
 def show_fitting_parameters(data_file_path):

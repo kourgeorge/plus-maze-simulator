@@ -17,9 +17,6 @@ import time
 from enum import Enum
 
 
-trials_in_day = 100
-
-
 class ExperimentStatus(Enum):
     COMPLETED = 'completed'
     RUNNING = 'running'

@@ -10,6 +10,7 @@ import scipy
 import fitting.fitting_config as fitting_config
 
 import config
+import utils
 from environment import PlusMazeOneHotCues2ActiveDoors, CueType
 from fitting import fitting_utils
 from fitting.fitting_config import maze_models, MAZE_ANIMAL_DATA_PATH
@@ -75,7 +76,7 @@ class MazeBayesianModelFitting:
 		y = meanNLL
 
 		print("{}.\tx={},\t(meanNLL={:.3f}, medianNLL={:.3f}, sumNLL={:.3f}, stages={}), \t(meanL={:.3f}, "
-			  "medianL={:.3f}, gmeanL={:.3f}, stages={})".format(fitting_utils.brain_name(model),
+			  "medianL={:.3f}, gmeanL={:.3f}, stages={})".format(utils.brain_name(model),
 																 list(np.round(parameters, 4)),
 																 meanNLL, np.nanmedian(NLL), np.nansum(NLL),
 																 np.round(likelihood_stage.NLL.to_numpy(), 2),
@@ -133,7 +134,7 @@ class MazeBayesianModelFitting:
 		animal_data = [pd.read_csv(os.path.join(animals_data_folder, rat_file))
 					   for rat_file in list(np.sort(os.listdir(animals_data_folder)))]
 
-		timestamp = fitting_utils.get_timestamp()
+		timestamp = utils.get_timestamp()
 		fitting_results = {}
 		results_df = pd.DataFrame()
 		for subject_id, curr_rat in enumerate(animal_data):
@@ -151,7 +152,7 @@ class MazeBayesianModelFitting:
 				# plt.title(str(model[1]))
 
 				rat_data_with_likelihood['subject'] = subject_id
-				rat_data_with_likelihood["model"] = fitting_utils.brain_name(model)
+				rat_data_with_likelihood["model"] = utils.brain_name(model)
 				rat_data_with_likelihood["parameters"] = [search_result.x] * len(rat_data_with_likelihood)
 
 				results_df = results_df.append(rat_data_with_likelihood, ignore_index=True)

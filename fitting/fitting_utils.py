@@ -3,20 +3,12 @@ __author__ = 'gkour'
 import os
 import sys
 import numpy as np
+
+from fitting.fitting_config import friendly_models_name_map
 from motivatedagent import MotivatedAgent
 from environment import PlusMazeOneHotCues
 from rewardtype import RewardType
 import re
-
-
-def get_timestamp():
-	import datetime
-	return datetime.datetime.now().strftime("%Y_%m_%d_%H_%M")
-
-
-def brain_name(architecture):
-	#return "{}.{}.{}".format(architecture[0].__name__, architecture[1].__name__, architecture[2].__name__)
-	return "{}.{}".format(architecture[1].__name__, architecture[2].__name__)
 
 
 def episode_rollout_on_real_data(env: PlusMazeOneHotCues, agent: MotivatedAgent, current_trial):
@@ -116,3 +108,14 @@ def maze_experimental_data_preprocessing(experiment_data):
 																		 len(experiment_data)-len(df)))
 
 	return df
+
+
+def models_order_df(df):
+	models_in_df = np.unique(df.model)
+	return [model for model in friendly_models_name_map.values() if model in models_in_df]
+
+
+def rename_models(model_df):
+	model_df["model"] = model_df.model.map(
+		lambda x: friendly_models_name_map[x] if x in friendly_models_name_map.keys() else x)
+	return model_df
