@@ -11,7 +11,7 @@ import fitting.fitting_config as fitting_config
 
 import config
 import utils
-from environment import PlusMazeOneHotCues2ActiveDoors, CueType
+from environment import PlusMazeOneHotCues2ActiveDoors, CueType, PlusMazeOneHotCues
 from fitting import fitting_utils
 from fitting.fitting_config import maze_models, MAZE_ANIMAL_DATA_PATH
 from fitting.PlusMazeExperimentFitting import PlusMazeExperimentFitting
@@ -50,7 +50,7 @@ class MazeBayesianModelFitting:
 		agent = MotivatedAgent(brain(learner_instance, beta=beta),
 			motivation=RewardType.WATER,
 			motivated_reward_value=config.MOTIVATED_REWARD,
-			non_motivated_reward_value=0, exploration_param=0)
+			non_motivated_reward_value=config.NON_MOTIVATED_REWARD, exploration_param=0)
 
 		experiment_stats, rat_data_with_likelihood = PlusMazeExperimentFitting(self.env, agent, dashboard=False,
 																			   experiment_data=self.experiment_data)
@@ -146,6 +146,11 @@ class MazeBayesianModelFitting:
 
 
 if __name__ == '__main__':
+	# MazeBayesianModelFitting.all_subjects_all_models_optimization(
+	# 	PlusMazeOneHotCues2ActiveDoors(relevant_cue=CueType.ODOR, stimuli_encoding=10),
+	# 	MAZE_ANIMAL_DATA_PATH, maze_models, n_calls=30)
+
 	MazeBayesianModelFitting.all_subjects_all_models_optimization(
-		PlusMazeOneHotCues2ActiveDoors(relevant_cue=CueType.ODOR, stimuli_encoding=10),
-		MAZE_ANIMAL_DATA_PATH, maze_models, n_calls=20)
+		PlusMazeOneHotCues(relevant_cue=CueType.ODOR, stimuli_encoding=10), fitting_config.MOTIVATED_ANIMAL_DATA_PATH,
+		maze_models, n_calls=50)
+
