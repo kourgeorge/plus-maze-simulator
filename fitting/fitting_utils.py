@@ -31,9 +31,14 @@ def episode_rollout_on_real_data(env: PlusMazeOneHotCues, agent: MotivatedAgent,
 		act_dist += dec_1hot
 		new_state, outcome, terminated, info = env.step(action)
 		reward = agent.evaluate_outcome(outcome)
+
+		# This validates that if the reward in the data is 0 the reward by the simulation should be RewardType.NONE.
+		# and vice versa, meaning if the reward in the data is not 0 then the reward type in the simulation must not be none.
 		if (outcome == RewardType.NONE and current_trial.reward != 0) or \
 				(outcome != RewardType.NONE and current_trial.reward == 0):
-			raise Exception("There is a discrepancy between data and simulation reward.")
+			raise Exception("There is a discrepancy between data and simulation reward!!\ntrial={}, stage={}, action={}"
+							" reward={}".format(current_trial.trial,current_trial.stage,current_trial.action, current_trial.reward))
+
 		total_reward += reward
 		model_action_dist = agent.get_brain().think(np.expand_dims(state, 0), agent).squeeze().detach().numpy()
 		likelihood += model_action_dist[action]
