@@ -15,7 +15,7 @@ import json
 plt.rcParams.update({'font.size': 16})
 
 stages = ['ODOR1', 'ODOR2', 'LED']
-num_days_reported = [4, 2, 10]
+num_days_reported = [4, 2, 7]
 
 
 def despine(axis):
@@ -215,8 +215,6 @@ def learning_curve_behavioral_boxplot(data_file_path):
 
 	for stage_day in [8, 11]:
 		axis.axvline(x=stage_day + 0.5, alpha=0.5, dashes=(5, 2, 1, 2), lw=2, color='grey')
-	days_info_df['ind'] = days_info_df['ind'].astype(float)
-	animals_in_day=days_info_df.groupby(['ind'], sort=True).count().reset_index().sort_values(by='ind').subject
 
 	animals_in_day = [len(np.unique(days_info_df[days_info_df.ind==day_stage].subject)) for day_stage in order]
 	axis.axhline(y=0.5, alpha=0.7, lw=1, color='grey', linestyle='--')
@@ -224,7 +222,7 @@ def learning_curve_behavioral_boxplot(data_file_path):
 	#add count of animals in each day.
 	axis.set_ylabel([0.4,1])
 	for xtick in axis.get_xticks():
-		axis.text(xtick, 0.41,animals_in_day[xtick],
+		axis.text(xtick, 0.41, animals_in_day[xtick],
 				horizontalalignment='center',size='small',color='black',weight='semibold')
 
 	ticks = ["{}".format(int(x[1:])) if (int(x[1:])-1)%3==0 else "" for ind, x in enumerate(order) ]
@@ -327,7 +325,7 @@ def show_likelihood_trials_scatter(data_file_path):
 
 	plt.subplots_adjust(left=0.07, bottom=0.12, right=0.9, top=0.9, wspace=0.2, hspace=0.5)
 
-	plt.savefig('fitting/Results/figures/trial_likelihood_dispersion_{}'.format(fitting_utils.get_timestamp()))
+	plt.savefig('fitting/Results/figures/trial_likelihood_dispersion_{}'.format(utils.get_timestamp()))
 	#plt.show()
 
 
@@ -471,7 +469,7 @@ def compare_fitting_criteria(data_file_path):
 	data['LPT'] = data.likelihood
 
 	data.LL = -data.LL
-	for criterion in ['AIC','BIC','LPT']:
+	for criterion in ['AIC', 'BIC', 'LPT']:
 		# fig = plt.figure(figsize=(35, 7), dpi=120, facecolor='w')
 		# for subject in stable_unique(data.subject):
 		# 	axis = fig.add_subplot(3, 3, subject + 1)
@@ -492,9 +490,8 @@ def compare_fitting_criteria(data_file_path):
 		#plot the average fitting quality for the entire population.
 		#sum_df = likelihood_trial.groupby(['model']).mean().reset_index()
 
-
 		plt.figure(figsize=(4.5, 4), dpi=120, facecolor='w')
-		axis=sns.barplot(x='model', y=criterion, data=data, order=models_order_df(data)) #orient='v'
+		axis = sns.barplot(x='model', y=criterion, data=data, order=models_order_df(data)) #orient='v'
 		minn = np.min(data[criterion])
 		maxx = np.max(data[criterion])
 		delta = 0.1 * (maxx - minn)
@@ -664,19 +661,18 @@ def average_likelihood(data_file_path):
 		axis.axhline(y=likelihood, alpha=1, lw=2, color=colors[ind])
 
 if __name__ == '__main__':
-	file_path = '/Users/gkour/repositories/plusmaze/fitting/Results/Rats-Results/reported_11_8.csv' #reported
-	file_path = '/Users/gkour/repositories/plusmaze/fitting/Results/Rats-Results/fitting_results_2023_01_10_03_20_20.csv'
-	#learning_curve_behavioral_boxplot('/Users/gkour/repositories/plusmaze/fitting/Results/Rats-Results/all_data.csv')
-	#models_fitting_quality_over_times_average(file_path)
+	file_path = 'fitting/Results/Rats-Results/reported_results_tabular_modelling/main_results_reported_10_1.csv' #reported
+	learning_curve_behavioral_boxplot('fitting/Results/Rats-Results/reported_results_tabular_modelling/all_data.csv')
+	models_fitting_quality_over_times_average(file_path)
 	#models_fitting_quality_over_times(file_path)
-	#compare_model_subject_learning_curve_average(file_path)
+	compare_model_subject_learning_curve_average(file_path)
 	##compare_model_subject_learning_curve(file_path)
 	plot_models_fitting_result_per_stage(file_path)
-	#show_likelihood_trials_scatter(file_path)
+	show_likelihood_trials_scatter(file_path)
 	#stage_transition_model_quality(file_path)
-	#show_fitting_parameters(file_path)
+	show_fitting_parameters(file_path)
 	compare_fitting_criteria(file_path)
 	average_likelihood(file_path)
 	#compare_neural_tabular_models(file_path)
-	#model_parameters_development(file_path)
+	model_parameters_development(file_path)
 	x = 2
