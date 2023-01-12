@@ -65,13 +65,14 @@ def dot_lists(V1, V2):
 def episode_rollout(env, agent):
 	state = env.reset()
 	# state = np.concatenate((env_state,agent.get_internal_state()))
+	action_dist = agent.get_brain().think(np.expand_dims(state, 0), agent)
 	action = agent.decide(state)
 	dec_1hot = np.zeros(env.num_actions())
 	dec_1hot[action] = 1
 	new_state, outcome, terminated, info = env.step(action)
 	reward = agent.evaluate_outcome(outcome)
 	agent.add_experience(state, dec_1hot, reward, outcome, new_state, terminated, info)
-	return state, action, outcome, reward
+	return state, action_dist, action, outcome, reward
 
 
 def unsupervised_dimensionality(samples_embedding, explained_variance=0.95):
