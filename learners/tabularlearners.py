@@ -129,11 +129,11 @@ class MALearner(IALearner):
 
 		phi_s = utils.softmax(self.model.phi)
 
-		for selected_odor, selected_color, selected_door, delta, reward in zip(selected_odors, selected_colors, actions, deltas, reward_batch):
+		for choice_value, selected_odor, selected_color, selected_door, delta, reward in zip(selected_action_value, selected_odors, selected_colors, actions, deltas, reward_batch):
 			V = np.array([self.model.V['odors'][selected_odor],
 						  self.model.V['colors'][selected_color],
 						  self.model.V['spatial'][selected_door]])
-			delta_phi = self.calc_delta_phi(selected_action_value, reward, V)
+			delta_phi = self.calc_delta_phi(choice_value, reward, V)
 
 			self.model.phi += self.alpha_phi * delta * phi_s * delta_phi
 
