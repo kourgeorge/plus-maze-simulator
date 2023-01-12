@@ -25,7 +25,8 @@ class MotivatedAgent:
 
     def decide(self, state):
         decision = self._brain.think(np.expand_dims(state, 0), self).squeeze().detach().numpy()
-        action = epsilon_greedy(self._exploration_param, decision)
+        #action = epsilon_greedy(self._exploration_param, decision)
+        action = dist_selection(decision)
         return action
 
     def evaluate_outcome(self, outcome):
