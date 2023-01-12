@@ -84,18 +84,6 @@ class MazeBayesianModelFitting:
 																 geomeanL,
 																 np.round(likelihood_stage.likelihood.to_numpy(), 2)))
 
-
-
-		# if meanL > 0.68 or meanNLL < 0.61:
-		# 	fig = plt.figure(dpi=120, facecolor='w')
-		# 	axis = fig.add_subplot(2, 1, 1)
-		# 	rat_data_with_likelihood.likelihood.hist(ax=axis)
-		# 	axis.set_title('{}:{}, L,NLL={},{}'.format(model[1], np.round(parameters, 3), np.round(meanL,2), np.round(meanNLL,2)))
-		# 	axis.set_ylabel('likelihood')
-		# 	axis = fig.add_subplot(2, 1, 2)
-		# 	rat_data_with_likelihood.NLL.hist(ax=axis)
-		# 	axis.set_ylabel('NLL')
-
 		MazeBayesianModelFitting.LvsNLL+=[[meanL, meanNLL]]
 
 		return np.clip(y, a_min=-5000, a_max=5000)
@@ -145,11 +133,7 @@ class MazeBayesianModelFitting:
 				model, parameters_space = curr_model
 				search_result, experiment_stats, rat_data_with_likelihood = \
 					MazeBayesianModelFitting(env, curr_rat, model, parameters_space, n_calls).optimize()
-				#plot correlations
-				# plt.scatter(np.array(MazeBayesianModelFitting.LvsNLL)[:, 0], np.array(MazeBayesianModelFitting.LvsNLL)[:, 1])
-				# plt.xlabel('L')
-				# plt.ylabel('NLL')
-				# plt.title(str(model[1]))
+
 
 				rat_data_with_likelihood['subject'] = subject_id
 				rat_data_with_likelihood["model"] = utils.brain_name(model)
