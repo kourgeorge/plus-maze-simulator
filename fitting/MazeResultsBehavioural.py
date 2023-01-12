@@ -3,6 +3,7 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 from statannotations.Annotator import Annotator
+import functools
 
 import utils
 from fitting import fitting_utils
@@ -197,7 +198,18 @@ def learning_curve_behavioral_boxplot(data_file_path):
 	days_info_df = df.groupby(['subject', 'model', 'stage', 'day in stage'], sort=False).mean().reset_index()
 
 	days_info_df['ind'] = days_info_df.apply(lambda x:str(x.stage)+str(x['day in stage']), axis='columns')
-	order = [str(x) for x in sorted(np.unique(days_info_df['ind']).astype(int))]
+
+	def compare(x, y):
+		if int(x[0]) < int(y[0]):
+			return -1
+		elif int(x[0]) > int(y[0]):
+			return 1
+		elif int(x[1:]) < int(y[1:]):
+			return -1
+		else:
+			return 1
+
+	order = sorted(np.unique(days_info_df['ind']), key=functools.cmp_to_key(compare))
 
 	axis = sns.boxplot(data=days_info_df, x='ind', y='reward',  order=order, palette="flare")
 
@@ -206,6 +218,7 @@ def learning_curve_behavioral_boxplot(data_file_path):
 	days_info_df['ind'] = days_info_df['ind'].astype(float)
 	animals_in_day=days_info_df.groupby(['ind'], sort=True).count().reset_index().sort_values(by='ind').subject
 
+	animals_in_day = [len(np.unique(days_info_df[days_info_df.ind==day_stage].subject)) for day_stage in order]
 	axis.axhline(y=0.5, alpha=0.7, lw=1, color='grey', linestyle='--')
 
 	#add count of animals in each day.
