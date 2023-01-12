@@ -4,6 +4,7 @@ import pandas as pd
 
 from brains.consolidationbrain import ConsolidationBrain
 from environment import PlusMaze, PlusMazeOneHotCues, CueType
+from models.tabularmodels import FTable
 from motivatedagent import MotivatedAgent
 from rewardtype import RewardType
 import numpy as np
@@ -24,7 +25,7 @@ class ExperimentStatus(Enum):
     RUNNING = 'running'
 
 
-def PlusMazeExperiment(env: PlusMaze, agent:MotivatedAgent, dashboard=False):
+def PlusMazeExperiment(env: PlusMaze, agent: MotivatedAgent, dashboard=False):
     max_experiment_length = len(env.stage_names) * 10  # days
     env.reset()
     experiment_data = pd.DataFrame()
@@ -47,7 +48,8 @@ def PlusMazeExperiment(env: PlusMaze, agent:MotivatedAgent, dashboard=False):
     dashboard_screenshots_path = os.path.join('/Users/gkour/repositories/plusmaze/Results', '{}-{}'.format(agent.get_brain(),time.strftime("%Y%m%d-%H%M")))
 
     trial = 0
-    print('============================ Brain:{}, Network:{} ======================='.format(str(agent.get_brain()), str(agent.get_brain().get_model())))
+    day_in_stage = 0
+    print('============================ Brain:{}, Learner:{}, Model:{}, ======================='.format(str(agent.get_brain()), str(agent.get_brain().get_learner()), str(agent.get_brain().get_model())))
     print("Stage {}: {} - Water Motivated, odor relevant. (Odors: {}, Correct: {})".format(env.get_stage(),
                                                                                            env.stage_names[env.get_stage()],
                                                                                            [np.argmax(encoding) for encoding in env.get_odor_cues()],
@@ -55,25 +57,27 @@ def PlusMazeExperiment(env: PlusMaze, agent:MotivatedAgent, dashboard=False):
 
     while env.get_stage() < len(env.stage_names):
 
-        if trial > trials_in_day * max_experiment_length:
+        if trial > config.TRIALS_IN_DAY * max_experiment_length:
             print("Agent failed to learn.")
             return stats, experiment_data
 
         trial += 1
-        state, action, outcome, reward = utils.episode_rollout(env, agent)
+        state, action_dist, action, outcome, reward = utils.episode_rollout(env, agent)
         trial_dict = env.format_state(state)
 
-        trial_dict['trial'] = trial % trials_in_day
+        trial_dict['trial'] = trial % config.TRIALS_IN_DAY
         trial_dict['stage'] = env.get_stage() + 1
         trial_dict['action'] = action + 1
         trial_dict['reward'] = reward
-        trial_dict['day in stage'] = trial // trials_in_day + 1
+        trial_dict['day in stage'] = day_in_stage
+        trial_dict['model_variables'] = agent.get_brain().get_model().get_model_metrics()
         #experiment_data = experiment_data.append(trial_dict, ignore_index=True)
         experiment_data = pd.concat([experiment_data, pd.DataFrame.from_records([trial_dict])])
 
         loss = agent.smarten()
-        if trial % trials_in_day == 0:
-            stats.update_stats_from_agent(agent, trial, trials_in_day)
+        if trial % config.TRIALS_IN_DAY == 0:
+            day_in_stage += 1
+            stats.update_stats_from_agent(agent, trial, config.TRIALS_IN_DAY)
             pre_stage_transition_update()
 
             print(
@@ -90,7 +94,12 @@ def PlusMazeExperiment(env: PlusMaze, agent:MotivatedAgent, dashboard=False):
             current_criterion = np.mean(stats.reports[-1].correct)
             reward = np.mean(stats.reports[-1].reward)
             if current_criterion > config.SUCCESS_CRITERION_THRESHOLD:# and reward > 0.6:
-                print(agent.get_brain().get_model().phi)
+                day_in_stage = 0
+                if hasattr(agent.get_brain().get_model(), 'phi'):
+                    print(utils.softmax(agent.get_brain().get_model().phi))
+                if isinstance(agent.get_brain().get_model(), FTable):
+                    agent.get_brain().get_model().reset_feature_values()
+
                 #print(torch.softmax(agent.get_brain().get_model().phi, axis=0))
                 env.set_next_stage(agent)
 

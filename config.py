@@ -1,6 +1,7 @@
 __author__ = 'gkour'
 
 REPORTING_INTERVAL = 100
+TRIALS_IN_DAY = 100
 
 # Brain Params
 LEARNING_RATE = 0.05

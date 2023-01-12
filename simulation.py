@@ -38,6 +38,7 @@ brains = [#(TDBrain, QLearner, QTable),
 def run_simulation(env):
     repetitions = 20
 
+    all_experiment_data = pd.DataFrame()
     brains_reports = []
     for agent_spec in brains:
         completed_experiments = 0
@@ -52,9 +53,13 @@ def run_simulation(env):
                                    motivation=RewardType.WATER, motivated_reward_value=config.MOTIVATED_REWARD,
                                    non_motivated_reward_value=config.NON_MOTIVATED_REWARD)
             experiment_stats, experiment_data = PlusMazeExperiment(env, agent, dashboard=False)
+            experiment_data['model'] = utils.brain_name(architecture)
+            experiment_data['subject'] = completed_experiments
+
             if experiment_stats.metadata['experiment_status'] == ExperimentStatus.COMPLETED:
                 brain_repetition_reports[completed_experiments] = experiment_stats
                 completed_experiments += 1
+                all_experiment_data = all_experiment_data.append(experiment_data, ignore_index=True)
             else:
                 aborted_experiments += 1
         brains_reports.append(brain_repetition_reports)
