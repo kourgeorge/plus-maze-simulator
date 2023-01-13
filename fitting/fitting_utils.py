@@ -47,7 +47,7 @@ def episode_rollout_on_real_data(env: PlusMazeOneHotCues, agent: MotivatedAgent,
 
 		env.set_state(current_trial)
 		info.likelihood = likelihood
-		info.model_action = agent.decide(state)
+		info.model_action = agent.decide_greedy(state)
 		_, model_action_outcome, _, _ = env.step(info.model_action)
 		info.network_outcome = model_action_outcome
 
