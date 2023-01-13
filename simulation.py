@@ -91,7 +91,7 @@ def run_simulation(env):
 			if experiment_stats.metadata['experiment_status'] == ExperimentStatus.COMPLETED:
 				brain_repetition_reports[completed_experiments] = experiment_stats
 				completed_experiments += 1
-				all_experiment_data = all_experiment_data.append(experiment_data, ignore_index=True)
+				all_experiment_data = pd.concat([all_experiment_data,experiment_data])
 			else:
 				aborted_experiments += 1
 		brains_reports.append(brain_repetition_reports)

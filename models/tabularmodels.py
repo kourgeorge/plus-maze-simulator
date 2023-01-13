@@ -126,7 +126,7 @@ class FTable:
 		return self.V[dimension][feature]
 
 	def get_model_metrics(self):
-		print("odor:{}\ncolor:{},\nspatial:{}".format(self.V['odors'], self.V['colors'], self.V['spatial']))
+		#print("odor:{}\ncolor:{},\nspatial:{}".format(self.V['odors'], self.V['colors'], self.V['spatial']))
 		return {'odor': entropy(self.V['odors'])/entropy(np.ones_like(self.V['odors']))/np.count_nonzero(self.V['odors']),
 				'color': entropy(self.V['colors'])/entropy(np.ones_like(self.V['colors']))/np.count_nonzero(self.V['colors']),
 				'spatial': entropy(self.V['spatial'])/entropy(np.ones_like(self.V['spatial']))/np.count_nonzero(self.V['spatial'])
@@ -164,7 +164,7 @@ class ACFTable(FTable):
 		return doors_value
 
 	def get_model_metrics(self):
-		print("odor:{}\ncolor:{},\nspatial:{}".format(self.V['odors'], self.V['colors'], self.V['spatial']))
+		#print("odor:{}\ncolor:{},\nspatial:{}".format(self.V['odors'], self.V['colors'], self.V['spatial']))
 		phi = utils.softmax(self.phi)
 		return {'odor_attn': phi[0],
 				'color_attn': phi[1],

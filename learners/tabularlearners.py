@@ -77,6 +77,9 @@ class IALearner(AbstractLearner):
 
 		return delta
 
+	def __str__(self):
+		return 'IALearner'
+
 
 class IAAluisiLearner(AbstractLearner):
 	def __init__(self, model: FTable, learning_rate=0.01):
