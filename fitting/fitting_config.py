@@ -25,6 +25,9 @@ MAZE_ANIMALS = [0, 1, 2, 3, 4, 5, 6, 7, 8]
 nmr = Real(name='nmr', low=-1, high=1)
 batch_size = Integer(name='batch_size', low=1, high=20)
 
+FITTING_ITERATIONS = 20
+
+
 if BAYESIAN_OPTIMIZATION:
 	lr = Real(name='lr', low=0.001, high=0.4, prior='log-uniform')
 	attention_lr = Real(name='attention_lr', low=0.001, high=0.4, prior='log-uniform')
@@ -83,6 +86,8 @@ friendly_models_name_map = {'QLearner.QTable': 'SARL',
 							'MALearner.ACFTable': 'AARL',
 							'MALearnerSimple.ACFTable':'MAARL',
 							'DQN.FCNet':'FCNet',
+							'DQN.FC2LayersNet':'FC2Net',
 							'DQN.UANet':'UANet',
 							'DQN.ACLNet':'ACLNet',
-							'DQNAtt.ACLNet':'ACLNet2'}
+							'DQNAtt.ACLNet':'ACLNet2'
+							}

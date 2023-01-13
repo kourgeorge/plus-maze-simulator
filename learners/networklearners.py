@@ -29,6 +29,9 @@ class DQN(AbstractLearner):
 		self.optimizer.step()
 		return loss.item()
 
+	def __str__(self):
+		return 'DQNLearner'
+
 
 class DQNAtt(AbstractLearner):
 	def __init__(self, model: AbstractNetworkModel, optimizer=optim.SGD, learning_rate=0.01, alpha_phi=0.01):

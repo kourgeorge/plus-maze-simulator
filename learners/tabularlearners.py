@@ -1,7 +1,6 @@
 __author__ = 'gkour'
 
 import numpy as np
-import copy
 
 import utils
 from learners.abstractlearner import AbstractLearner
@@ -24,6 +23,9 @@ class QLearner(AbstractLearner):
 			self.model.set_state_action_value(state, action, update_q_value)
 
 		return np.mean(deltas)
+
+	def __str__(self):
+		return 'QLearner'
 
 
 class OptionsLearner(AbstractLearner):

@@ -152,5 +152,5 @@ if __name__ == '__main__':
 
 	MazeBayesianModelFitting.all_subjects_all_models_optimization(
 		PlusMazeOneHotCues(relevant_cue=CueType.ODOR, stimuli_encoding=10), fitting_config.MOTIVATED_ANIMAL_DATA_PATH,
-		maze_models, n_calls=50)
+		maze_models, n_calls=fitting_config.FITTING_ITERATIONS)
 

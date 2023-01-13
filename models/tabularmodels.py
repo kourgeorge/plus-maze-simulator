@@ -50,7 +50,7 @@ class OptionsTable:
 
 	def __init__(self, encoding_size, num_channels, num_actions, use_location_cue=True, initial_value=config.INITIAL_FEATURE_VALUE):
 		self._num_actions = num_actions
-		self.C = defaultdict(lambda: initial_value) # familiar options are stored as tupples (color, odor and possibly, location).
+		self.C = defaultdict(lambda: float(initial_value)) # familiar options are stored as tupples (color, odor and possibly, location).
 		self.encoding_size = encoding_size
 		self.use_location_cue = use_location_cue
 
