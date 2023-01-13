@@ -17,12 +17,36 @@ plt.rcParams.update({'font.size': 12})
 
 #stages = ['ODOR1', 'ODOR2', 'LED']
 stages = ['Baseline', 'IDshift', 'Mshift(Food)', 'MShift(Water)+IDshift', 'EDshift(Spatial)']
-num_days_reported = [4, 2, 10]
+num_days_reported = [8, 2, 4, 2, 2]
 
 
 def despine(axis):
 	axis.spines['top'].set_visible(False)
 	axis.spines['right'].set_visible(False)
+
+
+def filter_days(df):
+	for ind, stage in enumerate(stages):
+		df = df[~((df.stage == ind+1) & (df['day in stage'] > num_days_reported[ind]))]
+	return df
+
+
+def index_days(df):
+	df['ind'] = df.apply(lambda x:str(x.stage)+'.'+str(x['day in stage']), axis='columns')
+
+	def compare(x, y):
+		if int(x[0]) < int(y[0]):
+			return -1
+		elif int(x[0]) > int(y[0]):
+			return 1
+		elif int(x[2:]) < int(y[2:]):
+			return -1
+		else:
+			return 1
+
+	order = sorted(np.unique(df['ind']), key=functools.cmp_to_key(compare))
+
+	return df, order
 
 
 def models_fitting_quality_over_times_average(data_file_path):
@@ -34,19 +58,19 @@ def models_fitting_quality_over_times_average(data_file_path):
 	model_df['ML'] = np.exp(-model_df.NLL)
 
 	model_df = rename_models(model_df)
-
-	model_df = model_df[~((model_df.stage == 1) & (model_df['day in stage'] > num_days_reported[0]))]
-	model_df = model_df[~((model_df.stage == 2) & (model_df['day in stage'] > num_days_reported[1]))]
-	model_df = model_df[~((model_df.stage == 3) & (model_df['day in stage'] > num_days_reported[2]))]
-
-	model_df['ind'] = model_df.stage+0.1*model_df['day in stage']
-	model_df['ind'] = model_df['ind'].astype(str)
+	model_df = filter_days(model_df)
+	model_df, order = index_days(model_df)
+	# this is needed because there is no good way to order the x-axis in lineplot.
+	model_df.sort_values('ind', axis=0, ascending=True, inplace=True)
 
 	fig = plt.figure(figsize=(7.5, 4), dpi=100, facecolor='w')
-	axis = sns.lineplot(x="ind", y="likelihood", hue="model", hue_order=models_order_df(model_df),
+
+	axis = sns.lineplot(x="ind", y="likelihood", hue="model", size_order=order, sort=False,
+						hue_order=models_order_df(model_df),
 						data=model_df, errorbar="se", err_style='band')
-	for stage_day in [3, 5]:
-		axis.axvline(x=stage_day + 0.5, alpha=0.5, dashes=(5, 2, 1, 2), lw=2, color='gray')
+
+	for stage_day in np.cumsum(num_days_reported)[:-1]:
+		axis.axvline(x=stage_day - 0.5, alpha=0.5, dashes=(5, 2, 1, 2), lw=2, color='gray')
 
 	axis.set_xlabel('Stage.Day')
 	axis.set_ylabel('Average Likelihood')
@@ -160,12 +184,11 @@ def compare_model_subject_learning_curve_average(data_file_path):
 	model_df = df.groupby(['subject', 'model', 'stage', 'day in stage'], sort=False).mean().reset_index()
 
 	model_df = rename_models(model_df)
-	model_df = model_df[~((model_df.stage == 1) & (model_df['day in stage'] > num_days_reported[0]))]
-	model_df = model_df[~((model_df.stage == 2) & (model_df['day in stage'] > num_days_reported[1]))]
-	model_df = model_df[~((model_df.stage == 3) & (model_df['day in stage'] > num_days_reported[2]))]
+	model_df = filter_days(model_df)
+	model_df, order = index_days(model_df)
+	# this is needed because there is no good way to order the x-axis in lineplot.
+	model_df.sort_values('ind', axis=0, ascending=True, inplace=True)
 
-	model_df['ind'] = model_df.stage+0.1*model_df['day in stage']
-	model_df['ind'] = model_df['ind'].astype(str)
 
 	fig = plt.figure(figsize=(7.5, 4), dpi=100, facecolor='w')
 	axis = sns.lineplot(x="ind", y="model_reward", hue="model", hue_order=models_order_df(model_df),
@@ -175,10 +198,8 @@ def compare_model_subject_learning_curve_average(data_file_path):
 	axis = sns.lineplot(x="ind", y="reward", data=subject_reward_df, errorbar="se", err_style='band', linestyle='--',
 						ax=axis, color='black')
 
-	#plt.legend(handles=plt.legend().legendHandles, labels=['a','b','c','d','e'])
-	#axis = sns.barplot(x="ind", y="reward", data=subject_reward_df, errorbar="se")
-	for stage_day in [3, 5]:
-		axis.axvline(x=stage_day + 0.5, alpha=0.5, dashes=(5, 2, 1, 2), lw=2, color='grey')
+	for stage_day in np.cumsum(num_days_reported)[:-1]:
+		axis.axvline(x=stage_day - 0.5, alpha=0.5, dashes=(5, 2, 1, 2), lw=2, color='gray')
 
 	axis.set_xlabel('Stage.Day')
 	axis.set_ylabel('Success Rate')
@@ -199,27 +220,12 @@ def learning_curve_behavioral_boxplot(data_file_path):
 	df = df[df.model == df.model[0]]
 	days_info_df = df.groupby(['subject', 'model', 'stage', 'day in stage'], sort=False).mean().reset_index()
 
-	days_info_df['ind'] = days_info_df.apply(lambda x:str(x.stage)+str(x['day in stage']), axis='columns')
-
-	def compare(x, y):
-		if int(x[0]) < int(y[0]):
-			return -1
-		elif int(x[0]) > int(y[0]):
-			return 1
-		elif int(x[1:]) < int(y[1:]):
-			return -1
-		else:
-			return 1
-
-	order = sorted(np.unique(days_info_df['ind']), key=functools.cmp_to_key(compare))
+	days_info_df, order = index_days(days_info_df)
 
 	axis = sns.boxplot(data=days_info_df, x='ind', y='reward',  order=order, palette="flare")
 
 	for stage_day in [13, 18, 24, 27]:
 		axis.axvline(x=stage_day + 0.5, alpha=0.5, dashes=(5, 2, 1, 2), lw=2, color='grey')
-
-	#days_info_df['ind'] = days_info_df['ind'].astype(float)
-	#animals_in_day = days_info_df.groupby(['ind'], sort=True).count().reset_index().sort_values(by='ind').subject
 
 	animals_in_day = [len(np.unique(days_info_df[days_info_df.ind==day_stage].subject)) for day_stage in order]
 	axis.axhline(y=0.5, alpha=0.7, lw=1, color='grey', linestyle='--')
@@ -242,49 +248,6 @@ def learning_curve_behavioral_boxplot(data_file_path):
 	plt.subplots_adjust(left=0.08, bottom=0.15, right=0.99, top=0.99, wspace=0.1, hspace=0.4)
 
 
-def compare_model_subject_learning_curve(data_file_path):
-	df = pd.read_csv(data_file_path)
-	df = df[['subject', 'model', 'stage', 'day in stage', 'trial', 'reward', 'model_reward']].copy()
-
-	days_info_df = df.groupby(['subject', 'model', 'stage', 'day in stage'], sort=False).mean().reset_index()
-
-	fig = plt.figure(figsize=(35, 7), dpi=120, facecolor='w')
-	for i, subject in enumerate(stable_unique(df["subject"])):
-		df_sub = days_info_df[days_info_df["subject"] == subject]
-		axis = fig.add_subplot(330 + i + 1)
-
-		for model in stable_unique(df_sub["model"]):
-			model_subject_df = df_sub[df_sub["model"] == model].reset_index()
-			days = list(model_subject_df.index + 1)
-			axis.plot(days, model_subject_df.model_reward, label=model, alpha=0.7)
-			axis.xaxis.set_major_locator(MaxNLocator(integer=True))
-
-			axis.set_title("Subject {}".format(i + 1))
-			axis.set_xlabel('Days') if i > 5 else 0
-			axis.set_ylabel("Accuracy") if i % 3 == 0 else 0
-			axis.set_yticklabels(['']) if i % 3 != 0 else 0
-
-		stage_transition_days = np.where(model_subject_df['day in stage'] == 1)[0][1:]
-		for stage_day in stage_transition_days:
-			axis.axvline(x=stage_day + 0.5, alpha=0.5, dashes=(5, 2, 1, 2), lw=2)
-
-		axis.plot(days, model_subject_df.reward, label='subject', color='black')
-		axis.axhline(y=0.5, alpha=0.7, lw=1, color='grey', linestyle='--')
-		axis.axhline(y=0.75, alpha=0.5, lw=0.7, color='blue', linestyle='--')
-		axis.set_ylim([0.3, 1.05])
-
-	handles, labels = axis.get_legend_handles_labels()
-	fig.legend(handles, labels, loc=(0.01, 0.82), prop={'size': 8}, labelspacing=0.3)  # loc=(0.55,0.1), prop={'size': 7}
-
-	plt.subplots_adjust(left=0.05, bottom=0.1, right=0.99, top=0.8, wspace=0.1, hspace=0.4)
-
-	axis.spines['top'].set_visible(False)
-	axis.spines['right'].set_visible(False)
-
-	plt.savefig('fitting/Results/figures/learning_curve_{}'.format(fitting_utils.get_timestamp()))
-	#plt.show()
-
-
 def show_likelihood_trials_scatter(data_file_path):
 	df = pd.read_csv(data_file_path)
 	df = df[['subject', 'model', 'stage', 'day in stage', 'trial', 'likelihood']].copy()
@@ -303,25 +266,24 @@ def show_likelihood_trials_scatter(data_file_path):
 	# 	fig.legend(handles, labels, loc=(0.01, 0.90), prop={'size': 10},
 	# 			   labelspacing=0.3)  # loc=(0.55,0.1), prop={'size': 7}
 
-
 	sns.set_theme(style="white")
 	fig = plt.figure(figsize=(11, 5), dpi=100, facecolor='w')
 
 	for i, model in enumerate(stable_unique(df.model)):
 		for s, stage in enumerate(stages):
-			axis = fig.add_subplot(len(stable_unique(df.model)), 3, i * 3 + s + 1)
+			axis = fig.add_subplot(len(stable_unique(df.model)), len(stages), i * len(stages) + s + 1)
 			model_df = df[(df.model == model) & (df.stage == s + 1)]
 			sns.histplot(data=model_df, x="likelihood", kde=True, stat='percent', fill=True, element="step")
 			axis.axvline(x=np.mean(model_df.likelihood), color='red', label='mean', alpha=0.7,)
 			axis.axvline(x=np.median(model_df.likelihood), color='green', label='median', alpha=0.7)
-			axis.axvline(x=0.5, color='gray', label='', alpha=0.7, linestyle='--')
+			axis.axvline(x=0.25, color='gray', label='', alpha=0.7, linestyle='--')
 
 			axis.set_xlabel(stages[s]) if i== len(stable_unique(df.model))-1 else axis.set_xlabel('')
 			axis.set_xticklabels(['']) if i < len(stable_unique(df.model))-1 else 0
 			axis.set_ylabel(model) if s == 0 else axis.set_ylabel('')
 
-			axis.set_xlim([0,1])
-			axis.set_ylim([0,15]) if s==1 else  axis.set_ylim([0,10])
+			#axis.set_xlim([0,1])
+			#axis.set_ylim([0,15]) if s==1 else  axis.set_ylim([0,10])
 
 			despine(axis)
 
@@ -330,7 +292,7 @@ def show_likelihood_trials_scatter(data_file_path):
 
 	plt.subplots_adjust(left=0.07, bottom=0.12, right=0.9, top=0.9, wspace=0.2, hspace=0.5)
 
-	plt.savefig('fitting/Results/figures/trial_likelihood_dispersion_{}'.format(fitting_utils.get_timestamp()))
+	plt.savefig('fitting/Results/figures/trial_likelihood_dispersion_{}'.format(utils.get_timestamp()))
 	#plt.show()
 
 
@@ -356,10 +318,10 @@ def plot_models_fitting_result_per_stage(data_file_path):
 	y = 'likelihood'
 	g1 = sns.barplot(x='stage', y=y, hue='model', hue_order=models_order_df(df_stage),
 					 data=df_stage, ax=ax0, errorbar='se' ,errwidth=1, capsize=.05)
-	g1.set_ylim([0.5, 0.63])
+	#g1.set_ylim([0.25, 0.65])
 	g1.set_xticklabels(stages)
 	g1.set(xlabel='', ylabel='Average Likelihood')
-	#g1.legend([], [], frameon=False)
+	g1.legend([], [], frameon=False)
 
 	# args = dict(x="stage", y=y, hue="model", hue_order=models_order_df(df_stage))
 	# pairs = [((1, 'AARL'), (1, 'MFRL')), ((1, 'SARL'), (1, 'AARL')), ((1, 'FRL'), (1, 'MFRL')),
@@ -390,68 +352,9 @@ def plot_models_fitting_result_per_stage(data_file_path):
 	g2.set_ylim(g1.get_ylim())
 
 	handles, labels = g2.get_legend_handles_labels()
-	g2.legend(handles, labels, loc='lower left', prop={'size': 11}, labelspacing=0.2)
+	g2.legend(handles, labels, loc='upper right', prop={'size': 11}, labelspacing=0.2)
 
 	plt.savefig('fitting/Results/figures/all_models_by_stage_{}'.format(utils.get_timestamp()))
-
-
-def stage_transition_model_quality(data_file_path):
-	df = pd.read_csv(data_file_path)
-	df = df[['subject', 'model', 'stage', 'day in stage', 'likelihood']].copy()
-	df = rename_models(df)
-	df['NLL'] = -np.log(df.likelihood)
-
-	model_df = df
-	model_df['ML'] = np.exp(-model_df.NLL)
-
-	transition1_before = model_df[(model_df['day in stage'] == 1) & (model_df.stage == 2)]
-	transition1_end = model_df[(model_df.stage == 1)].groupby(['model', 'subject'], sort=False).max('day in stage').reset_index()
-	transition1_df = pd.concat([transition1_before, transition1_end], ignore_index=True)
-
-	transition2_before = model_df[(model_df['day in stage'] == 1) & (model_df.stage == 3)]
-	transition2_end = model_df[(model_df.stage == 2)].groupby(['model', 'subject'], sort=False).max('day in stage').reset_index()
-	transition2_df = pd.concat([transition2_before, transition2_end], ignore_index=True)
-
-	fig = plt.figure(figsize=(10, 5), layout="constrained")
-
-	axis1 = fig.add_subplot(121)
-	axis2 = fig.add_subplot(122)
-	g1 = sns.pointplot(x='stage', y='likelihood', hue='model', errorbar='se', data=transition1_df, ax=axis1)
-	plt.setp(g1.collections, alpha=.5)  # for the markers
-	plt.setp(g1.lines, alpha=.5)  # for the lines
-
-	g2= sns.pointplot(x='stage', y='likelihood', hue='model', errorbar='se', data=transition2_df, ax=axis2)
-	axis1.legend([], [], frameon=False), axis2.legend([], [], frameon=False)
-	plt.setp(g2.collections, alpha=.5)  # for the markers
-	plt.setp(g2.lines, alpha=.5)  # for the lines
-
-	axis1.set_ylim(0.45, 0.95)
-	axis2.set_ylim(0.45, 0.95)
-	handles, labels = axis2.get_legend_handles_labels()
-	fig.legend(handles, labels, loc='upper right', prop={'size': 11})
-
-	axis1.axvline(x=0.5, ymin=0.05, ymax=0.95, alpha=0.5, dashes=(5, 2, 1, 2), lw=2, zorder=0, clip_on=False, color='black')
-	axis2.axvline(x=0.5, ymin=0.05, ymax=0.95, alpha=0.5, dashes=(5, 2, 1, 2), lw=2, zorder=0, clip_on=False, color='black')
-
-	axis1.axhline(y=0.5, alpha=0.7, lw=1, color='grey', linestyle='--')
-	axis2.axhline(y=0.5, alpha=0.7, lw=1, color='grey', linestyle='--')
-
-	axis1.set_xlabel('')
-	axis2.set_xlabel('')
-	axis1.set_ylabel('Average Likelihood')
-	axis2.set_ylabel('')
-
-	axis1.set_xticklabels(stages[:2])
-	axis2.set_xticklabels(stages[1:])
-
-	despine(axis1)
-	despine(axis2)
-
-	plt.savefig('fitting/Results/figures/stage_transition_{}'.format(fitting_utils.get_timestamp()))
-
-# # plots.plot_histogram(result=brain_results, dimension_identifier='lr', bins=20)
-# # plots.plot_objective_2D(brain_results['results'], 'lr', 'batch_size')
-# # plots.plot_objective(brain_results['results'], plot_dims=['nmr', 'lr'])
 
 
 def compare_fitting_criteria(data_file_path):
@@ -493,18 +396,18 @@ def compare_fitting_criteria(data_file_path):
 		#plot the average fitting quality for the entire population.
 		#sum_df = likelihood_trial.groupby(['model']).mean().reset_index()
 
-		plt.figure(figsize=(4.5, 4), dpi=120, facecolor='w')
-		axis = sns.barplot(x='model', y=criterion, data=data, order=models_order_df(data)) #orient='v'
+		plt.figure(figsize=(5, 4), dpi=120, facecolor='w')
+		axis = sns.barplot(y='model', x=criterion, data=data, order=models_order_df(data),)
 		minn = np.min(data[criterion])
 		maxx = np.max(data[criterion])
 		delta = 0.1 * (maxx - minn + 0.1)
-		plt.ylim([minn - delta, maxx + delta])
+		plt.xlim([minn - delta, maxx + delta])
 
-		plt.subplots_adjust(left=0.21, bottom=0.1, right=0.97, top=0.95, wspace=0.2, hspace=0.4)
+		plt.subplots_adjust(left=0.22, bottom=0.12, right=0.99, top=0.99, wspace=0.2, hspace=0.4)
 		axis.spines['top'].set_visible(False)
 		axis.spines['right'].set_visible(False)
 
-		axis.set_xlabel('')
+		axis.set_ylabel('')
 
 		plt.savefig('fitting/Results/figures/{}_{}'.format(criterion, utils.get_timestamp()))
 
@@ -530,9 +433,12 @@ def show_fitting_parameters(data_file_path):
 													 axis=1)
 	params_info['beta'] = params_info.apply(lambda row: "${:.2} \\pm {:.2}$".format(row.beta_x, row.beta_y),
 													 axis=1)
-	params_info['alpha_phi'] = params_info.apply(lambda row: "${:.2} \\pm {:.2}$".format(row.alpha_phi_x, row.alpha_phi_y),
+	if 'alpha_phi' in df.columns:
+		params_info['alpha_phi'] = params_info.apply(lambda row: "${:.2} \\pm {:.2}$".format(row.alpha_phi_x, row.alpha_phi_y),
 													 axis=1)
-	params_info = params_info[['model', 'alpha', 'beta', 'alpha_phi' ]]
+		params_info = params_info[['model', 'alpha', 'beta', 'alpha_phi' ]]
+	else:
+		params_info = params_info[['model', 'alpha', 'beta']]
 	print(params_info)
 
 	# ax = sns.scatterplot(data=df, x='alpha', y='alpha_phi', hue='model')
@@ -549,44 +455,46 @@ def model_parameters_development(data_file_path):
 	df_all = pd.read_csv(data_file_path)
 	df = df_all[['subject', 'model', 'parameters', 'stage', 'day in stage', 'trial', 'model_variables', 'likelihood']].copy()
 
-	df = rename_models(df)
-	#format the model_variables entry
 	df = df[df['model_variables'].notna()].reset_index()
 
-	#remove irrelevant trials
-	df = df[~((df.stage == 1) & (df['day in stage'] > num_days_reported[0]))]
-	df = df[~((df.stage == 2) & (df['day in stage'] > num_days_reported[1]))]
-	df = df[~((df.stage == 3) & (df['day in stage'] > reported_days_in_stage3))]
+	df = rename_models(df)
+	df = filter_days(df)
+	df, order = index_days(df)
+	# this is needed because there is no good way to order the x-axis in lineplot.
+	df.sort_values('ind', axis=0, ascending=True, inplace=True)
 
-	for model in ['FCNet']:
+	for model in ['AARL','ACLNet']:
 		df_model = df[df.model == model]
+		# format the model_variables entry
 		df_model['model_variables'] = df_model['model_variables'].apply(lambda s: s.replace("\'", "\""))
 		df_model['model_variables'] = df_model['model_variables'].apply(json.loads)
 
 		variables_names = df_model['model_variables'].tolist()[0].keys()
 		df_variables = pd.DataFrame(df_model['model_variables'].tolist())
+
 		df_no = df_model.drop('model_variables', axis=1).reset_index()
 		df_model = pd.concat([df_no, df_variables], axis=1)
 
 		df_model = df_model.groupby(['subject', 'model', 'parameters', 'stage', 'day in stage'],
 									sort=False).mean().reset_index()
 
-		df_model['ind'] = df_model.stage + 0.1 * df_model['day in stage']
-		df_model['ind'] = df_model['ind'].astype(str)
+		df_model, order = index_days(df_model)
+		# this is needed because there is no good way to order the x-axis in lineplot.
+		df_model.sort_values('ind', axis=0, ascending=True, inplace=True)
 
 		fig = plt.figure(figsize=(7.5, 4), dpi=120, facecolor='w')
-
 		sns.set_palette("Set2", n_colors=3)
 		axis = fig.add_subplot(111)
 		for variable_name in variables_names:
 			sns.lineplot(x="ind", y=variable_name, data=df_model, errorbar="se", err_style='band', ax=axis, label=variable_name.split('_')[0], marker='o')
 		axis.legend(loc='upper left')
 
-		for stage_day in [3, 5]:
-			plt.axvline(x=stage_day + 0.5, alpha=0.5, dashes=(5, 2, 1, 2), lw=1, color='gray')
+		for stage_day in np.cumsum(num_days_reported)[:-1]:
+			axis.axvline(x=stage_day - 0.5, alpha=0.5, dashes=(5, 2, 1, 2), lw=2, color='gray')
 
 		plt.xlabel('Stage.Day')
 		plt.ylabel('Attention')
+		plt.title(model)
 
 		handles, labels = axis.get_legend_handles_labels()
 		plt.legend(handles, labels, loc="upper left", prop={'size': 16}, labelspacing=0.2)
@@ -596,7 +504,7 @@ def model_parameters_development(data_file_path):
 		axis.spines['top'].set_visible(False)
 		axis.spines['right'].set_visible(False)
 
-		plt.savefig('fitting/Results/paper_figures/attention_{}'.format(fitting_utils.get_timestamp()))
+		plt.savefig('fitting/Results/paper_figures/attention_{}'.format(utils.get_timestamp()))
 
 		plt.rcParams.update({'font.size': 10})
 		fig = plt.figure(figsize=(9, 7), dpi=120, facecolor='w')
@@ -607,8 +515,10 @@ def model_parameters_development(data_file_path):
 
 			for variable_name in variables_names:
 				axis = sns.lineplot(x="ind", y=variable_name, data=df_sub, errorbar="se", err_style='band', ax=axis, label=variable_name.split('_')[0])
-			for stage_day in [3, 5]:
-				axis.axvline(x=stage_day + 0.5, alpha=0.5, dashes=(5, 2, 1, 2), lw=2, color='gray')
+
+			for stage_day in np.cumsum(num_days_reported)[:-1]:
+				axis.axvline(x=stage_day - 0.5, alpha=0.5, dashes=(5, 2, 1, 2), lw=2, color='gray')
+
 			axis.legend([], [], frameon=False)
 			axis.spines['top'].set_visible(False)
 			axis.spines['right'].set_visible(False)
@@ -643,7 +553,7 @@ def average_likelihood(data_file_path):
 
 	axis = sns.scatterplot(x='subject', y=criterion, hue='model', alpha=0.7, data=data,
 						   hue_order=models_order_df(data))
-	plt.ylim([0.55, 0.68])
+	#plt.ylim([0.55, 0.68])
 
 	plt.subplots_adjust(left=0.15, bottom=0.15, right=0.97, top=0.95, wspace=0.2, hspace=0.4)
 	despine(axis)
@@ -664,19 +574,14 @@ def average_likelihood(data_file_path):
 		axis.axhline(y=likelihood, alpha=1, lw=2, color=colors[ind])
 
 if __name__ == '__main__':
-	file_path = 'fitting/Results/Rats-Results/reported_results_tabular_modelling/main_results_reported_10_1.csv' #reported
-	file_path = '/Users/gkour/repositories/plusmaze/fitting/Results/Rats-Results/fitting_results_2023_01_12_03_45_30.csv'
-	file_path = '/Users/gkour/repositories/plusmaze/fitting/Results/Rats-Results/fitting_results_2023_01_12_15_14_11.csv'
-	#learning_curve_behavioral_boxplot('/Users/gkour/repositories/plusmaze/fitting/Results/Rats-Results/all_data.csv')
-	learning_curve_behavioral_boxplot('/Users/gkour/repositories/plusmaze/fitting/Results/Rats-Results/fitting_results_2023_01_12_15_14_11.csv')
-	models_fitting_quality_over_times_average(file_path)
-	#models_fitting_quality_over_times(file_path)
-	compare_model_subject_learning_curve_average(file_path)
-	##compare_model_subject_learning_curve(file_path)
-	plot_models_fitting_result_per_stage(file_path)
-	#show_likelihood_trials_scatter(file_path)
+	file_path = '/Users/gkour/repositories/plusmaze/fitting/Results/Rats-Results/fitting_results_2023_01_13_15_54_20_all.csv'
+	#learning_curve_behavioral_boxplot('/Users/gkour/repositories/plusmaze/fitting/Results/Rats-Results/fitting_results_2023_01_12_15_14_11.csv')
+	# models_fitting_quality_over_times_average(file_path)
+	# compare_model_subject_learning_curve_average(file_path)
+	# plot_models_fitting_result_per_stage(file_path)
+	# show_likelihood_trials_scatter(file_path)
 	#stage_transition_model_quality(file_path)
-	#show_fitting_parameters(file_path)
+	show_fitting_parameters(file_path)
 	compare_fitting_criteria(file_path)
 	#average_likelihood(file_path)
 	#compare_neural_tabular_models(file_path)
