@@ -3,15 +3,17 @@ import matplotlib.pyplot as plt
 
 from fitting.fitting_utils import stable_unique, rename_models
 import seaborn as sns
+from environment import PlusMazeOneHotCues, PlusMazeOneHotCues2ActiveDoors
 
 def despine(axis):
 	axis.spines['top'].set_visible(False)
 	axis.spines['right'].set_visible(False)
 
 
-stages = ['ODOR1', 'ODOR2', 'LED']
-plt.rcParams.update({'font.size': 16})
+stages = PlusMazeOneHotCues2ActiveDoors.stage_names
+stages = PlusMazeOneHotCues.stage_names
 
+plt.rcParams.update({'font.size': 10})
 
 def show_days_to_criterion(simulation_df):
 	df = pd.read_csv(simulation_df)
@@ -19,10 +21,10 @@ def show_days_to_criterion(simulation_df):
 
 	df = rename_models(df)
 
-	sns.set_palette('OrRd', n_colors=3)
+	sns.set_palette('OrRd', n_colors=len(stages))
 	df = df.groupby(['subject', 'model', 'stage'], sort=False).agg({'day in stage': 'max'}).reset_index()
 	fig = plt.figure(figsize=(6.5, 3.5))
-	g1 = sns.barplot(x='model', y='day in stage', hue='stage', hue_order=[1,2,3],
+	g1 = sns.barplot(x='model', y='day in stage', hue='stage', hue_order=list(range(1, len(stages)+1)),
 					 data=df, errorbar='se', errwidth=1, capsize=.05)
 
 	g1.set(xlabel='', ylabel='Days Until Criterion')
@@ -33,7 +35,7 @@ def show_days_to_criterion(simulation_df):
 
 
 if __name__ == '__main__':
-	show_days_to_criterion('/Users/gkour/repositories/plusmaze/fitting/Results/simulations_results/simulation_20_2023_01_12_02_35.csv')
-
+	#show_days_to_criterion('/Users/gkour/repositories/plusmaze/fitting/Results/simulations_results/simulation_20_2023_01_12_02_35.csv')
+	show_days_to_criterion('/Users/gkour/repositories/plusmaze/fitting/Results/simulations_results/simulation_20_2023_01_13_13_19.csv')
 
 
