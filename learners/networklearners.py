@@ -59,6 +59,8 @@ class DQNAtt(AbstractLearner):
 		self.optimizer_phi.step()
 		return loss.item()
 
+	def __str__(self):
+		return 'DQNAttnLearner'
 
 class PG(AbstractLearner):
 
@@ -82,4 +84,6 @@ class PG(AbstractLearner):
 		self.optimizer.step()
 		return loss.item()
 
+	def __str__(self):
+		return 'PGLearner'
 
