@@ -27,7 +27,8 @@ def PlusMazeExperiment(env: PlusMaze, agent: MotivatedAgent, dashboard=False):
     env.reset()
     experiment_data = pd.DataFrame()
     stats = Stats(metadata={'brain': str(agent.get_brain()),
-                                'network': str(agent.get_brain().get_model()),
+                                'learner': str(agent.get_brain().get_learner()),
+                                'model': str(agent.get_brain().get_model()),
                                 'brain_params': agent.get_brain().num_trainable_parameters() if isinstance(agent.get_brain(), ConsolidationBrain) else 0,
                                 'motivated_reward': agent._motivated_reward_value,
                                 'non_motivated_reward': agent._non_motivated_reward_value,
