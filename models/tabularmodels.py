@@ -30,7 +30,7 @@ class QTable:
 		state_actions_value[odor == self.encoding_size] = -np.inf
 		return state_actions_value
 
-	def set_state_action_value(self, state, action, value):
+	def set_actual_state_value(self, state, action, value):
 		obs = utils.states_encoding_to_cues(state, self.encoding_size)
 		self.Q[np.array2string(obs)][action] = value
 
@@ -64,7 +64,7 @@ class OptionsTable:
 			state_actions_value.append(obs_action_value)
 		return np.array(state_actions_value)
 
-	def set_option_value(self, state, action, value):
+	def set_actual_state_value(self, state, action, value):
 		option = self.get_cues_combinations(state)
 		self.C[option[action]] = value
 
@@ -114,8 +114,7 @@ class FTable:
 	def reset_feature_values(self):
 		self.V['odors'] = self.initial_value * np.ones([self.encoding_size + 1])
 		self.V['colors'] = self.initial_value * np.ones([self.encoding_size + 1])
-		self.V['spatial'] = self.initial_value * np.ones([4])
-
+		#self.V['spatial'] = self.initial_value * np.ones([4])
 
 	def get_selected_door_stimuli(self, states, doors):
 		cues = utils.states_encoding_to_cues(states, self.encoding_size)

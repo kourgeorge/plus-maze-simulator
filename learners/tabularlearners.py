@@ -20,29 +20,13 @@ class QLearner(AbstractLearner):
 		updated_q_values = selected_action_value + learning_rate * deltas
 
 		for state, action, update_q_value in zip(state_batch, actions, updated_q_values):
-			self.model.set_state_action_value(state, action, update_q_value)
+			self.model.set_actual_state_value(state, action, update_q_value)
 
 		return np.mean(deltas)
 
 	def __str__(self):
 		return 'QLearner'
 
-
-class OptionsLearner(AbstractLearner):
-	def __init__(self, model: OptionsTable, learning_rate=0.01):
-		super().__init__(model=model, optimizer={'learning_rate': learning_rate})
-
-	def learn(self, state_batch, action_batch, reward_batch, action_values, nextstate_batch):
-		learning_rate = self.optimizer['learning_rate']
-		actions = np.argmax(action_batch, axis=1)
-		all_action_values = self.model(state_batch)
-		selected_action_value = all_action_values[np.arange(len(all_action_values)), actions]
-		deltas = (reward_batch - selected_action_value)
-		updated_q_values = selected_action_value + learning_rate * deltas
-
-		for state, action, update_q_value in zip(state_batch, actions, updated_q_values):
-			self.model.set_option_value(state, action, update_q_value)
-		return np.mean(deltas)
 
 
 class IALearner(AbstractLearner):
