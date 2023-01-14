@@ -73,18 +73,51 @@ def parse_table_stage_by_odor(df):
 
 
 def set_odor_and_color_column(df):
-    df['A1o'] = df.apply(lambda row: 1 if row.correct_p1 == 1 else 0, axis=1)
-    df['A1c'] = df.apply(
-        lambda row: 1 if row.irrelevant_stimuli_p1 == 1 else 0, axis=1)
-    df['A2o'] = df.apply(lambda row: 1 if row.correct_p1 == 2 else 0, axis=1)
-    df['A2c'] = df.apply(
-        lambda row: 1 if row.irrelevant_stimuli_p1 == 2 else 0, axis=1)
-    df['A3o'] = df.apply(lambda row: 1 if row.correct_p2 == 3 else 0, axis=1)
-    df['A3c'] = df.apply(
-        lambda row: 1 if row.irrelevant_stimuli_p2 == 3 else 0, axis=1)
-    df['A4o'] = df.apply(lambda row: 1 if row.correct_p2 == 4 else 0, axis=1)
-    df['A4c'] = df.apply(
-        lambda row: 1 if row.irrelevant_stimuli_p2 == 4 else 0, axis=1)
+
+    # Possible cues combinations:
+    # (1, 0)(0, 1)(1, 0)(0, 1)
+    # (1, 0)(0, 1)(0, 1)(1, 0)
+    # (1, 1)(0, 0)(1, 1)(0, 0)
+    # (1, 1)(0, 0)(0, 0)(1, 1)
+
+    # (0, 1)(0, 1)(0, 1)(0, 1)
+    # (0, 1)(0, 1)(1, 0)(1, 0)
+    # (0, 0)(1, 1)(0, 0)(1, 1)
+    # (0, 0)(1, 1)(1, 1)(0, 0)
+
+    def cues_combination (correct_p1, correct_p2, irrelevant_stimuli_p1):
+        cues = [[-1,-1],[-1,-1],[-1,-1],[-1,-1]]
+
+        cues[0][0] = 1 if correct_p1== 1 else 0 # handle odor in door 1
+        cues[1][0] = 1-cues[0][0] # handle odor in door 2
+
+        cues[0][1] = 1 if irrelevant_stimuli_p1== 1 else 0 #handle color in door 1
+        cues[1][1] = 1-cues[0][1] #handle color in door 2
+
+        cues[2][0] = 1 if correct_p2 == 3 else 0 #handle odor in 3
+        cues[3][0] = 1 - cues[2][0] #handle odor in 4
+
+        # take the same combination from the first part of the maze according to the relevant cue.
+        cues[2][1] = cues[0][1] if cues[2][0]==cues[0][0] else cues[1][1]
+        cues[3][1] = 1 - cues[2][1]
+
+        return cues
+
+    df['combination'] = df.apply(lambda row: cues_combination(int(row.correct_p1),int(row.correct_p2), int(row.irrelevant_stimuli_p1)), axis=1)
+
+    df['A1o'] = df.apply(lambda row: row.combination[0][0], axis=1)
+    df['A1c'] = df.apply(lambda row: row.combination[0][1], axis=1)
+
+    df['A2o'] = df.apply(lambda row: row.combination[1][0], axis=1)
+    df['A2c'] = df.apply(lambda row: row.combination[1][1], axis=1)
+
+    df['A3o'] = df.apply(lambda row: row.combination[2][0], axis=1)
+    df['A3c'] = df.apply(lambda row: row.combination[2][1], axis=1)
+
+    df['A4o'] = df.apply(lambda row: row.combination[3][0], axis=1)
+    df['A4c'] = df.apply(lambda row: row.combination[3][1], axis=1)
+
+    df.drop('combination', inplace=True, axis=1)
     return df
 
 
