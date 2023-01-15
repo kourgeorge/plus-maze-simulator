@@ -4,7 +4,11 @@ import os
 import sys
 import numpy as np
 
+import config
+from fitting.PlusMazeExperimentFitting import PlusMazeExperimentFitting
 from fitting.fitting_config import friendly_models_name_map
+from learners.networklearners import DQNAtt
+from learners.tabularlearners import MALearner
 from motivatedagent import MotivatedAgent
 from environment import PlusMazeOneHotCues
 from rewardtype import RewardType
@@ -107,17 +111,16 @@ def stable_unique(array):
 
 
 def maze_experimental_data_preprocessing(experiment_data):
-
 	# remove trials with non-active doors selection:
 	experiment_data['completed'] = experiment_data.apply(
 		lambda x: False if np.isnan(x.action) or np.isnan(x.reward) else x["A{}o".format(int(x.action))] != -1, axis='columns')
-	experiment_data = experiment_data[experiment_data.completed == True]
-	experiment_data.drop('completed', axis='columns', inplace=True)
+	experiment_data_filtered = experiment_data[experiment_data.completed == True]
+	experiment_data_filtered.drop('completed', axis='columns', inplace=True)
 
 	df_sum = experiment_data.groupby(['stage', 'day in stage'], sort=False).agg({'reward': 'mean', 'action':'count'}).reset_index()
 
 	# Take at most 7 days from the last stage.
-	df = experiment_data.copy()
+	df = experiment_data_filtered.copy()
 	df = df[~((df.stage == 3) & (df['day in stage'] > 10))]
 
 
