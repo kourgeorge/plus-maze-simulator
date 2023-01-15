@@ -12,3 +12,6 @@ class AbstractLearner:
 
 	def learn(self, state_batch, action_batch, reward_batch, action_values, nextstate_batch):
 		raise NotImplementedError()
+
+	def __str__(self):
+		return  self.__class__.__name__
