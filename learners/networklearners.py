@@ -15,7 +15,7 @@ class DQN(AbstractLearner):
 		super().__init__(model, optimizer)
 		self.optimizer = optimizer(self.model.parameters(), lr=learning_rate)
 
-	def learn(self, state_batch, action_batch, reward_batch, action_values, nextstate_batch):
+	def learn(self, state_batch, action_batch, reward_batch, action_values, nextstate_batch, motivation):
 		actions = torch.unsqueeze(torch.argmax(action_batch,dim=-1), dim=1)
 		selected_action_value = torch.squeeze(action_values.gather(1, actions))
 
@@ -29,9 +29,6 @@ class DQN(AbstractLearner):
 		self.optimizer.step()
 		return loss.item()
 
-	def __str__(self):
-		return 'DQNLearner'
-
 
 class DQNAtt(AbstractLearner):
 	def __init__(self, model: AbstractNetworkModel, optimizer=optim.SGD, learning_rate=0.01, alpha_phi=0.01):
@@ -43,7 +40,7 @@ class DQNAtt(AbstractLearner):
 		self.optimizer = optimizer(other, lr=learning_rate)
 		self.optimizer_phi = optimizer(phi, lr=alpha_phi)
 
-	def learn(self, state_batch, action_batch, reward_batch, action_values, nextstate_batch):
+	def learn(self, state_batch, action_batch, reward_batch, action_values, nextstate_batch, motivation):
 		actions = torch.unsqueeze(torch.argmax(action_batch,dim=-1), dim=1)
 		selected_action_value = torch.squeeze(action_values.gather(1, actions))
 
@@ -59,8 +56,6 @@ class DQNAtt(AbstractLearner):
 		self.optimizer_phi.step()
 		return loss.item()
 
-	def __str__(self):
-		return 'DQNAttnLearner'
 
 class PG(AbstractLearner):
 
@@ -68,7 +63,7 @@ class PG(AbstractLearner):
 		super().__init__(model, optimizer)
 		self.optimizer = optimizer(self.model.parameters(), lr=learning_rate)
 
-	def learn(self, state_batch, action_batch, reward_batch, action_values, nextstate_batch):
+	def learn(self, state_batch, action_batch, reward_batch, action_values, nextstate_batch, motivation):
 		state_action_values, _ = torch.max(action_values * action_batch, dim=1)
 		log_prob_actions = torch.log(state_action_values)
 
@@ -84,6 +79,4 @@ class PG(AbstractLearner):
 		self.optimizer.step()
 		return loss.item()
 
-	def __str__(self):
-		return 'PGLearner'
 

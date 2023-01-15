@@ -4,6 +4,8 @@ import numpy as np
 import config
 from brains.abstractbrain import AbstractBrain
 import torch
+from motivatedagent import MotivatedAgent
+
 
 class TDBrain(AbstractBrain):
 
@@ -16,7 +18,7 @@ class TDBrain(AbstractBrain):
         self.num_optimizations = 0
 
     def think(self, obs, agent):
-        action_value = np.stack(self.get_model()(obs))
+        action_value = np.stack(self.get_model()(obs, agent.get_motivation()))
         action_dist = torch.softmax(self.beta*torch.from_numpy(action_value), axis=-1)
         return action_dist
 
@@ -26,7 +28,7 @@ class TDBrain(AbstractBrain):
     def get_learner(self):
         return self.learner
 
-    def consolidate(self, memory, agent, replays=config.CONSOLIDATION_REPLAYS):
+    def consolidate(self, memory, agent:MotivatedAgent, replays=config.CONSOLIDATION_REPLAYS):
         minibatch_size = min(self.batch_size, len(memory))
         if minibatch_size == 0:
             return
@@ -42,7 +44,7 @@ class TDBrain(AbstractBrain):
 
             action_values = self.think(state_batch, agent)
 
-            losses += [self.learner.learn(state_batch, action_batch, reward_batch, action_values, nextstate_batch)]
+            losses += [self.learner.learn(state_batch, action_batch, reward_batch, action_values, nextstate_batch, agent.get_motivation())]
 
         return np.mean(losses)
 

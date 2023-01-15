@@ -10,7 +10,7 @@ class AbstractLearner:
 	def get_model(self):
 		return self.model
 
-	def learn(self, state_batch, action_batch, reward_batch, action_values, nextstate_batch):
+	def learn(self, state_batch, action_batch, reward_batch, action_values, nextstate_batch, motivation):
 		raise NotImplementedError()
 
 	def __str__(self):

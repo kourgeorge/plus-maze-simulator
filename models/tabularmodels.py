@@ -100,6 +100,7 @@ class FTable:
 
 	def __call__(self, *args, **kwargs):
 		states = args[0]
+		motivation = args[1]
 
 		cues = utils.states_encoding_to_cues(states, self.encoding_size)
 		odor = cues[:, 0]  # odor for each door
@@ -123,6 +124,9 @@ class FTable:
 
 	def stimuli_value(self, dimension, feature):
 		return self.V[dimension][feature]
+
+	def new_stimuli_context(self):
+		pass
 
 	def get_model_metrics(self):
 		#print("odor:{}\ncolor:{},\nspatial:{}".format(self.V['odors'], self.V['colors'], self.V['spatial']))
@@ -148,7 +152,7 @@ class ACFTable(FTable):
 	def __call__(self, *args, **kwargs):
 		states = args[0]
 		batch = states.shape[0]
-
+		motivation = args[1]
 		cues = utils.states_encoding_to_cues(states, self.encoding_size)
 		odor = cues[:, 0]
 		color = cues[:, 1]
@@ -175,6 +179,10 @@ class ACFTable(FTable):
 				'color_attn_diff': self.phi[1]-brain2.phi[1],
 				'spatial_attn_diff': self.phi[2]-brain2.phi[2],}
 
+	def new_stimuli_context(self):
+		self.V['odors'] = self.initial_value * np.ones([self.encoding_size + 1])
+		self.V['colors'] = self.initial_value * np.ones([self.encoding_size + 1])
+		self.V['spatial'] = self.initial_value * np.ones([4])
 
 class PCFTable(ACFTable):
 	def __init__(self, encoding_size, num_channels, num_actions):

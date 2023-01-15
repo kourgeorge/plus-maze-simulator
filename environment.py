@@ -162,32 +162,41 @@ class PlusMaze:
 						  self._odor_cues[arm3O] + self._light_cues[arm3L] +
 						  self._odor_cues[1 - arm3O] + self._light_cues[1 - arm3L])
 
-	def set_next_stage(env, agent: MotivatedAgent):
-		env.set_stage(env.get_stage() + 1)
+	def set_next_stage(self, agent: MotivatedAgent):
+
+		def signal_new_stimuli_context():
+			if hasattr(agent.get_brain().get_model(), 'new_stimuli_context'):
+				agent.get_brain().get_model().new_stimuli_context()
+
+		self.set_stage(self.get_stage() + 1)
 		print('---------------------------------------------------------------------')
-		if env.get_stage() == 1:
-			env.set_random_odor_set()
-			print("Stage {}: {} (Odors: {}, Correct:{})".format(env._stage, env.stage_names[env._stage],
+		if self.get_stage() == 1:
+			self.set_random_odor_set()
+			signal_new_stimuli_context()
+			print("Stage {}: {} (Odors: {}, Correct:{})".format(self._stage, self.stage_names[self._stage],
 																[np.argmax(encoding) for encoding in
-																 env.get_odor_cues()],
-																np.argmax(env.get_correct_cue_value())))
+																 self.get_odor_cues()],
+																np.argmax(self.get_correct_cue_value())))
 
-		elif env.get_stage() == 2:
+		elif self.get_stage() == 2:
 			agent.set_motivation(RewardType.FOOD)
-			print("Stage {}: {}".format(env._stage, env.stage_names[env._stage]))
+			print("Stage {}: {}".format(self._stage, self.stage_names[self._stage]))
 
-		elif env.get_stage() == 3:
+		elif self.get_stage() == 3:
 			agent.set_motivation(RewardType.WATER)
-			env.set_random_odor_set()
-			print("Stage {}: {} (Odors: {}. Correct {})".format(env._stage, env.stage_names[env._stage],
+			self.set_random_odor_set()
+			signal_new_stimuli_context()
+			print("Stage {}: {} (Odors: {}. Correct {})".format(self._stage, self.stage_names[self._stage],
 																[np.argmax(encoding) for encoding in
-																 env.get_odor_cues()],
-																np.argmax(env.get_correct_cue_value())))
-		elif env.get_stage() == 4:
-			env._relevant_cue = CueType.SPATIAL
-			env.set_random_odor_set()
-			print("Stage {}: {} (Correct Doors: {})".format(env._stage, env.stage_names[env._stage],
-															env.get_correct_cue_value()))
+																 self.get_odor_cues()],
+																np.argmax(self.get_correct_cue_value())))
+
+		elif self.get_stage() == 4:
+			self._relevant_cue = CueType.SPATIAL
+			self.set_random_odor_set()
+			signal_new_stimuli_context()
+			print("Stage {}: {} (Correct Doors: {})".format(self._stage, self.stage_names[self._stage],
+															self.get_correct_cue_value()))
 
 
 class PlusMazeOneHotCues(PlusMaze):
