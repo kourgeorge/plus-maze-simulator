@@ -8,6 +8,8 @@ import config
 import utils
 from collections import defaultdict
 
+from rewardtype import RewardType
+
 norm = 'fro'
 
 
@@ -92,7 +94,6 @@ class OptionsTable:
 
 
 class FTable:
-
 	def __init__(self, encoding_size, num_channels, num_actions, initial_value=config.INITIAL_FEATURE_VALUE):
 		self.encoding_size = encoding_size
 		self._num_actions = num_actions
@@ -100,6 +101,8 @@ class FTable:
 		self.V['odors'] = initial_value*np.ones([encoding_size + 1])
 		self.V['colors'] = initial_value*np.ones([encoding_size + 1])
 		self.V['spatial'] = initial_value*np.ones([4])
+		self.V['bias_W'] = np.zeros([4])
+		self.V['bias_F'] = np.zeros([4])
 		self.initial_value = initial_value
 
 	def __call__(self, *args, **kwargs):
@@ -110,16 +113,13 @@ class FTable:
 		odor = cues[:, 0]  # odor for each door
 		color = cues[:, 1]  # color for each door
 		door = np.array(range(4))
+		action_bias = self.V['bias_W'] if motivation==RewardType.WATER else self.V['bias_F']
 		action_values = (self.stimuli_value('odors', odor) + \
 						self.stimuli_value('colors', color) + \
-						self.stimuli_value('spatial', door))
+						self.stimuli_value('spatial', door)) + action_bias
 		action_values[odor == self.encoding_size]=-np.inf #avoid selecting inactive doors.
 		return action_values
 
-	def reset_feature_values(self):
-		self.V['odors'] = self.initial_value * np.ones([self.encoding_size + 1])
-		self.V['colors'] = self.initial_value * np.ones([self.encoding_size + 1])
-		#self.V['spatial'] = self.initial_value * np.ones([4])
 
 	def get_selected_door_stimuli(self, states, doors):
 		cues = utils.states_encoding_to_cues(states, self.encoding_size)
@@ -164,7 +164,8 @@ class ACFTable(FTable):
 						 np.repeat(np.expand_dims(self.stimuli_value('spatial', np.array(range(4))), axis=0),
 								   repeats=batch, axis=0)])
 		attention = np.expand_dims(utils.softmax(self.phi), axis=0)
-		doors_value = np.matmul(attention, np.transpose(data, axes=(1, 0, 2)))
+		action_bias = self.V['bias_W'] if motivation == RewardType.WATER else self.V['bias_F']
+		doors_value = np.matmul(attention, np.transpose(data, axes=(1, 0, 2))) + action_bias
 		doors_value = np.squeeze(doors_value, axis=1)
 		doors_value[odor == self.encoding_size] = -np.inf  # avoid selecting inactive doors.
 
@@ -187,6 +188,7 @@ class ACFTable(FTable):
 		self.V['odors'] = self.initial_value * np.ones([self.encoding_size + 1])
 		self.V['colors'] = self.initial_value * np.ones([self.encoding_size + 1])
 		self.V['spatial'] = self.initial_value * np.ones([4])
+
 
 class PCFTable(ACFTable):
 	def __init__(self, encoding_size, num_channels, num_actions):

@@ -5,6 +5,7 @@ import numpy as np
 import utils
 from learners.abstractlearner import AbstractLearner
 from models.tabularmodels import QTable, FTable, ACFTable, OptionsTable
+from rewardtype import RewardType
 
 
 class QLearner(AbstractLearner):
@@ -44,13 +45,13 @@ class IALearner(AbstractLearner):
 	def __init__(self, model: FTable, learning_rate=0.01):
 		super().__init__(model=model, optimizer={'learning_rate': learning_rate})
 
-	def learn(self, state_batch, action_batch, reward_batch, action_values, nextstate_batch):
+	def learn(self, state_batch, action_batch, reward_batch, action_values, nextstate_batch, motivation):
 
 		learning_rate = self.optimizer['learning_rate']
 		actions = np.argmax(action_batch, axis=1)
 
 		# Calculate the Q function for all actions
-		all_action_values = self.model(state_batch)
+		all_action_values = self.model(state_batch, motivation)
 
 		# calculate the Q function for selected action
 		selected_action_value = all_action_values[np.arange(len(all_action_values)), actions]
