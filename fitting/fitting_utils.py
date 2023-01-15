@@ -55,6 +55,31 @@ def episode_rollout_on_real_data(env: PlusMazeOneHotCues, agent: MotivatedAgent,
 	return steps, total_reward, act_dist, model_action_dist, info.model_action+1, likelihood, model_action_outcome
 
 
+def run_model_on_animal_data(env, rat_data, model_arch, parameters):
+	(brain, learner, model) = model_arch
+	model_instance = model(env.stimuli_encoding_size(), 2, env.num_actions())
+
+	if issubclass(learner, MALearner) or issubclass(learner, DQNAtt):
+		(beta, lr, attention_lr) = parameters
+		learner_instance = learner(model_instance, learning_rate=lr, alpha_phi=attention_lr)
+	else:
+		(beta, lr) = parameters
+		learner_instance = learner(model_instance, learning_rate=lr)
+
+	#blockPrint()
+	env.init()
+	agent = MotivatedAgent(brain(learner_instance, beta=beta),
+						   motivation=RewardType.WATER,
+						   motivated_reward_value=config.MOTIVATED_REWARD,
+						   non_motivated_reward_value=config.NON_MOTIVATED_REWARD, exploration_param=0)
+
+	experiment_stats, rat_data_with_likelihood = PlusMazeExperimentFitting(env, agent, dashboard=False,
+																		   experiment_data=rat_data)
+	#enablePrint()
+
+	return experiment_stats, rat_data_with_likelihood
+
+
 def blockPrint():
 	sys.stdout = open(os.devnull, 'w')
 
