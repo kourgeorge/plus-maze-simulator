@@ -27,7 +27,8 @@ def plot_days_per_stage(all_brains_types_stats, file_path):
 
 		ax.bar(np.array(stages) + width*i, np.mean(days_per_stage_brain_type, axis=0), yerr=sem(days_per_stage_brain_type, axis=0, nan_policy='omit'),
 			width=width, label="{}:{}({})".format(brain_type_stats[0].metadata['brain'],
-												 brain_type_stats[0].metadata['network'],
+												  brain_type_stats[0].metadata['learner'],
+												 brain_type_stats[0].metadata['model'],
 												 brain_type_stats[0].metadata['brain_params']), capsize=2)
 		stats_all_brains[i] = days_per_stage_brain_type
 
@@ -105,7 +106,8 @@ def plot_behavior_results(brain_type_stats, dirname=None):
 
 	fig.suptitle("Stats of {} individuals.\nbrain:{}. network:{}({})".format(
 		len(brain_type_stats),
-		brain_type_stats[0].metadata['brain'], brain_type_stats[0].metadata['network'],
+		brain_type_stats[0].metadata['brain'], brain_type_stats[0].metadata['learner'],
+		brain_type_stats[0].metadata['model'],
 		brain_type_stats[0].metadata['brain_params']
 		),fontsize=8)
 
