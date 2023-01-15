@@ -11,7 +11,7 @@ class QLearner(AbstractLearner):
 	def __init__(self, model: QTable, learning_rate=0.01):
 		super().__init__(model=model, optimizer={'learning_rate': learning_rate})
 
-	def learn(self, state_batch, action_batch, reward_batch, action_values, nextstate_batch):
+	def learn(self, state_batch, action_batch, reward_batch, action_values, nextstate_batch, motivation):
 		learning_rate = self.optimizer['learning_rate']
 		actions = np.argmax(action_batch, axis=1)
 		all_action_values = self.model(state_batch)
@@ -22,11 +22,22 @@ class QLearner(AbstractLearner):
 		for state, action, update_q_value in zip(state_batch, actions, updated_q_values):
 			self.model.set_actual_state_value(state, action, update_q_value)
 
-		return np.mean(deltas)
+		return deltas
 
-	def __str__(self):
-		return 'QLearner'
 
+class ActionBiasedQLearner(QLearner):
+	def __init__(self, model: QTable, learning_rate=0.01):
+		super().__init__(model=model, learning_rate=learning_rate)
+
+	def learn(self, state_batch, action_batch, reward_batch, action_values, nextstate_batch, motivation):
+		deltas = super().learn(state_batch, action_batch, reward_batch, action_values, nextstate_batch, motivation)
+		actions = np.argmax(action_batch, axis=1)
+		learning_rate = self.optimizer['learning_rate']
+
+		for action in np.unique(actions):
+			self.model.action_bias[action] += learning_rate*np.mean(deltas[actions==action])
+
+		return deltas
 
 
 class IALearner(AbstractLearner):

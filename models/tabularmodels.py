@@ -16,6 +16,7 @@ class QTable:
 	def __init__(self, encoding_size, num_channels, num_actions, initial_value=config.INITIAL_FEATURE_VALUE):
 		self._num_actions = num_actions
 		self.Q = defaultdict(lambda: initial_value * np.ones(self._num_actions))
+		self.action_bias = np.zeros(self._num_actions)
 		self.encoding_size = encoding_size
 
 	def __call__(self, *args, **kwargs):
@@ -27,6 +28,7 @@ class QTable:
 		cues = utils.states_encoding_to_cues(state, self.encoding_size)
 		odor = cues[:, 0]  # odor for each door
 		state_actions_value = np.array(state_actions_value)
+		state_actions_value += self.action_bias
 		state_actions_value[odor == self.encoding_size] = -np.inf
 		return state_actions_value
 
@@ -51,6 +53,7 @@ class OptionsTable:
 	def __init__(self, encoding_size, num_channels, num_actions, use_location_cue=True, initial_value=config.INITIAL_FEATURE_VALUE):
 		self._num_actions = num_actions
 		self.C = defaultdict(lambda: float(initial_value)) # familiar options are stored as tupples (color, odor and possibly, location).
+		self.action_bias = np.zeros(self._num_actions)
 		self.encoding_size = encoding_size
 		self.use_location_cue = use_location_cue
 
@@ -61,6 +64,7 @@ class OptionsTable:
 			obs_action_value = []
 			for option in self.get_cues_combinations(state):
 				obs_action_value += [self.C[option]] if option[0] != self.encoding_size else [-np.inf]
+			obs_action_value += self.action_bias
 			state_actions_value.append(obs_action_value)
 		return np.array(state_actions_value)
 
@@ -76,7 +80,7 @@ class OptionsTable:
 		return cues
 
 	def get_model_metrics(self):
-		return {'num_entries': len(self.C.keys())}
+		return {'action_bias': self.action_bias.tolist()}
 
 	def get_model_diff(self, brain2):
 		diff = [np.linalg.norm(self.C[state] - brain2.C[state]) for state in
