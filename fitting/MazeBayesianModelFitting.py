@@ -97,11 +97,16 @@ class MazeBayesianModelFitting:
 				self._calc_experiment_likelihood, x0=x0[:len(self.parameters_space)],
 				bounds=self.parameters_space,
 				options={'maxiter':self.n_calls})
-		print("Best Parameters: {}".format(np.round(search_result.x, 4)))
 		experiment_stats, rat_data_with_likelihood = self._run_model(search_result.x)
+		n = len(rat_data_with_likelihood)
+		aic = - 2 * np.sum(np.log(rat_data_with_likelihood.likelihood))/n + 2 * len(search_result.x)/n
+		print("Best Parameters: {} - AIC:{:.3}".format(np.round(search_result.x, 4), aic))
+
 		return search_result, experiment_stats, rat_data_with_likelihood
 
 	def _fake_optimize(self):
+		"""Use this to validate that the data of all rats are sensible and that
+		there is no discrepancy between the data and the behaviour of simulation"""
 		class Object(object):
 			pass
 
