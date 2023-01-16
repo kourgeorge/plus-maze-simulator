@@ -41,6 +41,7 @@ def PlusMazeExperimentFitting(env: PlusMaze, agent: MotivatedAgent, experiment_d
     dashboard_screenshots_path = os.path.join('/Users/gkour/repositories/plusmaze/Results', '{}-{}'.format(agent.get_brain(),time.strftime("%Y%m%d-%H%M")))
 
     trial = 0
+    last_day_reported_trial = 0
     print('============================ Brain:{}, Network:{} ======================='.format(str(agent.get_brain()), str(agent.get_brain().get_model())))
     print("Stage {}: {} - Water Motivated, odor relevant. (Odors: {}, Correct: {})".format(env.get_stage(), env.stage_names[env.get_stage()],
                                                                                            [np.argmax(encoding) for encoding in env.get_odor_cues()],
@@ -52,7 +53,7 @@ def PlusMazeExperimentFitting(env: PlusMaze, agent: MotivatedAgent, experiment_d
             env.set_next_stage(agent)
 
         if new_day(trial, fitting_info):
-            stats.update_stats_from_agent(agent, trial, config.REPORTING_INTERVAL)
+            stats.update_stats_from_agent(agent, trial, trial-last_day_reported_trial)
             pre_stage_transition_update()
 
         if completed_trial(fitting_info, trial):
