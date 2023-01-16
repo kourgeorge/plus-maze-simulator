@@ -81,13 +81,13 @@ class IAAluisiLearner(AbstractLearner):
 	def __init__(self, model: FTable, learning_rate=0.01):
 		super().__init__(model=model, optimizer={'learning_rate': learning_rate})
 
-	def learn(self, state_batch, action_batch, reward_batch, action_values, nextstate_batch):
+	def learn(self, state_batch, action_batch, reward_batch, action_values, nextstate_batch, motivation):
 
 		learning_rate = self.optimizer['learning_rate']
 		actions = np.argmax(action_batch, axis=1)
 
 		# Calculate the Q function for all actions
-		all_action_values = self.model(state_batch)
+		all_action_values = self.model(state_batch, motivation)
 
 		# calculate the Q function for selected action
 		selected_action_value = all_action_values[np.arange(len(all_action_values)), actions]
@@ -116,13 +116,13 @@ class MALearner(IALearner):
 		super().__init__(model, *args, **kwargs)
 		self.alpha_phi = alpha_phi
 
-	def learn(self, state_batch, action_batch, reward_batch, action_values, nextstate_batch):
+	def learn(self, state_batch, action_batch, reward_batch, action_values, nextstate_batch, motivation):
 
-		super().learn(state_batch, action_batch, reward_batch, action_values, nextstate_batch)
+		super().learn(state_batch, action_batch, reward_batch, action_values, nextstate_batch, motivation)
 
 		actions = np.argmax(action_batch, axis=1)
 
-		all_action_values = self.model(state_batch)
+		all_action_values = self.model(state_batch, motivation)
 		selected_action_value = all_action_values[np.arange(len(all_action_values)), actions]
 
 		deltas = (reward_batch - selected_action_value)
