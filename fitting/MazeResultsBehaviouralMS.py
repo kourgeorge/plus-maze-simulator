@@ -45,8 +45,9 @@ def index_days(df):
 			return 1
 
 	order = sorted(np.unique(df['ind']), key=functools.cmp_to_key(compare))
+	transition = [i for i in range(1, len(order)) if order[i][0] != order[i - 1][0]]
 
-	return df, order
+	return df, order, transition
 
 
 def models_fitting_quality_over_times_average(data_file_path):
@@ -59,7 +60,7 @@ def models_fitting_quality_over_times_average(data_file_path):
 
 	model_df = rename_models(model_df)
 	model_df = filter_days(model_df)
-	model_df, order = index_days(model_df)
+	model_df, order, tr = index_days(model_df)
 	# this is needed because there is no good way to order the x-axis in lineplot.
 	model_df.sort_values('ind', axis=0, ascending=True, inplace=True)
 
@@ -69,7 +70,7 @@ def models_fitting_quality_over_times_average(data_file_path):
 						hue_order=models_order_df(model_df),
 						data=model_df, errorbar="se", err_style='band')
 
-	for stage_day in np.cumsum(num_days_reported)[:-1]:
+	for stage_day in tr:
 		axis.axvline(x=stage_day - 0.5, alpha=0.5, dashes=(5, 2, 1, 2), lw=2, color='gray')
 
 	axis.set_xlabel('Stage.Day')
@@ -179,13 +180,14 @@ def compare_neural_tabular_models(data_file_path):
 
 def compare_model_subject_learning_curve_average(data_file_path):
 	df = pd.read_csv(data_file_path)
-	df = df[['subject', 'model', 'stage', 'day in stage', 'trial', 'reward', 'model_reward']].copy()
 
+	df = rename_models(df)
+
+	df = df[['subject', 'model', 'stage', 'day in stage', 'trial', 'reward', 'model_reward']].copy()
 	model_df = df.groupby(['subject', 'model', 'stage', 'day in stage'], sort=False).mean().reset_index()
 
-	model_df = rename_models(model_df)
 	model_df = filter_days(model_df)
-	model_df, order = index_days(model_df)
+	model_df, order, tr = index_days(model_df)
 	# this is needed because there is no good way to order the x-axis in lineplot.
 	model_df.sort_values('ind', axis=0, ascending=True, inplace=True)
 
@@ -198,7 +200,7 @@ def compare_model_subject_learning_curve_average(data_file_path):
 	axis = sns.lineplot(x="ind", y="reward", data=subject_reward_df, errorbar="se", err_style='band', linestyle='--',
 						ax=axis, color='black')
 
-	for stage_day in np.cumsum(num_days_reported)[:-1]:
+	for stage_day in tr:
 		axis.axvline(x=stage_day - 0.5, alpha=0.5, dashes=(5, 2, 1, 2), lw=2, color='gray')
 
 	axis.set_xlabel('Stage.Day')
@@ -236,7 +238,7 @@ def learning_curve_behavioral_boxplot(data_file_path):
 		axis.text(xtick, 0.41, animals_in_day[xtick],
 				horizontalalignment='center',size='small',color='black',weight='semibold')
 
-	ticks = ["{}".format(int(x[1:])) if (int(x[1:])-1) % 2 == 0 else "" for ind, x in enumerate(order) ]
+	ticks = ["{}".format(int(x[2:])) if (int(x[2:])-1) % 2 == 0 else "" for ind, x in enumerate(order) ]
 	axis.set_xticklabels(ticks)
 
 	axis.set_xlabel('Training Day in Stage')
@@ -459,11 +461,11 @@ def model_parameters_development(data_file_path):
 
 	df = rename_models(df)
 	df = filter_days(df)
-	df, order = index_days(df)
+	df, order, st = index_days(df)
 	# this is needed because there is no good way to order the x-axis in lineplot.
 	df.sort_values('ind', axis=0, ascending=True, inplace=True)
 
-	for model in ['AARL','ACLNet']:
+	for model in ['AARL','ACLNet2']:
 		df_model = df[df.model == model]
 		# format the model_variables entry
 		df_model['model_variables'] = df_model['model_variables'].apply(lambda s: s.replace("\'", "\""))
@@ -478,7 +480,7 @@ def model_parameters_development(data_file_path):
 		df_model = df_model.groupby(['subject', 'model', 'parameters', 'stage', 'day in stage'],
 									sort=False).mean().reset_index()
 
-		df_model, order = index_days(df_model)
+		df_model, order, st= index_days(df_model)
 		# this is needed because there is no good way to order the x-axis in lineplot.
 		df_model.sort_values('ind', axis=0, ascending=True, inplace=True)
 
@@ -508,26 +510,35 @@ def model_parameters_development(data_file_path):
 
 		plt.rcParams.update({'font.size': 10})
 		fig = plt.figure(figsize=(9, 7), dpi=120, facecolor='w')
-		for i, subject in enumerate(stable_unique(df_model["subject"])):
+		animals_ind = np.unique(df_model.subject)
+		for i, subject in enumerate(animals_ind):
 
-			df_sub = df_model[df_model["subject"] == subject]
-			axis = fig.add_subplot(4, 2, i+1)
+			df_sub = df_model[df_model.subject == subject]
+			axis = fig.add_subplot(int(np.ceil(len(animals_ind)/2)), 2, i+1)
+
+			_, order, st = index_days(df_sub)
 
 			for variable_name in variables_names:
 				axis = sns.lineplot(x="ind", y=variable_name, data=df_sub, errorbar="se", err_style='band', ax=axis, label=variable_name.split('_')[0])
 
-			for stage_day in np.cumsum(num_days_reported)[:-1]:
+			for stage_day in st:
 				axis.axvline(x=stage_day - 0.5, alpha=0.5, dashes=(5, 2, 1, 2), lw=2, color='gray')
 
 			axis.legend([], [], frameon=False)
 			axis.spines['top'].set_visible(False)
 			axis.spines['right'].set_visible(False)
 
-			axis.set_xlabel('Stage.Day') if i > 5 else axis.set_xlabel('')
+			params_list = np.round(fitting_utils.string2list(df_sub.parameters.tolist()[0]),3)
+			axis.set_title('S{}: [{} {} {}]'.format(subject, *params_list))
+
+			axis.set_xlabel('Stage.Day') if i > len(animals_ind)-3 else axis.set_xlabel('')
 			axis.set_ylabel('') #axis.set_ylabel("Attention") if i % 2 == 0 else axis.set_ylabel('')
 			plt.tick_params(axis='both', which='major', labelsize=9)
 
-	plt.subplots_adjust(left=0.1, bottom=0.1, right=0.99, top=0.95, wspace=0.1, hspace=0.4)
+			ticks = ["{}".format(int(x[2:])) if (int(x[2:]) - 1) % 2 == 0 else "" for ind, x in enumerate(order)]
+			axis.set_xticklabels(ticks)
+
+		plt.subplots_adjust(left=0.1, bottom=0.1, right=0.99, top=0.95, wspace=0.2, hspace=0.8)
 
 	handles, labels = axis.get_legend_handles_labels()
 	fig.legend(handles, labels, loc=(0.1,0.9), prop={'size': 11}, labelspacing=0.2)
