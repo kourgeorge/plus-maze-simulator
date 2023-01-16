@@ -41,21 +41,26 @@ FITTING_ITERATIONS = 50
 maze_models = [
 				# ((TDBrain, QLearner, QTable), (beta, lr)),
 				# ((TDBrain, ActionBiasedQLearner, QTable), (beta, lr)),
-			   # ((TDBrain, QLearner, OptionsTable), (beta, lr)),
+				#
+			    # ((TDBrain, QLearner, OptionsTable), (beta, lr)),
 				# ((TDBrain, ActionBiasedQLearner, OptionsTable), (beta, lr)),
-			   # ((TDBrain, IALearner, ACFTable), (beta, lr)),
-			   # ((TDBrain, IAAluisiLearner, ACFTable), (beta, lr)),
-				((TDBrain, IALearner, FTable), (beta, lr)),
-			    ((TDBrain, IALearner, ACFTable), (beta, lr)),
+				#
+			    # ((TDBrain, IALearner, ACFTable), (beta, lr)),
+			    # ((TDBrain, IAAluisiLearner, ACFTable), (beta, lr)),
+				#
+				# ((TDBrain, IALearner, FTable), (beta, lr)),
+			    #((TDBrain, IALearner, ACFTable), (beta, lr)),
+
+				#((TDBrain, MALearner, ACFTable), (beta, lr, attention_lr)),
 
 			   # ((TDBrain, MALearnerSimple, ACFTable), (beta, lr, attention_lr)),
 			   # ((TDBrain, MALearner, PCFTable), (beta, lr, attention_lr)),
 
-			   # ((ConsolidationBrain, DQN, FCNet), (beta, lr)),
-			   # ((ConsolidationBrain, DQN, UANet), (beta, lr)),
-			   # ((ConsolidationBrain, DQN, ACLNet), (beta, lr)),
-			   # ((ConsolidationBrain, DQNAtt, ACLNet), (beta, lr, attention_lr)),
-			   # ((ConsolidationBrain, DQN, FC2LayersNet), (beta, lr)),
+			   ((ConsolidationBrain, DQN, FCNet), (beta, lr)),
+			   ((ConsolidationBrain, DQN, UANet), (beta, lr)),
+			   #((ConsolidationBrain, DQN, ACLNet), (beta, lr)),
+			   #((ConsolidationBrain, DQNAtt, ACLNet), (beta, lr, attention_lr)),
+			   #((ConsolidationBrain, DQN, FC2LayersNet), (beta, lr)),
 
 				#((ConsolidationBrain, DQN, EfficientNetwork),(beta, lr)),
 				# ((ConsolidationBrain, PG, FullyConnectedNetwork), (beta, lr)),
@@ -86,7 +91,8 @@ friendly_models_name_map = {'QLearner.QTable': 'SARL',
 							'ActionBiasedQLearner.QTable': 'ABSARL',
 							'QLearner.OptionsTable': 'ORL',
 							'ActionBiasedQLearner.OptionsTable': 'ABORL',
-							'IALearner.ACFTable': 'FRL',
+							'IALearner.FTable': 'FRL',
+							'IALearner.ACFTable': 'SCFRL',
 							'IAAluisiLearner.ACFTable': 'MFRL',
 							'MALearner.ACFTable': 'AARL',
 							'MALearnerSimple.ACFTable':'MAARL',
