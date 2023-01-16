@@ -134,10 +134,17 @@ class FTable:
 
 	def get_model_metrics(self):
 		#print("odor:{}\ncolor:{},\nspatial:{}".format(self.V['odors'], self.V['colors'], self.V['spatial']))
-		return {'odor': entropy(self.V['odors'])/entropy(np.ones_like(self.V['odors']))/np.count_nonzero(self.V['odors']),
-				'color': entropy(self.V['colors'])/entropy(np.ones_like(self.V['colors']))/np.count_nonzero(self.V['colors']),
-				'spatial': entropy(self.V['spatial'])/entropy(np.ones_like(self.V['spatial']))/np.count_nonzero(self.V['spatial'])
-				}
+		# {'odor': entropy(utils.softmax(self.V['odors']))/(entropy(np.ones_like(self.V['odors']))/np.count_nonzero(self.V['odors'])),
+		# 		'color': entropy(utils.softmax(self.V['colors']))/(entropy(np.ones_like(self.V['colors']))/np.count_nonzero(self.V['colors'])),
+		# 		'spatial': entropy(utils.softmax(self.V['spatial']))/(entropy(np.ones_like(self.V['spatial']))/np.count_nonzero(self.V['spatial']))
+		# 		}
+
+		return {
+			'odors': np.linalg.norm(self.V['odors']),
+			'colors': np.linalg.norm(self.V['colors']),
+			'spatial': np.linalg.norm(self.V['spatial'])
+		}
+
 
 	def get_model_diff(self, brain2):
 		return {'odor_diff': jensenshannon(self.V['odors'], brain2.V['odors']),
