@@ -28,7 +28,7 @@ batch_size = Integer(name='batch_size', low=1, high=20)
 if BAYESIAN_OPTIMIZATION:
 	lr = Real(name='lr', low=0.001, high=0.4, prior='log-uniform')
 	attention_lr = Real(name='attention_lr', low=0.001, high=0.4, prior='log-uniform')
-	beta = Real(name='beta', low=0.1, high=30, prior='log-uniform')
+	beta = Real(name='beta', low=0.1, high=30, prior='uniform')
 	initial_value = Real(name='initial', low=0, high=0.1, prior='uniform')
 else:
 	lr = (0.001, 0.2)
