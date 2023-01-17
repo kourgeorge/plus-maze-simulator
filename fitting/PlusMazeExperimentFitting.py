@@ -3,13 +3,13 @@ __author__ = 'gkour'
 import numpy as np
 import os
 import time
-import config
 from PlusMazeExperiment import ExperimentStatus
 from environment import PlusMazeOneHotCues, CueType, PlusMaze
 from motivatedagent import MotivatedAgent
 import fitting.fitting_utils as fitting_utils
 from Dashboard import Dashboard
 from fitting.FittingStats import FittingStats
+from rewardtype import RewardType
 
 
 def PlusMazeExperimentFitting(env: PlusMaze, agent: MotivatedAgent, experiment_data, dashboard=False):
@@ -17,6 +17,7 @@ def PlusMazeExperimentFitting(env: PlusMaze, agent: MotivatedAgent, experiment_d
     fitting_info = experiment_data.copy()
     fitting_info = fitting_info.reset_index()
     fitting_info['model_reward'] = np.nan
+    fitting_info['model_reward_value'] = np.nan
     fitting_info['model_action_dist'] = np.nan
     fitting_info['model_action'] = np.nan
     fitting_info['model_action_dist'] = fitting_info['model_action_dist'].astype(object)
@@ -47,6 +48,7 @@ def PlusMazeExperimentFitting(env: PlusMaze, agent: MotivatedAgent, experiment_d
                                                                                            [np.argmax(encoding) for encoding in env.get_odor_cues()],
                                                                                              np.argmax(env.get_correct_cue_value())))
     model_action_dists = np.empty([1, env.num_actions()])
+    loss = 0
     while trial < len(fitting_info):
 
         if should_pass_to_next_stage(fitting_info, trial):
@@ -64,7 +66,8 @@ def PlusMazeExperimentFitting(env: PlusMaze, agent: MotivatedAgent, experiment_d
             fitting_info.at[trial,'likelihood'] = likelihood
             fitting_info.at[trial, 'model_action_dist'] = np.round(model_action_dist,3)
             fitting_info.at[trial, 'model_action'] = model_action
-            fitting_info.at[trial, 'model_reward'] = agent.evaluate_outcome(model_action_outcome)
+            fitting_info.at[trial, 'model_reward'] = 0 if model_action_outcome == RewardType.NONE else 1
+            fitting_info.at[trial, 'model_reward_value'] = agent.evaluate_outcome(model_action_outcome)
             fitting_info.at[trial, 'model_variables'] = agent.get_brain().get_model().get_model_metrics()
 
             loss = agent.smarten()

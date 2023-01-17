@@ -70,9 +70,9 @@ def add_stage_index_and_day_to_df(df, stage_index, day_index):
 def parse_table_stage_by_odor(df):
     df = set_odor_and_color_column(df)
     df['action'] = df.apply(lambda row: row.chosen_arm, axis=1)
-    df['correct'] = df.apply(lambda row: 1 if row.trial_outcome == 1 else 0 if row.trial_outcome == 2 else None, axis=1)
+    df['reward'] = df.apply(lambda row: 1 if row.trial_outcome == 1 else 0 if row.trial_outcome == 2 else None, axis=1)
     df['reward_type'] = df.apply(lambda row: int(reward_type(row)), axis=1)
-    return df[['stage', 'day in stage', 'trial', 'A1o', 'A1c', 'A2o', 'A2c', 'A3o', 'A3c', 'A4o', 'A4c', 'action', 'correct', 'reward_type']]
+    return df[['stage', 'day in stage', 'trial', 'A1o', 'A1c', 'A2o', 'A2c', 'A3o', 'A3c', 'A4o', 'A4c', 'action', 'reward', 'reward_type']]
 
 
 def set_odor_and_color_column(df):

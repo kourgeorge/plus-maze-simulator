@@ -38,8 +38,8 @@ def episode_rollout_on_real_data(env: PlusMazeOneHotCues, agent: MotivatedAgent,
 
 		# This validates that if the reward in the data is 0 the reward by the simulation should be RewardType.NONE.
 		# and vice versa, meaning if the reward in the data is not 0 then the reward type in the simulation must not be none.
-		if (outcome == RewardType.NONE and current_trial.correct != 0) or \
-				(outcome != RewardType.NONE and current_trial.correct == 0):
+		if (outcome == RewardType.NONE and current_trial.reward != 0) or \
+				(outcome != RewardType.NONE and current_trial.reward == 0):
 			raise Exception("There is a discrepancy between data and simulation reward!!\ntrial={}, stage={}, action={}"
 							" reward={}".format(current_trial.trial,current_trial.stage,current_trial.action, current_trial.reward))
 
@@ -136,25 +136,6 @@ def maze_experimental_data_preprocessing(experiment_data):
 	# df = df[~((df.stage == 1) & (df['day in stage'] > criteria_days[0]))]
 	# df = df[~((df.stage == 2) & (df['day in stage'] > criteria_days[1]))]
 	# df = df[~((df.stage == 3) & (df['day in stage'] > np.min ([criteria_days[2],7])))]
-
-	print("Processing behavioral data: Original:{}, removed:{}".format(len(experiment_data),
-																		 len(experiment_data)-len(df)))
-
-	return df
-
-
-def motivation_maze_experimental_data_preprocessing(experiment_data):
-	# remove trials with non-active doors selection:
-	experiment_data['completed'] = experiment_data.apply(
-		lambda x: False if np.isnan(x.action) or np.isnan(x.correct) else x["A{}o".format(int(x.action))] != -1, axis='columns')
-	experiment_data_filtered = experiment_data[experiment_data.completed == True]
-	experiment_data_filtered.drop('completed', axis='columns', inplace=True)
-
-	df_sum = experiment_data.groupby(['stage', 'day in stage'], sort=False).agg({'correct': 'mean', 'action':'count'}).reset_index()
-
-	# Take at most 7 days from the last stage.
-	df = experiment_data_filtered.copy()
-	df = df[~((df.stage == 3) & (df['day in stage'] > 10))]
 
 	print("Processing behavioral data: Original:{}, removed:{}".format(len(experiment_data),
 																		 len(experiment_data)-len(df)))

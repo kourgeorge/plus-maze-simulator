@@ -89,7 +89,7 @@ def PlusMazeExperiment(env: PlusMaze, agent: MotivatedAgent, dashboard=False):
                 'WPI:{}, WC: {}, FC:{}'.format(stats.epoch_stats_df['WaterPreference'].to_numpy()[-1], stats.epoch_stats_df['WaterCorrect'].to_numpy()[-1],
                                                stats.epoch_stats_df['FoodCorrect'].to_numpy()[-1]))
 
-            current_criterion = np.mean(stats.reports[-1].correct)
+            current_criterion = np.mean(stats.reports[-1].reward)
             reward = np.mean(stats.reports[-1].reward)
             if current_criterion > config.SUCCESS_CRITERION_THRESHOLD:# and reward > 0.6:
                 day_in_stage = 0
