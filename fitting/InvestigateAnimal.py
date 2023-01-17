@@ -27,15 +27,13 @@ def writecsvfiletotemp(rat_data_with_likelihood: pd.DataFrame):
 
 
 if __name__ == '__main__':
-	subject = 0
+	subject = 6
 	model_arch = (ConsolidationBrain, DQN, UANet)
-	parameters = (3.14, 0.069)
+	parameters = (3.72, 0.3485)
 	rat_files = [rat_file for rat_file in list(np.sort(os.listdir(fitting_config.MOTIVATED_ANIMAL_DATA_PATH)))]
 	rat_data = pd.read_csv(os.path.join(fitting_config.MOTIVATED_ANIMAL_DATA_PATH, rat_files[subject]))
 	env = PlusMazeOneHotCues(relevant_cue=CueType.ODOR, stimuli_encoding=10)
-	rat_data = fitting_utils.maze_experimental_data_preprocessing(rat_data) if isinstance(env,PlusMazeOneHotCues2ActiveDoors)\
-				else fitting_utils.motivation_maze_experimental_data_preprocessing(rat_data)
-
+	rat_data = fitting_utils.maze_experimental_data_preprocessing(rat_data)
 	# test = rat_data.groupby(['A1o','A1c','A2o','A2c','A3o','A3c','A4o','A4c']).mean().reset_index()
 	# experiment_stats, rat_data_with_likelihood = run_model_on_animal_data(PlusMazeOneHotCues(relevant_cue=CueType.ODOR, stimuli_encoding=10),
 	# 						 rat_data, (TDBrain, MALearner, ACFTable), (8.5, 0.008, 0.4))
