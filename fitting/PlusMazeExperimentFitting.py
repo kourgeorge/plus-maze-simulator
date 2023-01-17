@@ -57,6 +57,19 @@ def PlusMazeExperimentFitting(env: PlusMaze, agent: MotivatedAgent, experiment_d
         if new_day(trial, fitting_info):
             stats.update_stats_from_agent(agent, trial, trial-last_day_reported_trial)
             pre_stage_transition_update()
+            last_day_reported_trial = trial
+            #print(utils.softmax(agent.get_brain().get_model().phi)) if hasattr(agent.get_brain().get_model(), 'phi') else 0
+
+            print(
+                'Trial: {}, Action Dist:{}, Corr.:{}, Rew.:{}, loss={};'.format(stats.epoch_stats_df['Trial'].to_numpy()[-1],
+                                                                                stats.epoch_stats_df['ActionDist'].to_numpy()[-1],
+                                                                                stats.epoch_stats_df['Correct'].to_numpy()[-1],
+                                                                                stats.epoch_stats_df['Reward'].to_numpy()[-1],
+                                                                                round(loss, 2)))
+
+            print(
+                'WPI:{}, WC: {}, FC:{}'.format(stats.epoch_stats_df['WaterPreference'].to_numpy()[-1], stats.epoch_stats_df['WaterCorrect'].to_numpy()[-1],
+                                               stats.epoch_stats_df['FoodCorrect'].to_numpy()[-1]))
 
         if completed_trial(fitting_info, trial):
             _, _, _, model_action_dist, model_action, likelihood, model_action_outcome = fitting_utils.episode_rollout_on_real_data(env, agent,
