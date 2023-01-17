@@ -41,6 +41,22 @@ class ABQLearner(QLearner):
 		return deltas
 
 
+class UABQLearner(QLearner):
+	def __init__(self, model: QTable, learning_rate=0.01):
+		super().__init__(model=model, learning_rate=learning_rate)
+
+	def learn(self, state_batch, action_batch, reward_batch, action_values, nextstate_batch, motivation):
+		deltas = super().learn(state_batch, action_batch, reward_batch, action_values, nextstate_batch, motivation)
+		actions = np.argmax(action_batch, axis=1)
+		learning_rate = self.optimizer['learning_rate']
+
+		for action in np.unique(actions):
+			self.model.action_bias[RewardType.WATER.value][action] += learning_rate * np.mean(deltas[actions == action])
+			self.model.action_bias[RewardType.FOOD.value][action] += learning_rate * np.mean(deltas[actions == action])
+
+		return deltas
+
+
 class IALearner(AbstractLearner):
 	def __init__(self, model: FTable, learning_rate=0.01):
 		super().__init__(model=model, optimizer={'learning_rate': learning_rate})
@@ -87,6 +103,23 @@ class ABIALearner(IALearner):
 			self.model.action_bias[motivation.value][action] += learning_rate*np.mean(deltas[actions==action])
 
 		return deltas
+
+
+class UABIALearner(IALearner):
+	def __init__(self, model: FTable, learning_rate=0.01):
+		super().__init__(model=model, learning_rate=learning_rate)
+
+	def learn(self, state_batch, action_batch, reward_batch, action_values, nextstate_batch, motivation):
+		deltas = super().learn(state_batch, action_batch, reward_batch, action_values, nextstate_batch, motivation)
+		actions = np.argmax(action_batch, axis=1)
+		learning_rate = self.optimizer['learning_rate']
+
+		for action in np.unique(actions):
+			self.model.action_bias[RewardType.WATER.value][action] += learning_rate * np.mean(deltas[actions == action])
+			self.model.action_bias[RewardType.FOOD.value][action] += learning_rate * np.mean(deltas[actions == action])
+
+		return deltas
+
 
 class IAAluisiLearner(AbstractLearner):
 	def __init__(self, model: FTable, learning_rate=0.01):
@@ -170,6 +203,22 @@ class ABMALearner(MALearner):
 
 		return deltas
 
+
+class UABMALearner(MALearner):
+
+	def __init__(self, model: ACFTable, *args, **kwargs):
+		super().__init__(model=model, *args, **kwargs)
+
+	def learn(self, state_batch, action_batch, reward_batch, action_values, nextstate_batch, motivation):
+		deltas = super().learn(state_batch, action_batch, reward_batch, action_values, nextstate_batch, motivation)
+		actions = np.argmax(action_batch, axis=1)
+		learning_rate = self.optimizer['learning_rate']
+
+		for action in np.unique(actions):
+			self.model.action_bias[RewardType.WATER.value][action] += learning_rate * np.mean(deltas[actions == action])
+			self.model.action_bias[RewardType.FOOD.value][action] += learning_rate * np.mean(deltas[actions == action])
+
+		return deltas
 
 
 class MALearnerSimple(MALearner):
