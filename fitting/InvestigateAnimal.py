@@ -11,7 +11,8 @@ from brains.consolidationbrain import ConsolidationBrain
 from brains.tdbrain import TDBrain
 from environment import PlusMazeOneHotCues, CueType, PlusMazeOneHotCues2ActiveDoors
 from fitting import fitting_config, fitting_utils
-from fitting.MazeResultsBehaviouralMS import compare_model_subject_learning_curve_average
+from fitting.MazeResultsBehaviouralMS import compare_model_subject_learning_curve_average, \
+	plot_models_fitting_result_per_stage
 from fitting.fitting_utils import run_model_on_animal_data
 from learners.networklearners import *
 from learners.tabularlearners import *
@@ -20,7 +21,7 @@ from models.tabularmodels import *
 
 
 def writecsvfiletotemp(rat_data_with_likelihood: pd.DataFrame):
-	f = tempfile.NamedTemporaryFile()
+	f = tempfile.NamedTemporaryFile(delete=False)
 	rat_data_with_likelihood.to_csv(f)
 	return f.name
 
@@ -43,8 +44,8 @@ if __name__ == '__main__':
 	rat_data_with_likelihood['model'] = utils.brain_name(model_arch)
 	rat_data_with_likelihood['subject'] = [parameters] * len(rat_data_with_likelihood)
 
-	# filename = writecsvfiletotemp(rat_data_with_likelihood)
+	filename = writecsvfiletotemp(rat_data_with_likelihood)
 
-	compare_model_subject_learning_curve_average(rat_data_with_likelihood)
-
+	compare_model_subject_learning_curve_average(filename)
+	plot_models_fitting_result_per_stage(filename)
 	pass
