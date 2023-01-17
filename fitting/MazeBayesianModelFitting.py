@@ -67,17 +67,19 @@ class MazeBayesianModelFitting:
 		likelihood_stage = likelihood_day.groupby('stage').mean()
 
 		NLL = rat_data_with_likelihood.NLL.to_numpy()
+		n = len(NLL)
 		L = rat_data_with_likelihood.likelihood.to_numpy()
 		meanNLL = np.nanmean(NLL)
 		meanL = np.nanmean(rat_data_with_likelihood.likelihood)
 		geomeanL = scipy.stats.mstats.gmean(rat_data_with_likelihood.likelihood, nan_policy='omit')
 		np.testing.assert_almost_equal(np.exp(-meanNLL), geomeanL)
-
+		aic = 2 * np.sum(NLL)/n + 2 * len(parameters) / n
 		y = meanNLL
 
-		print("{}.\tx={},\t(meanNLL={:.3f}, medianNLL={:.3f}, sumNLL={:.3f}, stages={}), \t(meanL={:.3f}, "
+		print("{}. x={}, AIC:{:2f} (meanNLL={:.2f}, medianNLL={:.2f}, sumNLL={:.2f}, stages={}), \t(meanL={:.2f}, "
 			  "medianL={:.3f}, gmeanL={:.3f}, stages={})".format(utils.brain_name(model),
 																 list(np.round(parameters, 4)),
+																 aic,
 																 meanNLL, np.nanmedian(NLL), np.nansum(NLL),
 																 np.round(likelihood_stage.NLL.to_numpy(), 2),
 																 meanL, np.nanmedian(L),
@@ -138,7 +140,6 @@ class MazeBayesianModelFitting:
 				model, parameters_space = curr_model
 				search_result, experiment_stats, rat_data_with_likelihood = \
 					MazeBayesianModelFitting(env, curr_rat, model, parameters_space, n_calls).optimize()
-
 
 				rat_data_with_likelihood['subject'] = subject_id
 				rat_data_with_likelihood["model"] = utils.brain_name(model)
