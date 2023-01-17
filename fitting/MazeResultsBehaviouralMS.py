@@ -66,6 +66,7 @@ def models_fitting_quality_over_times_average(data_file_path):
 
 	fig = plt.figure(figsize=(7.5, 4), dpi=100, facecolor='w')
 
+	#sns.set_palette("tab10", len(models_order_df(model_df)))
 	axis = sns.lineplot(x="ind", y="likelihood", hue="model", size_order=order, sort=False,
 						hue_order=models_order_df(model_df),
 						data=model_df, errorbar="se", err_style='band')
@@ -78,8 +79,7 @@ def models_fitting_quality_over_times_average(data_file_path):
 
 	handles, labels = axis.get_legend_handles_labels()
 	plt.legend(handles, labels, loc="upper left", prop={'size': 14}, labelspacing=0.2)
-	axis.spines['top'].set_visible(False)
-	axis.spines['right'].set_visible(False)
+	despine(axis)
 	plt.subplots_adjust(left=0.12, bottom=0.15, right=0.98, top=0.98, wspace=0.2, hspace=0.1)
 
 def models_fitting_quality_over_times(data_file_path):
