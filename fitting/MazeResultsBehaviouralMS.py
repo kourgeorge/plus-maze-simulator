@@ -11,7 +11,7 @@ from fitting.fitting_utils import stable_unique, rename_models, models_order_df
 from matplotlib.ticker import MaxNLocator
 import seaborn as sns
 import json
-
+from itertools import product
 
 plt.rcParams.update({'font.size': 12})
 
@@ -213,6 +213,55 @@ def compare_model_subject_learning_curve_average(data_file_path):
 	plt.subplots_adjust(left=0.12, bottom=0.15, right=0.98, top=0.98, wspace=0.2, hspace=0.1)
 
 	plt.savefig('fitting/Results/paper_figures/learning_curve_{}'.format(utils.get_timestamp()))
+
+
+def WPI_WC_FC(data_file_path):
+	plt.rcParams.update({'font.size': 12})
+	df = pd.read_csv(data_file_path)
+	df = df[['subject', 'model', 'stage', 'day in stage', 'trial', 'reward','reward_type', 'model_reward']].copy()
+	df = df[df.model == df.model[0]]
+
+	df['reward_type'] = df['reward_type'].map(lambda x: 'Food' if x==1 else 'Water')
+
+	days_info_df = df.groupby(['subject', 'model', 'stage', 'day in stage', 'reward_type'], sort=False). \
+		agg({'reward': 'mean', 'trial': 'count'}).reset_index()
+
+	days_info_df = filter_days(days_info_df)
+	days_info_df, order, tr = index_days(days_info_df)
+	days_info_df.sort_values('ind', axis=0, ascending=True, inplace=True)
+
+	# axis = sns.boxplot(x="ind", y="reward", hue="reward_type",
+	# 						data=days_info_df)#, errorbar="se", err_style='band')
+	axis = sns.pointplot(x="ind", y="reward", hue="reward_type", data=days_info_df, errorbar="se", join=False, capsize=.5,
+						 palette=sns.color_palette("Paired", n_colors=2), scale=0.4, dodge=0.1, linestyles='--')
+
+	for stage_day in tr:
+		axis.axvline(x=stage_day - 0.5, alpha=0.5, dashes=(5, 2, 1, 2), lw=2, color='gray')
+
+	despine(axis)
+	axis.legend().set_title('')
+
+	axis.set_xlabel('Stage.Day')
+	axis.set_ylabel('Correct Choices')
+
+	df_temp = df[['subject', 'model', 'stage', 'day in stage', 'trial']].copy()
+	trials_in_day = df_temp.groupby(['subject', 'model', 'stage', 'day in stage'], sort=False).count().reset_index()
+	trials_in_day['total_trials'] = trials_in_day['trial']
+	trials_in_day.drop(['trial'], axis=1, inplace=True)
+
+	wp_df = pd.concat([days_info_df, trials_in_day], axis=1, join='inner')
+	wp_df['WPI'] = wp_df['trial'] / wp_df['total_trials']
+
+	wp_df = wp_df[wp_df['reward_type']=='Water']
+
+	uniques = [days_info_df[i].unique().tolist() for i in ['subject', 'stage', 'day in stage', 'reward_type']]
+	df_combo = pd.DataFrame(product(*uniques), columns=days_info_df.columns)
+
+	fig = plt.figure(figsize=(11, 5), dpi=100, facecolor='w')
+	axis2 = sns.lineplot(x="ind", y="WPI",data=wp_df, errorbar="se", )
+
+	for stage_day in tr:
+		axis2.axvline(x=stage_day - 0.5, alpha=0.5, dashes=(5, 2, 1, 2), lw=2, color='gray')
 
 
 def learning_curve_behavioral_boxplot(data_file_path):
@@ -585,16 +634,17 @@ def average_likelihood(data_file_path):
 		axis.axhline(y=likelihood, alpha=1, lw=2, color=colors[ind])
 
 if __name__ == '__main__':
-	file_path = '/Users/gkour/repositories/plusmaze/fitting/Results/Rats-Results/fitting_results_2023_01_13_15_54_20_all.csv'
-	#learning_curve_behavioral_boxplot('/Users/gkour/repositories/plusmaze/fitting/Results/Rats-Results/fitting_results_2023_01_12_15_14_11.csv')
-	# models_fitting_quality_over_times_average(file_path)
-	# compare_model_subject_learning_curve_average(file_path)
-	# plot_models_fitting_result_per_stage(file_path)
+	file_path = '/Users/gkour/repositories/plusmaze/fitting/Results/Rats-Results/fitting_results_ActionBias.csv'
+	#learning_curve_behavioral_boxplot('/Users/gkour/repositories/plusmaze/fitting/Results/Rats-Results/fitting_results_2023_01_15_03_36_50.csv')
+	#WPI_WC_FC(file_path)
+	models_fitting_quality_over_times_average(file_path)
+	compare_model_subject_learning_curve_average(file_path)
+	plot_models_fitting_result_per_stage(file_path)
 	# show_likelihood_trials_scatter(file_path)
 	#stage_transition_model_quality(file_path)
-	show_fitting_parameters(file_path)
+	# show_fitting_parameters(file_path)
 	compare_fitting_criteria(file_path)
-	#average_likelihood(file_path)
+	average_likelihood(file_path)
 	#compare_neural_tabular_models(file_path)
-	#model_parameters_development(file_path)
-	x = 2
+	model_parameters_development(file_path)
+	x = 1
