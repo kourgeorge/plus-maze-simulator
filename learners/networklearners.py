@@ -25,7 +25,7 @@ class DQN(AbstractLearner):
 		# Optimize the model
 		self.optimizer.zero_grad()
 		loss.backward()
-
+		torch.nn.utils.clip_grad_value_(self.model.parameters(), 100)
 		self.optimizer.step()
 		return loss.item()
 

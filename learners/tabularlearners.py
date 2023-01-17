@@ -15,7 +15,7 @@ class QLearner(AbstractLearner):
 	def learn(self, state_batch, action_batch, reward_batch, action_values, nextstate_batch, motivation):
 		learning_rate = self.optimizer['learning_rate']
 		actions = np.argmax(action_batch, axis=1)
-		all_action_values = self.model(state_batch)
+		all_action_values = self.model(state_batch, motivation)
 		selected_action_value = all_action_values[np.arange(len(all_action_values)), actions]
 		deltas = (reward_batch - selected_action_value)
 		updated_q_values = selected_action_value + learning_rate * deltas
@@ -26,7 +26,7 @@ class QLearner(AbstractLearner):
 		return deltas
 
 
-class ActionBiasedQLearner(QLearner):
+class ABQLearner(QLearner):
 	def __init__(self, model: QTable, learning_rate=0.01):
 		super().__init__(model=model, learning_rate=learning_rate)
 
@@ -36,7 +36,7 @@ class ActionBiasedQLearner(QLearner):
 		learning_rate = self.optimizer['learning_rate']
 
 		for action in np.unique(actions):
-			self.model.action_bias[action] += learning_rate*np.mean(deltas[actions==action])
+			self.model.action_bias[motivation.value][action] += learning_rate*np.mean(deltas[actions==action])
 
 		return deltas
 
@@ -73,9 +73,20 @@ class IALearner(AbstractLearner):
 
 		return delta
 
-	def __str__(self):
-		return 'IALearner'
 
+class ABIALearner(IALearner):
+	def __init__(self, model: FTable, learning_rate=0.01):
+		super().__init__(model=model, learning_rate=learning_rate)
+
+	def learn(self, state_batch, action_batch, reward_batch, action_values, nextstate_batch, motivation):
+		deltas = super().learn(state_batch, action_batch, reward_batch, action_values, nextstate_batch, motivation)
+		actions = np.argmax(action_batch, axis=1)
+		learning_rate = self.optimizer['learning_rate']
+
+		for action in np.unique(actions):
+			self.model.action_bias[motivation.value][action] += learning_rate*np.mean(deltas[actions==action])
+
+		return deltas
 
 class IAAluisiLearner(AbstractLearner):
 	def __init__(self, model: FTable, learning_rate=0.01):
@@ -112,7 +123,7 @@ class IAAluisiLearner(AbstractLearner):
 
 
 class MALearner(IALearner):
-	def __init__(self, model, alpha_phi=0.005, *args, **kwargs):
+	def __init__(self, model:ACFTable, alpha_phi=0.005, *args, **kwargs):
 		super().__init__(model, *args, **kwargs)
 		self.alpha_phi = alpha_phi
 
@@ -142,6 +153,23 @@ class MALearner(IALearner):
 
 	def calc_delta_phi(self, Q, reward, V):
 		return V-Q
+
+
+class ABMALearner(MALearner):
+
+	def __init__(self, model: ACFTable, *args, **kwargs):
+		super().__init__(model=model, *args, **kwargs)
+
+	def learn(self, state_batch, action_batch, reward_batch, action_values, nextstate_batch, motivation):
+		deltas = super().learn(state_batch, action_batch, reward_batch, action_values, nextstate_batch, motivation)
+		actions = np.argmax(action_batch, axis=1)
+		learning_rate = self.optimizer['learning_rate']
+
+		for action in np.unique(actions):
+			self.model.action_bias[motivation.value][action] += learning_rate * np.mean(deltas[actions == action])
+
+		return deltas
+
 
 
 class MALearnerSimple(MALearner):

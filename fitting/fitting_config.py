@@ -88,10 +88,11 @@ def extract_configuration_params(params):
 
 
 friendly_models_name_map = {'QLearner.QTable': 'SARL',
-							'ActionBiasedQLearner.QTable': 'ABSARL',
+							'ABQLearner.QTable': 'ABSARL',
 							'QLearner.OptionsTable': 'ORL',
-							'ActionBiasedQLearner.OptionsTable': 'ABORL',
+							'ABQLearner.OptionsTable': 'ABORL',
 							'IALearner.FTable': 'FRL',
+							'ABIALearner.FTable': 'ABFRL',
 							'IALearner.ACFTable': 'SCFRL',
 							'IAAluisiLearner.ACFTable': 'MFRL',
 							'MALearner.ACFTable': 'AARL',
