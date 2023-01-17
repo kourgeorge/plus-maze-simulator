@@ -271,7 +271,7 @@ def learning_curve_behavioral_boxplot(data_file_path):
 	df = df[df.model == df.model[0]]
 	days_info_df = df.groupby(['subject', 'model', 'stage', 'day in stage'], sort=False).mean().reset_index()
 
-	days_info_df, order = index_days(days_info_df)
+	days_info_df, order, st = index_days(days_info_df)
 
 	axis = sns.boxplot(data=days_info_df, x='ind', y='reward',  order=order, palette="flare")
 
@@ -366,10 +366,11 @@ def plot_models_fitting_result_per_stage(data_file_path):
 	ax0 = fig.add_subplot(spec[0, 0:2])
 	ax1 = fig.add_subplot(spec[0, 2])
 
+	sns.set_palette("tab10", len(models_order_df(df_stage)))
 	y = 'likelihood'
 	g1 = sns.barplot(x='stage', y=y, hue='model', hue_order=models_order_df(df_stage),
 					 data=df_stage, ax=ax0, errorbar='se' ,errwidth=1, capsize=.05)
-	#g1.set_ylim([0.25, 0.65])
+	g1.set_ylim([0.25, 0.4])
 	g1.set_xticklabels(stages)
 	g1.set(xlabel='', ylabel='Average Likelihood')
 	g1.legend([], [], frameon=False)
@@ -392,7 +393,7 @@ def plot_models_fitting_result_per_stage(data_file_path):
 	g2.legend([], [], frameon=False)
 	plt.subplots_adjust(left=0.1, bottom=0.1, right=0.99, top=0.9, wspace=0.3, hspace=0.3)
 
-	g2.set_ylim([0.5, 0.6])
+	g2.set_ylim(g1.get_ylim())
 
 	# args = dict(x="dummy", y=y, hue="model", hue_order=models_order_df(df))
 	# pairs = [((1.0, 'AARL'), (1.0, 'MFRL')), ((1.0, 'SARL'), (1.0, 'AARL')), ((1.0, 'MFRL'), (1.0, 'FRL'))]
@@ -409,13 +410,15 @@ def plot_models_fitting_result_per_stage(data_file_path):
 
 
 def compare_fitting_criteria(data_file_path):
+	plt.rcParams.update({'font.size': 10})
+
 	df = pd.read_csv(data_file_path)
 	df = df[['subject', 'model', 'likelihood', 'parameters', 'day in stage', 'stage', 'reward']].copy()
 	df = rename_models(df)
 	df['LL'] = np.log(df.likelihood)
 
 	# # optimization average over trials
-	likelihood_trial = df.groupby(['model']).agg({'reward': 'count', 'LL': 'sum', 'likelihood': 'mean'}).reset_index()
+	likelihood_trial = df.groupby(['subject', 'model', 'parameters']).agg({'reward': 'count', 'LL': 'sum', 'likelihood': 'mean'}).reset_index()
 	data = likelihood_trial.rename(columns={'reward': 'n'})
 
 	#data['k'] = data.apply(lambda row: len(fitting_utils.string2list(row['parameters'])), axis=1)
@@ -480,10 +483,8 @@ def show_fitting_parameters(data_file_path):
 	params_info = param_mean.merge(param_std, on=['model'])
 	params_info = params_info.sort_values(['model'], ascending=False)
 
-	params_info['alpha'] = params_info.apply(lambda row: "${:.2} \\pm {:.2}$".format(row.alpha_x, row.alpha_y),
-													 axis=1)
-	params_info['beta'] = params_info.apply(lambda row: "${:.2} \\pm {:.2}$".format(row.beta_x, row.beta_y),
-													 axis=1)
+	params_info['alpha'] = params_info.apply(lambda row: "${:.2} \\pm {:.2}$".format(row.alpha_x, row.alpha_y), axis=1)
+	params_info['beta'] = params_info.apply(lambda row: "${:.2} \\pm {:.2}$".format(row.beta_x, row.beta_y), axis=1)
 	if 'alpha_phi' in df.columns:
 		params_info['alpha_phi'] = params_info.apply(lambda row: "${:.2} \\pm {:.2}$".format(row.alpha_phi_x, row.alpha_phi_y),
 													 axis=1)
@@ -501,7 +502,6 @@ def show_fitting_parameters(data_file_path):
 
 def model_parameters_development(data_file_path):
 
-	reported_days_in_stage3 = 9
 	plt.rcParams.update({'font.size': 14})
 	df_all = pd.read_csv(data_file_path)
 	df = df_all[['subject', 'model', 'parameters', 'stage', 'day in stage', 'trial', 'model_variables', 'likelihood']].copy()
@@ -514,7 +514,7 @@ def model_parameters_development(data_file_path):
 	# this is needed because there is no good way to order the x-axis in lineplot.
 	df.sort_values('ind', axis=0, ascending=True, inplace=True)
 
-	for model in ['AARL','ACLNet2']:
+	for model in np.unique(df.model): # ['AARL','ACLNet2']:
 		df_model = df[df.model == model]
 		# format the model_variables entry
 		df_model['model_variables'] = df_model['model_variables'].apply(lambda s: s.replace("\'", "\""))
@@ -578,7 +578,7 @@ def model_parameters_development(data_file_path):
 			axis.spines['right'].set_visible(False)
 
 			params_list = np.round(fitting_utils.string2list(df_sub.parameters.tolist()[0]),3)
-			axis.set_title('S{}: [{} {} {}]'.format(subject, *params_list))
+			axis.set_title('S{}: {}'.format(subject, params_list))
 
 			axis.set_xlabel('Stage.Day') if i > len(animals_ind)-3 else axis.set_xlabel('')
 			axis.set_ylabel('') #axis.set_ylabel("Attention") if i % 2 == 0 else axis.set_ylabel('')
