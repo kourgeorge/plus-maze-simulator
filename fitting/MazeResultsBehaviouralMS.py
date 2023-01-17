@@ -425,35 +425,21 @@ def compare_fitting_criteria(data_file_path):
 	data['k'] = data.apply(lambda row: 3 if row.model=='AARL' or row.model=='ACLNet2' else 2, axis=1)
 
 	data['AIC'] = - 2 * data.LL/data.n + 2 * data.k/data.n
-	data['BIC'] = - 2 * data.LL + np.log(data.n) * data.k
+	data['BIC'] = (- 2 * data.LL + np.log(data.n) * data.k)/ data.n
 	data['LPT'] = data.likelihood
 
 	data.LL = -data.LL
-	for criterion in ['AIC', 'BIC', 'LPT']:
-		# fig = plt.figure(figsize=(35, 7), dpi=120, facecolor='w')
-		# for subject in stable_unique(data.subject):
-		# 	axis = fig.add_subplot(3, 3, subject + 1)
-		# 	subject_model_df = data[(data.subject == subject)]
-		# 	sns.barplot(x=criterion, y='model', data=subject_model_df, ax=axis, orient='h', order=models_order)
-		# 	axis.set_title('Subject:{}'.format(subject+1))
-		# 	minn = np.min(subject_model_df[criterion])
-		# 	maxx=np.max(subject_model_df[criterion])
-		# 	delta = 0.1*(maxx-minn)
-		# 	axis.set_xlim([minn-delta,maxx+delta])
-		# 	labels = axis.get_xticklabels()
-		# 	axis.set_ylabel("")
-		# 	axis.set_yticklabels("") if subject % 3 > 0 else 0
-		# 	axis.set_xlabel("") if subject < 6 else 0
-		#
-		# plt.subplots_adjust(left=0.15, bottom=0.1, right=0.97, top=0.9, wspace=0.2, hspace=0.4)
 
-		#plot the average fitting quality for the entire population.
-		#sum_df = likelihood_trial.groupby(['model']).mean().reset_index()
+	# plot the average fitting quality for the entire population.
+	sum_df = data.groupby(['model']).mean().reset_index()
+
+	sns.set_palette("tab10", len(models_order_df(data)))
+	for criterion in ['AIC', 'BIC', 'LPT']:
 
 		plt.figure(figsize=(5, 4), dpi=120, facecolor='w')
-		axis = sns.barplot(y='model', x=criterion, data=data, order=models_order_df(data),)
-		minn = np.min(data[criterion])
-		maxx = np.max(data[criterion])
+		axis = sns.barplot(y='model', x=criterion, data=sum_df, order=models_order_df(sum_df),)
+		minn = np.min(sum_df[criterion])
+		maxx = np.max(sum_df[criterion])
 		delta = 0.1 * (maxx - minn + 0.1)
 		plt.xlim([minn - delta, maxx + delta])
 
@@ -463,7 +449,24 @@ def compare_fitting_criteria(data_file_path):
 
 		axis.set_ylabel('')
 
-		plt.savefig('fitting/Results/figures/{}_{}'.format(criterion, utils.get_timestamp()))
+		fig = plt.figure(figsize=(35, 7), dpi=120, facecolor='w')
+		for subject in np.unique(data.subject):
+			axis = fig.add_subplot(int(np.ceil(len(np.unique((data.subject)))/2)), 2, subject + 1)
+			subject_model_df = data[(data.subject == subject)]
+			sns.barplot(x=criterion, y='model', data=subject_model_df, ax=axis, orient='h', order=models_order_df(data))
+			axis.set_title('Subject:{}'.format(subject+1))
+			minn = np.min(data[criterion])
+			maxx= np.max(data[criterion])
+			delta = 0.1*(maxx-minn)
+			axis.set_xlim([minn-delta,maxx+delta])
+			labels = axis.get_xticklabels()
+			axis.set_ylabel("")
+			axis.set_yticklabels("") if subject % 2 > 0 else 0
+			axis.set_xlabel("") if subject <8  else 0
+			plt.subplots_adjust(left=0.15, bottom=0.1, right=0.97, top=0.9, wspace=0.2, hspace=0.7)
+
+			params_list = np.round(fitting_utils.string2list(subject_model_df.parameters.tolist()[0]), 3)
+			axis.set_title('S{}: {}'.format(subject, params_list))
 
 
 def show_fitting_parameters(data_file_path):
