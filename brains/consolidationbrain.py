@@ -23,7 +23,7 @@ class ConsolidationBrain(AbstractBrain):
 
 	def think(self, obs, agent):
 		action_value = self.get_model()(torch.FloatTensor(obs))
-		action_dist = torch.softmax(self.beta*action_value, axis=-1)
+		action_dist = torch.softmax(self.beta*action_value, dim=-1)
 		return action_dist
 
 	def get_learner(self):
