@@ -8,7 +8,7 @@ import time
 import utils
 
 
-def plot_days_per_stage(all_brains_types_stats, file_path):
+def plot_days_per_stage(all_brains_types_stats):
 
 	width = 0.7/len(all_brains_types_stats)
 	fig, ax = plt.subplots(figsize=(10, 6))
@@ -26,7 +26,7 @@ def plot_days_per_stage(all_brains_types_stats, file_path):
 		days_per_stage_brain_type = np.stack(days_per_stage_brain_type)
 
 		ax.bar(np.array(stages) + width*i, np.mean(days_per_stage_brain_type, axis=0), yerr=sem(days_per_stage_brain_type, axis=0, nan_policy='omit'),
-			width=width, label="{}:{}({})".format(brain_type_stats[0].metadata['brain'],
+			width=width, label="{}:{}:{}({})".format(brain_type_stats[0].metadata['brain'],
 												  brain_type_stats[0].metadata['learner'],
 												 brain_type_stats[0].metadata['model'],
 												 brain_type_stats[0].metadata['brain_params']), capsize=2)
@@ -36,8 +36,6 @@ def plot_days_per_stage(all_brains_types_stats, file_path):
 
 	plt.title("Days Per stage. #reps={}".format(repetitions))
 	plt.legend()
-
-	plt.savefig(file_path)
 
 
 def days_to_consider_in_each_stage(subject_reports, q=75):
@@ -104,9 +102,10 @@ def plot_behavior_results(brain_type_stats, dirname=None):
 	plt.xlabel('Days')
 	#plt.ylabel('Percent')
 
-	fig.suptitle("Stats of {} individuals.\nbrain:{}. network:{}({})".format(
+	fig.suptitle("Stats of {} individuals.\n{}:{}:{}({})".format(
 		len(brain_type_stats),
-		brain_type_stats[0].metadata['brain'], brain_type_stats[0].metadata['learner'],
+		brain_type_stats[0].metadata['brain'],
+		brain_type_stats[0].metadata['learner'],
 		brain_type_stats[0].metadata['model'],
 		brain_type_stats[0].metadata['brain_params']
 		),fontsize=8)
