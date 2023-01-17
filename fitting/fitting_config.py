@@ -40,27 +40,27 @@ FITTING_ITERATIONS = 50
 
 maze_models = [
 				# ((TDBrain, QLearner, QTable), (beta, lr)),
-				# ((TDBrain, ActionBiasedQLearner, QTable), (beta, lr)),
+				((TDBrain, ABQLearner, QTable), (beta, lr)),
 				#
 			    # ((TDBrain, QLearner, OptionsTable), (beta, lr)),
-				# ((TDBrain, ActionBiasedQLearner, OptionsTable), (beta, lr)),
+				((TDBrain, ABQLearner, OptionsTable), (beta, lr)),
 				#
 			    # ((TDBrain, IALearner, ACFTable), (beta, lr)),
-			    # ((TDBrain, IAAluisiLearner, ACFTable), (beta, lr)),
+			    #((TDBrain, IAAluisiLearner, ACFTable), (beta, lr)),
 				#
 				# ((TDBrain, IALearner, FTable), (beta, lr)),
-			    #((TDBrain, IALearner, ACFTable), (beta, lr)),
+			    ((TDBrain, IALearner, ACFTable), (beta, lr)),
 
-				#((TDBrain, MALearner, ACFTable), (beta, lr, attention_lr)),
+				((TDBrain, MALearner, ACFTable), (beta, lr, attention_lr)),
 
 			   # ((TDBrain, MALearnerSimple, ACFTable), (beta, lr, attention_lr)),
 			   # ((TDBrain, MALearner, PCFTable), (beta, lr, attention_lr)),
 
 			   ((ConsolidationBrain, DQN, FCNet), (beta, lr)),
 			   ((ConsolidationBrain, DQN, UANet), (beta, lr)),
-			   #((ConsolidationBrain, DQN, ACLNet), (beta, lr)),
-			   #((ConsolidationBrain, DQNAtt, ACLNet), (beta, lr, attention_lr)),
-			   #((ConsolidationBrain, DQN, FC2LayersNet), (beta, lr)),
+			   ((ConsolidationBrain, DQN, ACLNet), (beta, lr)),
+			   ((ConsolidationBrain, DQNAtt, ACLNet), (beta, lr, attention_lr)),
+			   ((ConsolidationBrain, DQN, FC2LayersNet), (beta, lr)),
 
 				#((ConsolidationBrain, DQN, EfficientNetwork),(beta, lr)),
 				# ((ConsolidationBrain, PG, FullyConnectedNetwork), (beta, lr)),
@@ -69,6 +69,25 @@ maze_models = [
 				# ((ConsolidationBrain, PG, FullyConnectedNetwork2Layers), (beta, lr)),
 			   # ((RandomBrain, DQN, Random), (beta, lr))
 			   ]
+
+
+
+
+maze_models = [
+				# ((TDBrain, QLearner, QTable), (beta, lr)),
+				# ((TDBrain, UABQLearner, QTable), (beta, lr)),
+				#
+			    # ((TDBrain, QLearner, OptionsTable), (beta, lr)),
+				# ((TDBrain, UABQLearner, OptionsTable), (beta, lr)),
+				#
+				#((TDBrain, IALearner, FTable), (beta, lr)),
+				# ((TDBrain, UABIALearner, FTable), (beta, lr)),
+
+				((TDBrain, MALearner, ACFTable), (beta, lr, attention_lr)),
+				((TDBrain, UABMALearner, ACFTable), (beta, lr, attention_lr)),
+				((TDBrain, ABMALearner, ACFTable), (beta, lr, attention_lr)),
+
+	]
 
 motivational_models = maze_models + [((ConsolidationBrain, DQN, EfficientNetwork), (beta, lr, batch_size)),
 					   ((FixedDoorAttentionBrain, DQN, EfficientNetwork), (nmr, lr, batch_size)),
@@ -88,10 +107,13 @@ def extract_configuration_params(params):
 
 
 friendly_models_name_map = {'QLearner.QTable': 'SARL',
+							'UABQLearner.QTable': 'UABSARL',
 							'ABQLearner.QTable': 'ABSARL',
 							'QLearner.OptionsTable': 'ORL',
+							'UABQLearner.OptionsTable': 'UABORL',
 							'ABQLearner.OptionsTable': 'ABORL',
 							'IALearner.FTable': 'FRL',
+							'UABIALearner.FTable': 'UABFRL',
 							'ABIALearner.FTable': 'ABFRL',
 							'IALearner.ACFTable': 'SCFRL',
 							'IAAluisiLearner.ACFTable': 'MFRL',
