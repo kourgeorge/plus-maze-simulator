@@ -27,13 +27,18 @@ def triplet_colors(n):
 
 	def flatten(l):
 		return [item for sublist in l for item in sublist]
-	colors = flatten(list(zip(pastel,deep,dark)))
+
+	colors = flatten(list(zip(pastel, deep, dark)))
 	return colors
 
 def despine(axis):
 	axis.spines['top'].set_visible(False)
 	axis.spines['right'].set_visible(False)
 
+
+def dilute_xticks(axis):
+	ticks = ["{}".format(int(x._text[2:])) if (int(x._text[2:]) - 1) % 2 == 0 else "" for ind, x in enumerate(axis.get_xticklabels())]
+	axis.set_xticklabels(ticks)
 
 def filter_days(df):
 	for ind, stage in enumerate(stages):
@@ -58,6 +63,26 @@ def index_days(df):
 	transition = [i for i in range(1, len(order)) if order[i][0] != order[i - 1][0]]
 
 	return df, order, transition
+
+
+def unbox_model_variables(df_model):
+	# format the model_variables entry
+	df_model['model_variables'] = df_model['model_variables'].apply(lambda s: s.replace("\'", "\""))
+	df_model['model_variables'] = df_model['model_variables'].apply(json.loads)
+
+	variables_names = df_model['model_variables'].tolist()[0].keys()
+	df_variables = pd.DataFrame(df_model['model_variables'].tolist())
+
+	df_no = df_model.drop('model_variables', axis=1).reset_index()
+	df_model = pd.concat([df_no, df_variables], axis=1)
+
+	df_model = df_model.groupby(['subject', 'model', 'parameters', 'stage', 'day in stage'],
+								sort=False).mean().reset_index()
+
+	return df_model, variables_names
+
+
+
 
 
 def models_fitting_quality_over_times_average(data_file_path):
@@ -226,9 +251,10 @@ def compare_model_subject_learning_curve_average(data_file_path):
 
 
 def WPI_WC_FC(data_file_path):
-	plt.rcParams.update({'font.size': 12})
+	plt.rcParams.update({'font.size': 16})
 	df = pd.read_csv(data_file_path)
-	df = df[['subject', 'model', 'stage', 'day in stage', 'trial', 'reward','reward_type', 'model_reward']].copy()
+	df = df[['subject', 'model', 'stage', 'day in stage', 'trial', 'reward', 'reward_type', 'model_reward']].copy()
+
 	df = df[df.model == df.model[0]]
 
 	df['reward_type'] = df['reward_type'].map(lambda x: 'Food' if x==1 else 'Water')
@@ -240,10 +266,14 @@ def WPI_WC_FC(data_file_path):
 	days_info_df, order, tr = index_days(days_info_df)
 	days_info_df.sort_values('ind', axis=0, ascending=True, inplace=True)
 
+	colors = triplet_colors(5)
+	colors =(colors[9], colors[10])
+
+	fig = plt.figure(figsize=(10, 5))
 	# axis = sns.boxplot(x="ind", y="reward", hue="reward_type",
 	# 						data=days_info_df)#, errorbar="se", err_style='band')
 	axis = sns.pointplot(x="ind", y="reward", hue="reward_type", data=days_info_df, errorbar="se", join=False, capsize=.5,
-						 palette=sns.color_palette("Paired", n_colors=2), scale=0.4, dodge=0.1, linestyles='--')
+						 palette=sns.color_palette(colors), scale=1, dodge=0.2, linestyles='--')
 
 	for stage_day in tr:
 		axis.axvline(x=stage_day - 0.5, alpha=0.5, dashes=(5, 2, 1, 2), lw=2, color='gray')
@@ -264,14 +294,20 @@ def WPI_WC_FC(data_file_path):
 
 	wp_df = wp_df[wp_df['reward_type']=='Water']
 
-	uniques = [days_info_df[i].unique().tolist() for i in ['subject', 'stage', 'day in stage', 'reward_type']]
-	df_combo = pd.DataFrame(product(*uniques), columns=days_info_df.columns)
+	# uniques = [days_info_df[i].unique().tolist() for i in ['subject', 'stage', 'day in stage', 'reward_type']]
+	# df_combo = pd.DataFrame(product(*uniques), columns=days_info_df.columns)
 
-	fig = plt.figure(figsize=(11, 5), dpi=100, facecolor='w')
-	axis2 = sns.lineplot(x="ind", y="WPI",data=wp_df, errorbar="se", )
+	# fig = plt.figure(figsize=(11, 5), dpi=100, facecolor='w')
+	#axis2 = sns.lineplot(x="ind", y="WPI",data=wp_df, errorbar="se", )
 
 	for stage_day in tr:
-		axis2.axvline(x=stage_day - 0.5, alpha=0.5, dashes=(5, 2, 1, 2), lw=2, color='gray')
+		axis.axvline(x=stage_day - 0.5, alpha=0.5, dashes=(5, 2, 1, 2), lw=2, color='gray')
+
+	axis.axhline(y=0.5, alpha=0.7, lw=1, color='grey', linestyle='--')
+	axis.axhline(y=0.75, alpha=0.7, lw=1, color='grey', linestyle='--')
+
+
+	plt.subplots_adjust(left=0.08, bottom=0.15, right=0.99, top=0.99, wspace=0.1, hspace=0.4)
 
 
 def learning_curve_behavioral_boxplot(data_file_path):
@@ -516,8 +552,68 @@ def show_fitting_parameters(data_file_path):
 	# ax.set(xscale="log", yscale="log")
 
 
-def model_parameters_development(data_file_path):
+def action_bias_in_stage(data_file_path):
+	plt.rcParams.update({'font.size': 8})
+	df_all = pd.read_csv(data_file_path)
+	df = df_all[
+		['subject', 'model', 'parameters', 'stage', 'day in stage', 'trial', 'model_variables', 'likelihood']].copy()
 
+	df = df[df['model_variables'].notna()].reset_index()
+
+	df = rename_models(df)
+	df = filter_days(df)
+	df, order, st = index_days(df)
+
+	days_per_rat = df[['subject', 'stage', 'day in stage']].drop_duplicates()
+	days_per_rat=days_per_rat.groupby(['subject','stage'],).max().reset_index()
+
+	min_days_in_stage = [5,2,3,2,2]
+	sns.set_palette("hls", n_colors=2)
+	fig = plt.figure(figsize=(12, 5), dpi=120, facecolor='w')
+
+	models = ['MAB-SARL', 'MAB-ORL', 'MAB-FRL']
+	ylim = [[-.0001,0.01],[-0.0001,0.005], [-0.0001,0.07]]
+	ax_i = 0
+	for model_ind, model in enumerate(models):
+		model_df = df[df.model==model]
+
+		for stg_ind, stage in enumerate(stages):
+			#find the rates that maintained at least the number of days: 5,2,3,2,2
+			# plot the days in a lineplot in a figure with 5 sbplots
+
+			min_days = min_days_in_stage[stg_ind]
+			relevant_rats = days_per_rat[(days_per_rat.stage == stg_ind + 1) & (days_per_rat['day in stage'] >= min_days)]
+			relevant_rats = relevant_rats.subject
+
+			#read data of relevant rats in the stage
+			df_relevant_rats = model_df[(model_df.subject.isin(relevant_rats)) & (model_df.stage == stg_ind + 1)]
+
+			df_relevant_rats, variable_names = unbox_model_variables(df_relevant_rats)
+			variable_names = [name for name in list(variable_names) if 'bias' in name]
+
+			ax_i += 1
+			axis = fig.add_subplot(len(models), len(stages), ax_i)
+			# maxx = df_relevant_rats[variable_name]
+			for variable_name in variable_names:
+				axis = sns.lineplot(x="day in stage", y=variable_name, data=df_relevant_rats, errorbar="se",
+									err_style='band', ax=axis, label=variable_name.split('_')[0], marker='o')
+				axis.set_xlabel(stage) if ax_i > 10 else axis.set_xlabel('')
+				axis.set_ylabel(model) if (ax_i - 1) % 5 == 0 else axis.set_ylabel('')
+				axis.legend([], [], frameon=False)
+				despine(axis)
+				axis.set_ylim(ylim[model_ind])
+
+	handles, labels = axis.get_legend_handles_labels()
+	fig.legend(handles, labels, loc="upper left", prop={'size': 11}, labelspacing=0.2)
+
+	plt.subplots_adjust(left=0.06, bottom=0.07, right=0.99, top=0.95, wspace=0.3, hspace=0.5)
+
+	x=1
+
+
+
+
+def model_parameters_development(data_file_path, show_per_subject=False):
 	plt.rcParams.update({'font.size': 14})
 	df_all = pd.read_csv(data_file_path)
 	df = df_all[['subject', 'model', 'parameters', 'stage', 'day in stage', 'trial', 'model_variables', 'likelihood']].copy()
@@ -664,5 +760,6 @@ if __name__ == '__main__':
 	#compare_fitting_criteria(file_path)
 	average_likelihood(file_path)
 	#compare_neural_tabular_models(file_path)
-	# model_parameters_development(file_path)
+	#model_parameters_development(file_path, True)
+	action_bias_in_stage(file_path)
 	x = 1
