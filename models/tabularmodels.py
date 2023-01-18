@@ -13,51 +13,79 @@ from rewardtype import RewardType
 norm = 'fro'
 
 
-class QTable:
+class AbstractTabularModel:
 
+	def __call__(self, *args, **kwargs):
+		raise NotImplementedError()
+
+	def get_model_metrics(self):
+		raise NotImplementedError()
+
+	def get_model_diff(self, brain2):
+		raise NotImplementedError()
+
+	def __str__(self):
+		return self.__class__.__name__
+
+
+class QTable(AbstractTabularModel):
 	def __init__(self, encoding_size, num_channels, num_actions, initial_value=config.INITIAL_FEATURE_VALUE):
+		super().__init__()
 		self._num_actions = num_actions
 		self.Q = defaultdict(lambda: initial_value * np.ones(self._num_actions))
-		self.action_bias = {'water': np.zeros(self._num_actions), 'food':np.zeros(self._num_actions)}
+		self.action_bias = {'water': np.zeros(self._num_actions), 'food': np.zeros(self._num_actions)}
 		self.encoding_size = encoding_size
 
 	def __call__(self, *args, **kwargs):
-		state = args[0]
+		env_obs = args[0]
 		motivation = args[1]
 		state_actions_value = []
-		for obs in utils.states_encoding_to_cues(state, self.encoding_size):
-			#state_actions_value.append(self.Q[obs.tostring()])
-			state_actions_value.append(self.Q[np.array2string(obs)])
-		cues = utils.states_encoding_to_cues(state, self.encoding_size)
-		odor = cues[:, 0]  # odor for each door
+		for state in self.state_representation(env_obs, motivation):
+			state_actions_value.append(self.Q[np.array2string(state)])
 		state_actions_value = np.array(state_actions_value)
 		state_actions_value += self.action_bias[motivation.value]
-		state_actions_value[odor == self.encoding_size] = -np.inf
+		inactive_doors = utils.get_inactive_doors(env_obs)
+		state_actions_value[inactive_doors] = -np.inf
 		return state_actions_value
 
-	def set_actual_state_value(self, state, action, value):
-		obs = utils.states_encoding_to_cues(state, self.encoding_size)
-		self.Q[np.array2string(obs)][action] = value
+	def state_representation(self, obs, motivation):
+		return utils.stimuli_1hot_to_cues(obs, self.encoding_size)
+
+	def set_actual_state_value(self, obs, actions, values, motivation):
+		states = self.state_representation(obs, motivation)
+		for state, action, value in zip(states, actions, values):
+			self.Q[np.array2string(state)][action] = value
 
 	def get_model_metrics(self):
-		return {'WMotivation_bias': np.linalg.norm(self.action_bias['water'].tolist()),
-				'FMotivation_bias': np.linalg.norm(self.action_bias['food'].tolist())}
+		res =  {'WMotivation_bias': utils.negentropy(self.action_bias['water']),
+				'FMotivation_bias': utils.negentropy(self.action_bias['food'])}
+
+		return res
 
 	def get_model_diff(self, brain2):
 		diff = [np.linalg.norm(self.Q[state] - brain2.Q[state]) for state in
 				set(self.Q.keys()).intersection(brain2.Q.keys())]
 		return {'table_change': np.mean(diff) * 100}
 
-	def __str__(self):
-		return self.__class__.__name__
+
+class MQTable(QTable):
+	def __init__(self, encoding_size, num_channels, num_actions):
+		super().__init__(encoding_size, num_channels, num_actions)
+
+	def state_representation(self, obs, motivation):
+		motivation_dimension = np.tile([motivation.value], (obs.shape[0], 1, 4))
+		return np.append(utils.stimuli_1hot_to_cues(obs, self.encoding_size), motivation_dimension, axis=1)
 
 
-class OptionsTable:
+class OptionsTable(AbstractTabularModel):
 
-	def __init__(self, encoding_size, num_channels, num_actions, use_location_cue=True, initial_value=config.INITIAL_FEATURE_VALUE):
+	def __init__(self, encoding_size, num_channels, num_actions, use_location_cue=True,
+				 initial_value=config.INITIAL_FEATURE_VALUE):
+		super().__init__()
 		self._num_actions = num_actions
-		self.C = defaultdict(lambda: float(initial_value)) # familiar options are stored as tupples (color, odor and possibly, location).
-		self.action_bias = {'water': np.zeros(self._num_actions), 'food':np.zeros(self._num_actions)}
+		self.C = defaultdict(lambda: float(
+			initial_value))  # familiar options are stored as tupples (color, odor and possibly, location).
+		self.action_bias = {'water': np.zeros(self._num_actions), 'food': np.zeros(self._num_actions)}
 		self.encoding_size = encoding_size
 		self.use_location_cue = use_location_cue
 
@@ -65,7 +93,7 @@ class OptionsTable:
 		states = args[0]
 		motivation = args[1]
 		state_actions_value = []
-		for state in states:
+		for state in self.state_representation(states, motivation):
 			obs_action_value = []
 			for option in self.get_cues_combinations(state):
 				obs_action_value += [self.C[option]] if option[0] != self.encoding_size else [-np.inf]
@@ -73,20 +101,24 @@ class OptionsTable:
 			state_actions_value.append(obs_action_value)
 		return np.array(state_actions_value)
 
-	def set_actual_state_value(self, state, action, value):
-		option = self.get_cues_combinations(state)
-		self.C[option[action]] = value
+	def state_representation(self, obs, motivation):
+		return utils.stimuli_1hot_to_cues(obs, self.encoding_size)
+
+	def set_actual_state_value(self, obs, actions, values, motivation):
+		states = self.state_representation(obs, motivation)
+		for state, action, value in zip(states, actions, values):
+			option = self.get_cues_combinations(state)
+			self.C[option[action]] = value
 
 	def get_cues_combinations(self, state):
-		state_cues = utils.states_encoding_to_cues(state, self.encoding_size)
-		cues = list(zip(*state_cues))
+		cues = list(zip(*state))
 		if self.use_location_cue:
-			cues = [option+(a+1,) for a, option in enumerate(cues)]
+			cues = [option + (a + 1,) for a, option in enumerate(cues)]
 		return cues
 
 	def get_model_metrics(self):
-		return {'WMotivation_bias': np.linalg.norm(self.action_bias['water'].tolist()),
-				'FMotivation_bias': np.linalg.norm(self.action_bias['food'].tolist())}
+		return {'WMotivation_bias': utils.negentropy(self.action_bias['water'].tolist()),
+				'FMotivation_bias': utils.negentropy(self.action_bias['food'].tolist())}
 
 	def get_model_diff(self, brain2):
 		diff = [np.linalg.norm(self.C[state] - brain2.C[state]) for state in
@@ -97,74 +129,121 @@ class OptionsTable:
 		return self.__class__.__name__
 
 
-class FTable:
+class MOptionsTable(OptionsTable):
+	def __init__(self, encoding_size, num_channels, num_actions):
+		super().__init__(encoding_size, num_channels, num_actions)
+
+	def state_representation(self, obs, motivation):
+		motivation_dimension = np.tile([motivation.value], (obs.shape[0], 1, 4))
+		return np.append(utils.stimuli_1hot_to_cues(obs, self.encoding_size), motivation_dimension, axis=1)
+
+
+class FTable(AbstractTabularModel):
 	def __init__(self, encoding_size, num_channels, num_actions, initial_value=config.INITIAL_FEATURE_VALUE):
+		super().__init__()
 		self.encoding_size = encoding_size
 		self._num_actions = num_actions
-		self.V = dict()
-		self.V['odors'] = initial_value*np.ones([encoding_size + 1])
-		self.V['colors'] = initial_value*np.ones([encoding_size + 1])
-		self.V['spatial'] = initial_value*np.ones([4])
-		self.action_bias = {'water': np.zeros(self._num_actions), 'food':np.zeros(self._num_actions)}
 		self.initial_value = initial_value
+		self.V = dict()
+		self.action_bias = dict()
+		for motivation in RewardType:
+			self.V[motivation.value] = dict()
+			for stimuli in ['odors', 'colors', 'spatial']:
+				self.V[motivation.value][stimuli] = self.initial_value * np.ones([self.encoding_size + 1])
+				self.action_bias[motivation.value] = np.zeros(self._num_actions)
 
 	def __call__(self, *args, **kwargs):
 		states = args[0]
 		motivation = args[1]
 
-		cues = utils.states_encoding_to_cues(states, self.encoding_size)
+		cues = utils.stimuli_1hot_to_cues(states, self.encoding_size)
 		odor = cues[:, 0]  # odor for each door
 		color = cues[:, 1]  # color for each door
 		door = np.array(range(4))
-		action_values = (self.stimuli_value('odors', odor) + \
-						self.stimuli_value('colors', color) + \
-						self.stimuli_value('spatial', door)) + self.action_bias[motivation.value]
-		action_values[odor == self.encoding_size]=-np.inf #avoid selecting inactive doors.
+		action_values = (self.get_stimulus_value('odors', odor, motivation) +
+						 self.get_stimulus_value('colors', color, motivation) +
+						 self.get_stimulus_value('spatial', door, motivation)) + self.action_bias[motivation.value]
+		action_values[odor == self.encoding_size] = -np.inf  # avoid selecting inactive doors.
 		return action_values
 
-
 	def get_selected_door_stimuli(self, states, doors):
-		cues = utils.states_encoding_to_cues(states, self.encoding_size)
+		cues = utils.stimuli_1hot_to_cues(states, self.encoding_size)
 		selected_cues = cues[np.arange(len(states)), :, doors]
 		return selected_cues[:, 0], selected_cues[:, 1]
 
-	def stimuli_value(self, dimension, feature):
-		return self.V[dimension][feature]
+	def get_stimulus_value(self, dimension, feature, motivation):
+		return self.V[RewardType.NONE.value][dimension][feature]
+
+	def set_stimulus_value(self, dimension, feature, motivation, new_value):
+		self.V[RewardType.NONE.value][dimension][feature] = new_value
+
+	def update_stimulus_value(self, dimension, feature, motivation, delta):
+		if dimension=='odors':
+			print('{}:{:.2},{:.2}'.format(feature, self.V[RewardType.NONE.value][dimension][feature], self.V[RewardType.NONE.value][dimension][feature]+delta))
+		self.V[RewardType.NONE.value][dimension][feature] += delta
 
 	def new_stimuli_context(self):
 		pass
 
 	def get_model_metrics(self):
-		#print("odor:{}\ncolor:{},\nspatial:{}".format(self.V['odors'], self.V['colors'], self.V['spatial']))
-		# {'odor': entropy(utils.softmax(self.V['odors']))/(entropy(np.ones_like(self.V['odors']))/np.count_nonzero(self.V['odors'])),
-		# 		'color': entropy(utils.softmax(self.V['colors']))/(entropy(np.ones_like(self.V['colors']))/np.count_nonzero(self.V['colors'])),
-		# 		'spatial': entropy(utils.softmax(self.V['spatial']))/(entropy(np.ones_like(self.V['spatial']))/np.count_nonzero(self.V['spatial']))
-		# 		}
+		flattened_biases_values = utils.flatten_dict(self.action_bias)
 
-		return {
-			'odors': np.linalg.norm(self.V['odors']),
-			'colors': np.linalg.norm(self.V['colors']),
-			'spatial': np.linalg.norm(self.V['spatial']),
-			'WMotivation_bias': np.linalg.norm(self.action_bias['water'].tolist()),
-			'FMotivation_bias': np.linalg.norm(self.action_bias['food'].tolist())
-		}
-
+		np.max(self.V[RewardType.NONE.value]['odors'])
+		res = {k: utils.negentropy(v.tolist()) for k, v in flattened_biases_values.items()}
+		res['odor_value']= np.max(self.V[RewardType.NONE.value]['odors'])
+		return res
 
 	def get_model_diff(self, brain2):
-		return {'odor_diff': jensenshannon(self.V['odors'], brain2.V['odors']),
-				'color_diff': jensenshannon(self.V['colors'], brain2.V['colors']),
-				'spatial_diff': jensenshannon(self.V['spatial'], brain2.V['spatial']),
-				'WMotivation_bias': np.linalg.norm(self.action_bias['water'].tolist()),
-				'FMotivation_bias': np.linalg.norm(self.action_bias['food'].tolist())
-				}
+		flattened_biases_values1 = utils.flatten_dict(self.action_bias)
+		flattened_stimulus_values1 = utils.flatten_dict(self.V)
+
+		flattened_biases_values2 = utils.flatten_dict(brain2.action_bias)
+		flattened_stimulus_values2 = utils.flatten_dict(brain2.V)
+
+		result = {}
+		for key in flattened_stimulus_values1.keys():
+			result[key] = jensenshannon(flattened_stimulus_values1[key], flattened_stimulus_values2[key])
+		for key in flattened_biases_values1.keys():
+			result[key] = jensenshannon(flattened_biases_values1[key], flattened_biases_values2[key])
+
+		return result
 
 	def __str__(self):
 		return self.__class__.__name__
 
 
+class MFTable(FTable):
+	def __init__(self, *args, **kwargs):
+		super().__init__(*args, **kwargs)
+
+	def __call__(self, *args, **kwargs):
+		states = args[0]
+		motivation = args[1]
+
+		cues = utils.stimuli_1hot_to_cues(states, self.encoding_size)
+		odor = cues[:, 0]  # odor for each door
+		color = cues[:, 1]  # color for each door
+		door = np.array(range(4))
+		action_values = (self.get_stimulus_value('odors', odor, motivation) +
+						 self.get_stimulus_value('colors', color, motivation) +
+						 self.get_stimulus_value('spatial', door, motivation)) + self.action_bias[motivation.value]
+		action_values[odor == self.encoding_size] = -np.inf  # avoid selecting inactive doors.
+		return action_values
+
+	def get_stimulus_value(self, dimension, feature, motivation):
+		return self.V[motivation.value][dimension][feature]
+
+	def set_stimulus_value(self, dimension, feature, motivation, new_value):
+		self.V[motivation][dimension][feature] = new_value
+
+	def update_stimulus_value(self, dimension, feature, motivation, delta):
+		self.V[motivation.value][dimension][feature] += delta
+
+
 class ACFTable(FTable):
 	"""This model implements attention in addition to stimuli reset on SC.
 	However, whether attention is updated is up to the learner."""
+
 	def __init__(self, *args, **kwargs):
 		super().__init__(*args, **kwargs)
 		self.phi = np.ones([3]) / 3
@@ -173,11 +252,11 @@ class ACFTable(FTable):
 		states = args[0]
 		batch = states.shape[0]
 		motivation = args[1]
-		cues = utils.states_encoding_to_cues(states, self.encoding_size)
+		cues = utils.stimuli_1hot_to_cues(states, self.encoding_size)
 		odor = cues[:, 0]
 		color = cues[:, 1]
-		data = np.stack([self.stimuli_value('odors', odor), self.stimuli_value('colors', color),
-						 np.repeat(np.expand_dims(self.stimuli_value('spatial', np.array(range(4))), axis=0),
+		data = np.stack([self.get_stimulus_value('odors', odor), self.get_stimulus_value('colors', color),
+						 np.repeat(np.expand_dims(self.get_stimulus_value('spatial', np.array(range(4))), axis=0),
 								   repeats=batch, axis=0)])
 		attention = np.expand_dims(utils.softmax(self.phi), axis=0)
 		doors_value = np.matmul(attention, np.transpose(data, axes=(1, 0, 2))) + self.action_bias[motivation.value]
@@ -187,7 +266,7 @@ class ACFTable(FTable):
 		return doors_value
 
 	def get_model_metrics(self):
-		#print("odor:{}\ncolor:{},\nspatial:{}".format(self.V['odors'], self.V['colors'], self.V['spatial']))
+		# print("odor:{}\ncolor:{},\nspatial:{}".format(self.V['odors'], self.V['colors'], self.V['spatial']))
 		phi = utils.softmax(self.phi)
 		return {'odor_attn': phi[0],
 				'color_attn': phi[1],
@@ -195,9 +274,9 @@ class ACFTable(FTable):
 				}
 
 	def get_model_diff(self, brain2):
-		return {'odor_attn_diff': self.phi[0]-brain2.phi[0],
-				'color_attn_diff': self.phi[1]-brain2.phi[1],
-				'spatial_attn_diff': self.phi[2]-brain2.phi[2],}
+		return {'odor_attn_diff': self.phi[0] - brain2.phi[0],
+				'color_attn_diff': self.phi[1] - brain2.phi[1],
+				'spatial_attn_diff': self.phi[2] - brain2.phi[2], }
 
 	def new_stimuli_context(self):
 		self.V['odors'] = self.initial_value * np.ones([self.encoding_size + 1])
@@ -213,16 +292,15 @@ class PCFTable(ACFTable):
 		states = args[0]
 		batch = states.shape[0]
 
-		cues = utils.states_encoding_to_cues(states, self.encoding_size)
+		cues = utils.stimuli_1hot_to_cues(states, self.encoding_size)
 		odor = cues[:, 0]
 		color = cues[:, 1]
 
-		selected_dim = utils.epsilon_greedy(0.1,self.phi)
-		doors_value = self.stimuli_value('odors', odor) if selected_dim == 0 else \
-			self.stimuli_value('colors', color) if selected_dim == 1 \
-				else self.stimuli_value('spatial', [np.array(range(4))])
+		selected_dim = utils.epsilon_greedy(0.1, self.phi)
+		doors_value = self.get_stimulus_value('odors', odor) if selected_dim == 0 else \
+			self.get_stimulus_value('colors', color) if selected_dim == 1 \
+				else self.get_stimulus_value('spatial', [np.array(range(4))])
 
 		doors_value[odor == self.encoding_size] = -np.inf  # avoid selecting inactive doors.
 
 		return doors_value
-

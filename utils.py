@@ -1,9 +1,12 @@
 __author__ = 'gkour'
 
 import hashlib
+from collections.abc import MutableMapping
 
 import numpy as np
+import pandas as pd
 from matplotlib import cm
+from scipy.stats import entropy
 from sklearn import decomposition
 
 
@@ -19,6 +22,16 @@ def colorify(name):
 			h / 100 % 100 / 100,
 			h / 10000 % 100 / 100]
 
+
+def get_inactive_doors(onehot_obs):
+	encoding_size = onehot_obs.shape[-1]
+	cues = stimuli_1hot_to_cues(onehot_obs, encoding_size)
+	odor = cues[:, 0]  # odor for each door
+	return odor == encoding_size
+
+def flatten_dict(d: MutableMapping, sep: str= '.') -> MutableMapping:
+    [flat_dict] = pd.json_normalize(d, sep=sep).to_dict(orient='records')
+    return flat_dict
 
 def colorify2(name):
 	colors = cm.rainbow(np.linspace(0, 1, 1000))
@@ -84,6 +97,14 @@ def episode_rollout(env, agent):
 	return state, action_dist, action, outcome, reward
 
 
+def negentropy(dist, temperature = 1):
+	return (max_entropy(len(dist))-entropy(softmax(dist, temperature)))/max_entropy(len(dist))
+
+
+def max_entropy(n, temperature = 1):
+	return entropy(softmax([1/n]*n, temprature=temperature))
+
+
 def unsupervised_dimensionality(samples_embedding, explained_variance=0.95):
 	num_pcs = min(len(samples_embedding), len(samples_embedding[0]))
 	if num_pcs < 2:
@@ -105,7 +126,7 @@ def normalize(v):
     return v / norm
 
 
-def states_encoding_to_cues(states, encoding_size):
+def stimuli_1hot_to_cues(states, encoding_size):
     return np.argmax(states, axis=-1) + encoding_size * np.all(states == 0, axis=-1)
 
 
