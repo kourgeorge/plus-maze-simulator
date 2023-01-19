@@ -13,6 +13,14 @@ from rewardtype import RewardType
 norm = 'fro'
 
 
+class SCTable():
+	'''
+	Stimuli dependant Tabular model,
+	It initializes the state value data when a new stimuli is encountered.
+	'''
+	def new_stimuli_context(self):
+		self.initialize_state_values()
+
 class AbstractTabularModel:
 
 	def __call__(self, *args, **kwargs):
@@ -144,13 +152,17 @@ class FTable(AbstractTabularModel):
 		self.encoding_size = encoding_size
 		self._num_actions = num_actions
 		self.initial_value = initial_value
-		self.V = dict()
+		self.Q = dict()
 		self.action_bias = dict()
+		self.initialize_state_values()
 		for motivation in RewardType:
-			self.V[motivation.value] = dict()
+			self.action_bias[motivation.value] = np.zeros(self._num_actions)
+
+	def initialize_state_values(self):
+		for motivation in RewardType:
+			self.Q[motivation.value] = dict()
 			for stimuli in ['odors', 'colors', 'spatial']:
-				self.V[motivation.value][stimuli] = self.initial_value * np.ones([self.encoding_size + 1])
-				self.action_bias[motivation.value] = np.zeros(self._num_actions)
+				self.Q[motivation.value][stimuli] = self.initial_value * np.ones([self.encoding_size + 1])
 
 	def __call__(self, *args, **kwargs):
 		states = args[0]
@@ -175,36 +187,31 @@ class FTable(AbstractTabularModel):
 		return self.V[RewardType.NONE.value][dimension][feature]
 
 	def set_stimulus_value(self, dimension, feature, motivation, new_value):
-		self.V[RewardType.NONE.value][dimension][feature] = new_value
+		self.Q[RewardType.NONE.value][dimension][feature] = new_value
 
 	def update_stimulus_value(self, dimension, feature, motivation, delta):
-		if dimension=='odors':
-			print('{}:{:.2},{:.2}'.format(feature, self.V[RewardType.NONE.value][dimension][feature], self.V[RewardType.NONE.value][dimension][feature]+delta))
-		self.V[RewardType.NONE.value][dimension][feature] += delta
-
-	def new_stimuli_context(self):
-		pass
+		#if dimension=='odors':
+			#print('{}:{:.2},{:.2}'.format(feature, self.Q[RewardType.NONE.value][dimension][feature], self.Q[RewardType.NONE.value][dimension][feature] + delta))
+		self.Q[RewardType.NONE.value][dimension][feature] += delta
 
 	def get_model_metrics(self):
 		flattened_biases_values = utils.flatten_dict(self.action_bias)
-
-		np.max(self.V[RewardType.NONE.value]['odors'])
-		res = {k: utils.negentropy(v.tolist()) for k, v in flattened_biases_values.items()}
-		res['odor_value']= np.max(self.V[RewardType.NONE.value]['odors'])
+		res = {k: np.sum(v.tolist()[0:1])-np.sum(v.tolist()[2:3]) for k, v in flattened_biases_values.items()}
+		#res['odor_value']= np.max(self.Q[RewardType.NONE.value]['odors'])
 		return res
 
 	def get_model_diff(self, brain2):
 		flattened_biases_values1 = utils.flatten_dict(self.action_bias)
-		flattened_stimulus_values1 = utils.flatten_dict(self.V)
+		flattened_stimulus_values1 = utils.flatten_dict(self.Q)
 
 		flattened_biases_values2 = utils.flatten_dict(brain2.action_bias)
-		flattened_stimulus_values2 = utils.flatten_dict(brain2.V)
+		flattened_stimulus_values2 = utils.flatten_dict(brain2.Q)
 
 		result = {}
 		for key in flattened_stimulus_values1.keys():
-			result[key] = jensenshannon(flattened_stimulus_values1[key], flattened_stimulus_values2[key])
+			result[key] = 0 if True else jensenshannon(flattened_stimulus_values1[key], flattened_stimulus_values2[key])
 		for key in flattened_biases_values1.keys():
-			result[key] = jensenshannon(flattened_biases_values1[key], flattened_biases_values2[key])
+			result[key] = 0 if True else jensenshannon(flattened_biases_values1[key], flattened_biases_values2[key])
 
 		return result
 
@@ -212,7 +219,13 @@ class FTable(AbstractTabularModel):
 		return self.__class__.__name__
 
 
+class SCFTable(FTable, SCTable):
+	pass
+
+
 class MFTable(FTable):
+	"""The state action value is dependent on the current motivation.
+	Different models for diffrent motivations"""
 	def __init__(self, *args, **kwargs):
 		super().__init__(*args, **kwargs)
 
@@ -255,8 +268,10 @@ class ACFTable(FTable):
 		cues = utils.stimuli_1hot_to_cues(states, self.encoding_size)
 		odor = cues[:, 0]
 		color = cues[:, 1]
-		data = np.stack([self.get_stimulus_value('odors', odor), self.get_stimulus_value('colors', color),
-						 np.repeat(np.expand_dims(self.get_stimulus_value('spatial', np.array(range(4))), axis=0),
+
+		data = np.stack([self.get_stimulus_value('odors', odor, motivation),
+						 self.get_stimulus_value('colors', color, motivation),
+						 np.repeat(np.expand_dims(self.get_stimulus_value('spatial', np.array(range(4)), motivation), axis=0),
 								   repeats=batch, axis=0)])
 		attention = np.expand_dims(utils.softmax(self.phi), axis=0)
 		doors_value = np.matmul(attention, np.transpose(data, axes=(1, 0, 2))) + self.action_bias[motivation.value]
@@ -279,9 +294,9 @@ class ACFTable(FTable):
 				'spatial_attn_diff': self.phi[2] - brain2.phi[2], }
 
 	def new_stimuli_context(self):
-		self.V['odors'] = self.initial_value * np.ones([self.encoding_size + 1])
-		self.V['colors'] = self.initial_value * np.ones([self.encoding_size + 1])
-		self.V['spatial'] = self.initial_value * np.ones([4])
+		self.Q['odors'] = self.initial_value * np.ones([self.encoding_size + 1])
+		self.Q['colors'] = self.initial_value * np.ones([self.encoding_size + 1])
+		self.Q['spatial'] = self.initial_value * np.ones([4])
 
 
 class PCFTable(ACFTable):

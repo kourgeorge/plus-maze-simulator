@@ -142,14 +142,14 @@ class IAAluisiLearner(AbstractLearner):
 		selected_odors, selected_colors = self.model.get_selected_door_stimuli(state_batch, actions)
 
 		for odor in set(np.unique(selected_odors)).difference([self.model.encoding_size]):
-			self.model.V['odors'][odor] += \
-				learning_rate * np.nanmean(reward_batch[selected_odors == odor] - self.model.V['odors'][odor])
+			self.model.Q['odors'][odor] += \
+				learning_rate * np.nanmean(reward_batch[selected_odors == odor] - self.model.Q['odors'][odor])
 		for color in set(np.unique(selected_colors)).difference([self.model.encoding_size]):
-			self.model.V['colors'][color] += \
-				learning_rate * np.nanmean(reward_batch[selected_colors == color] - self.model.V['colors'][color])
+			self.model.Q['colors'][color] += \
+				learning_rate * np.nanmean(reward_batch[selected_colors == color] - self.model.Q['colors'][color])
 		for door in np.unique(actions):
-			self.model.V['spatial'][door] += \
-				 learning_rate * np.nanmean(reward_batch[actions == door] - self.model.V['spatial'][door])
+			self.model.Q['spatial'][door] += \
+				 learning_rate * np.nanmean(reward_batch[actions == door] - self.model.Q['spatial'][door])
 
 		return delta
 
@@ -174,9 +174,9 @@ class MALearner(IALearner):
 		phi_s = utils.softmax(self.model.phi)
 
 		for choice_value, selected_odor, selected_color, selected_door, delta, reward in zip(selected_action_value, selected_odors, selected_colors, actions, deltas, reward_batch):
-			V = np.array([self.model.V['odors'][selected_odor],
-						  self.model.V['colors'][selected_color],
-						  self.model.V['spatial'][selected_door]])
+			V = np.array([self.model.Q['odors'][selected_odor],
+						  self.model.Q['colors'][selected_color],
+						  self.model.Q['spatial'][selected_door]])
 			delta_phi = self.calc_delta_phi(choice_value, reward, V)
 
 			self.model.phi += self.alpha_phi * delta * phi_s * delta_phi

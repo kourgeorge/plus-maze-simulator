@@ -11,8 +11,8 @@ from brains.consolidationbrain import ConsolidationBrain
 from brains.tdbrain import TDBrain
 from environment import PlusMazeOneHotCues, CueType, PlusMazeOneHotCues2ActiveDoors
 from fitting import fitting_config, fitting_utils
-from fitting.MazeResultsBehaviouralMS import compare_model_subject_learning_curve_average, \
-	plot_models_fitting_result_per_stage
+from fitting.MazeResultsBehaviouralLC import compare_model_subject_learning_curve_average, \
+	model_parameters_development
 from fitting.fitting_utils import run_model_on_animal_data
 from learners.networklearners import *
 from learners.tabularlearners import *
@@ -27,9 +27,11 @@ def writecsvfiletotemp(rat_data_with_likelihood: pd.DataFrame):
 
 
 if __name__ == '__main__':
-	subject = 6
-	model_arch = (ConsolidationBrain, DQN, UANet)
-	parameters = (3.72, 0.3485)
+	subject = 3
+	model_arch = (TDBrain, ABQLearner, QTable)
+	#model_arch = (TDBrain, ABQLearner, OptionsTable)
+	#model_arch = (TDBrain, ABIALearner, SCFTable)
+	parameters = (1.6, 0.124)
 	rat_files = [rat_file for rat_file in list(np.sort(os.listdir(fitting_config.MOTIVATED_ANIMAL_DATA_PATH)))]
 	rat_data = pd.read_csv(os.path.join(fitting_config.MOTIVATED_ANIMAL_DATA_PATH, rat_files[subject]))
 	env = PlusMazeOneHotCues(relevant_cue=CueType.ODOR, stimuli_encoding=10)
@@ -40,10 +42,12 @@ if __name__ == '__main__':
 
 	experiment_stats, rat_data_with_likelihood = run_model_on_animal_data(env, rat_data, model_arch, parameters)
 	rat_data_with_likelihood['model'] = utils.brain_name(model_arch)
-	rat_data_with_likelihood['subject'] = [parameters] * len(rat_data_with_likelihood)
+	rat_data_with_likelihood['subject'] = [subject] * len(rat_data_with_likelihood)
+	rat_data_with_likelihood['parameters'] = [parameters] * len(rat_data_with_likelihood)
 
 	filename = writecsvfiletotemp(rat_data_with_likelihood)
 
-	compare_model_subject_learning_curve_average(filename)
-	plot_models_fitting_result_per_stage(filename)
+	#compare_model_subject_learning_curve_average(filename)
+	#plot_models_fitting_result_per_stage(filename)
+	model_parameters_development(filename)
 	pass
