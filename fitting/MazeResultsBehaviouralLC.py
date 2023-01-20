@@ -393,67 +393,80 @@ def show_likelihood_trials_scatter(data_file_path):
 	#plt.show()
 
 
-def plot_models_fitting_result_per_stage(data_file_path):
+def plot_models_fitting_result_per_stage_action_bias(data_file_path):
 	plt.rcParams.update({'font.size': 10})
 	df = pd.read_csv(data_file_path)
 	df = rename_models(df)
+	relevant_models= utils.flatten_list([(m,'B-'+m,'M(B)-'+m) for m in ['SARL','ORL','FRL']])
+	df=df[df.model.isin(relevant_models)]
 	df['stage'] = df['stage'].astype('category')
 
 	df = df[['subject', 'model', 'stage', 'day in stage', 'trial', 'likelihood']].copy()
-	df['NLL'] = -np.log(df.likelihood)
 
-	df_stage = df.groupby(['subject', 'model', 'stage'], sort=False).mean().reset_index()
-	sns.set_theme(style="whitegrid")
+	sns.set_theme(style="white")
 
-	df['ML'] = np.exp(-df.NLL)
-	df_stage['ML'] = np.exp(-df_stage.NLL)
+	models = ['SARL','ORL','FRL']
+	n=len(models)
 
-	fig = plt.figure(figsize=(11, 3.5), layout="constrained")
-	spec = fig.add_gridspec(1, 4)
-	ax0 = fig.add_subplot(spec[0, 0:3])
-	ax1 = fig.add_subplot(spec[0, 3])
+	fig = plt.figure(figsize=(12, 5))
+	spec = fig.add_gridspec(n, 4)
+	ax0 = fig.add_subplot(spec[0:n, 3])
+	ax = [None, None, None]
 
 	colors = triplet_colors(3)
-	sns.set_palette(sns.color_palette(colors))
+	ylim = [0.25,0.5]
 
 	y = 'likelihood'
-	g1 = sns.barplot(x='stage', y=y, hue='model', hue_order=models_order_df(df_stage), data=df_stage, ax=ax0, errorbar='se' ,errwidth=1, capsize=.04, errcolor='gray', dodge=1)
-	g1.set_ylim([0.25, 0.4])
-	g1.set_xticklabels(stages)
-	g1.set(xlabel='', ylabel='Average Likelihood')
-	g1.legend([], [], frameon=False)
+	for ind, model in enumerate(models):
+		ax[ind] = fig.add_subplot(spec[ind, 0:n])
+		sns.set_palette(colors[n*ind:n*ind+n])
+		df_model = df[df.model.str.contains(model)]
+		hue_order = [model_name for model_name in relevant_models if model in model_name]
+		args = dict(x = 'stage', y = y, hue = 'model', data=df_model, hue_order=hue_order)
+		ax[ind] = sns.barplot(**args, ax=ax[ind], errorbar='se' ,errwidth=1, capsize=.07, errcolor='gray', dodge=1)
 
-	# args = dict(x="stage", y=y, hue="model", hue_order=models_order_df(df_stage))
-	# pairs = [((1, 'AARL'), (1, 'MFRL')), ((1, 'SARL'), (1, 'AARL')), ((1, 'FRL'), (1, 'MFRL')),
-	# 		 ((2, 'AARL'), (2, 'MFRL')), ((2, 'SARL'), (2, 'AARL')), ((2, 'FRL'), (2, 'MFRL')),
-	# 		 ((3, 'AARL'), (3, 'MFRL')), ((3, 'SARL'), (3, 'AARL')),((3, 'FRL'), (3, 'MFRL'))]
-	# annot = Annotator(g1, pairs, **args, data=df)
-	# annot.configure(test='t-test_paired', text_format='star', loc='inside', verbose=2)
-	# annot.apply_test().annotate()
+		ax[ind].set_ylim(0.25, 0.3)
 
-	df['dummy'] = 1
-	#g2 = sns.boxplot(x='dummy', y='ML', hue='model', data=df, ax=ax1)
-	g2 = sns.barplot(x='dummy', y=y, hue='model', hue_order=models_order_df(df),
-					 data=df, ax=ax1, errorbar='se', errwidth=1, capsize=.05)
+		pairs = [[((loc, model), (loc, 'B-'+model)), ((loc, 'B-'+model), (loc, 'M(B)-'+model))] for loc in range(1,6)]
+		pairs = utils.flatten_list(pairs)
+		annot = Annotator(ax[ind], pairs, **args)
+		annot.configure(test='t-test_paired', text_format='star', loc='inside', verbose=2, line_height=0.05)
+		annot.apply_test().annotate()
 
-	g2.set_xticklabels([''])
-	g2.set(xlabel='All Stages', ylabel='')
-	g2.legend([], [], frameon=False)
-	plt.subplots_adjust(left=0.1, bottom=0.1, right=0.99, top=0.9, wspace=0.3, hspace=0.3)
 
-	g2.set_ylim(g1.get_ylim())
+		ax[ind].set(xlabel='', ylabel=model)
+		ax[ind].legend([], [], frameon=False)
+		ax[ind].set(xticklabels=[])
+		ax[ind].tick_params(bottom=False)
 
-	# args = dict(x="dummy", y=y, hue="model", hue_order=models_order_df(df))
-	# pairs = [((1.0, 'AARL'), (1.0, 'MFRL')), ((1.0, 'SARL'), (1.0, 'AARL')), ((1.0, 'MFRL'), (1.0, 'FRL'))]
-	# annot = Annotator(g2, pairs, **args, data=df)
-	# annot.configure(test='t-test_paired', text_format='star', loc='inside', verbose=2)
-	# annot.apply_test().annotate()
+		despine(ax[ind])
 
-	g2.set_ylim(g1.get_ylim())
+	ax[n-1].set_xticklabels(stages)
+	fig.text(0.01, 0.5, 'Average Likelihood', va='center', rotation='vertical')
 
-	handles, labels = g2.get_legend_handles_labels()
-	displabels = [label if i%3==0 else '' for i,label in enumerate(labels)]
-	g2.legend(handles, displabels, loc='upper right', prop={'size': 9}, labelspacing=0)
+	sns.set_palette(sns.color_palette('Greys', n_colors=n))
+
+	df['model_name'] = df.model.apply(lambda x: x.split('-')[-1])
+	df['model_type'] = df.model.apply(lambda x: 'm' if len(x.split('-')) == 1 else  x.split('-')[0]+'-m')
+	ax0 = sns.barplot(x='model_name', y=y, hue='model_type', hue_order=['m', 'B-m', 'M(B)-m'], #models_order_df(df),
+					 data=df, ax=ax0, errorbar='se', errwidth=1, capsize=.1)
+
+	ax0.set_xlabel('')
+	ax0.legend([], [], frameon=False)
+
+	ax0.set_ylim(ax[0].get_ylim())
+
+	args = dict(x="model_name", y=y, hue="model_type", hue_order=['m', 'B-m', 'M(B)-m'])
+	pairs = utils.flatten_list([[((model, 'B-m'), (model, 'M(B)-m'))] for model in models])
+	annot = Annotator(ax0, pairs, **args, data=df)
+	annot.configure(test='t-test_paired', text_format='star', loc='inside', verbose=1)
+	annot.apply_test().annotate()
+
+	handles, labels = ax0.get_legend_handles_labels()
+	ax0.legend(handles, labels, loc='upper left', prop={'size': 12}, labelspacing=0)
+	despine(ax0)
+
+	fig.subplots_adjust(left=0.08, bottom=0.07, right=0.99, top=0.99, wspace=0.3, hspace=0.3)
 
 	plt.savefig('fitting/Results/figures/all_models_by_stage_{}'.format(utils.get_timestamp()))
 
