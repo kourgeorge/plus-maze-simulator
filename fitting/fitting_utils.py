@@ -145,7 +145,7 @@ def maze_experimental_data_preprocessing(experiment_data):
 
 def models_order_df(df):
 	models_in_df = np.unique(df.model)
-	return np.unique([model for model in friendly_models_name_map.values() if model in models_in_df])
+	return stable_unique([model for model in friendly_models_name_map.values() if model in models_in_df])
 
 
 def rename_models(model_df):
