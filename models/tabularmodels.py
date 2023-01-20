@@ -13,13 +13,24 @@ from rewardtype import RewardType
 norm = 'fro'
 
 
-class SCTable():
+class SCDependantV():
 	'''
 	Stimuli dependant Tabular model,
 	It initializes the state value data when a new stimuli is encountered.
 	'''
 	def new_stimuli_context(self):
 		self.initialize_state_values()
+
+class SCDependantVB():
+	'''
+	Motivation dependant Tabular model.
+	It initializes the state value and action bias data when a new stimuli is encountered.
+	'''
+
+	def new_stimuli_context(self):
+		self.initialize_state_values()
+		self.action_bias = {'water': np.zeros(self._num_actions), 'food': np.zeros(self._num_actions)}
+
 
 class AbstractTabularModel:
 
@@ -184,7 +195,7 @@ class FTable(AbstractTabularModel):
 		return selected_cues[:, 0], selected_cues[:, 1]
 
 	def get_stimulus_value(self, dimension, feature, motivation):
-		return self.V[RewardType.NONE.value][dimension][feature]
+		return self.Q[RewardType.NONE.value][dimension][feature]
 
 	def set_stimulus_value(self, dimension, feature, motivation, new_value):
 		self.Q[RewardType.NONE.value][dimension][feature] = new_value
@@ -219,9 +230,11 @@ class FTable(AbstractTabularModel):
 		return self.__class__.__name__
 
 
-class SCFTable(FTable, SCTable):
+class SCFTable(FTable, SCDependantV):
 	pass
 
+class SCVBFTable(FTable, SCDependantVB):
+	pass
 
 class MFTable(FTable):
 	"""The state action value is dependent on the current motivation.
@@ -244,13 +257,13 @@ class MFTable(FTable):
 		return action_values
 
 	def get_stimulus_value(self, dimension, feature, motivation):
-		return self.V[motivation.value][dimension][feature]
+		return self.Q[motivation.value][dimension][feature]
 
 	def set_stimulus_value(self, dimension, feature, motivation, new_value):
-		self.V[motivation][dimension][feature] = new_value
+		self.Q[motivation][dimension][feature] = new_value
 
 	def update_stimulus_value(self, dimension, feature, motivation, delta):
-		self.V[motivation.value][dimension][feature] += delta
+		self.Q[motivation.value][dimension][feature] += delta
 
 
 class ACFTable(FTable):
