@@ -13,7 +13,7 @@ from brains.motivationdependantbrain import MotivationDependantBrain
 from models.networkmodels import *
 from learners.networklearners import *
 from learners.tabularlearners import *
-from models.tabularmodels import PCFTable
+from models.tabularmodels import PCFTable, MFTable, MQTable, MOptionsTable, SCFTable, SCVBFTable
 
 REPETITIONS = 50
 MOTIVATED_ANIMAL_DATA_PATH = './fitting/motivation_behavioral_data'
@@ -31,36 +31,36 @@ if BAYESIAN_OPTIMIZATION:
 	beta = Real(name='beta', low=0.1, high=30, prior='uniform')
 	initial_value = Real(name='initial', low=0, high=0.1, prior='uniform')
 else:
-	lr = (0.001, 0.2)
-	attention_lr = (0.001, 0.2)
+	lr = (0.001, 0.4)
+	attention_lr = (0.001, 0.4)
 	beta = (0, 30)
 	initial_value = (0, 0.15)
 
-FITTING_ITERATIONS = 50
+FITTING_ITERATIONS = 25
 
 maze_models = [
 				# ((TDBrain, QLearner, QTable), (beta, lr)),
 				((TDBrain, ABQLearner, QTable), (beta, lr)),
 				#
 			    # ((TDBrain, QLearner, OptionsTable), (beta, lr)),
-				((TDBrain, ABQLearner, OptionsTable), (beta, lr)),
+				# ((TDBrain, ABQLearner, OptionsTable), (beta, lr)),
 				#
 			    # ((TDBrain, IALearner, ACFTable), (beta, lr)),
 			    #((TDBrain, IAAluisiLearner, ACFTable), (beta, lr)),
 				#
 				# ((TDBrain, IALearner, FTable), (beta, lr)),
-			    ((TDBrain, IALearner, ACFTable), (beta, lr)),
+			    # ((TDBrain, IALearner, ACFTable), (beta, lr)),
 
-				((TDBrain, MALearner, ACFTable), (beta, lr, attention_lr)),
+				# ((TDBrain, MALearner, ACFTable), (beta, lr, attention_lr)),
 
 			   # ((TDBrain, MALearnerSimple, ACFTable), (beta, lr, attention_lr)),
 			   # ((TDBrain, MALearner, PCFTable), (beta, lr, attention_lr)),
 
-			   ((ConsolidationBrain, DQN, FCNet), (beta, lr)),
-			   ((ConsolidationBrain, DQN, UANet), (beta, lr)),
-			   ((ConsolidationBrain, DQN, ACLNet), (beta, lr)),
-			   ((ConsolidationBrain, DQNAtt, ACLNet), (beta, lr, attention_lr)),
-			   ((ConsolidationBrain, DQN, FC2LayersNet), (beta, lr)),
+			   # ((ConsolidationBrain, DQN, FCNet), (beta, lr)),
+			   # ((ConsolidationBrain, DQN, UANet), (beta, lr)),
+			   # ((ConsolidationBrain, DQN, ACLNet), (beta, lr)),
+			   # ((ConsolidationBrain, DQNAtt, ACLNet), (beta, lr, attention_lr)),
+			   # ((ConsolidationBrain, DQN, FC2LayersNet), (beta, lr)),
 
 				#((ConsolidationBrain, DQN, EfficientNetwork),(beta, lr)),
 				# ((ConsolidationBrain, PG, FullyConnectedNetwork), (beta, lr)),
@@ -71,23 +71,43 @@ maze_models = [
 			   ]
 
 
-
-
-maze_models = [
+maze_models_action_bias = [
 				# ((TDBrain, QLearner, QTable), (beta, lr)),
 				# ((TDBrain, UABQLearner, QTable), (beta, lr)),
+				# ((TDBrain, ABQLearner, QTable), (beta, lr)),
 				#
 			    # ((TDBrain, QLearner, OptionsTable), (beta, lr)),
 				# ((TDBrain, UABQLearner, OptionsTable), (beta, lr)),
+				# ((TDBrain, ABQLearner, OptionsTable), (beta, lr)),
 				#
-				#((TDBrain, IALearner, FTable), (beta, lr)),
-				# ((TDBrain, UABIALearner, FTable), (beta, lr)),
+				# ((TDBrain, IALearner, FTable), (beta, lr)),
+				 #((TDBrain, ABIALearner, SCFTable), (beta, lr)),
+				# ((TDBrain, ABIALearner, FTable), (beta, lr)),
 
-				((TDBrain, MALearner, ACFTable), (beta, lr, attention_lr)),
-				((TDBrain, UABMALearner, ACFTable), (beta, lr, attention_lr)),
-				((TDBrain, ABMALearner, ACFTable), (beta, lr, attention_lr)),
+
+				# ((TDBrain, IALearner, FTable), (beta, lr)),
+				# ((TDBrain, IALearner, ACFTable), (beta, lr)),
+
+				((TDBrain, QLearner, MQTable), (beta, lr)),
+				((TDBrain, ABQLearner, MQTable), (beta, lr)),
+
+				((TDBrain, QLearner, MOptionsTable), (beta, lr)),
+				((TDBrain, ABQLearner, MOptionsTable), (beta, lr)),
+
+				((TDBrain, IALearner, MFTable), (beta, lr)),
+				((TDBrain, ABIALearner, MFTable), (beta, lr)),
 
 	]
+
+maze_SCFRL = [
+	((TDBrain, ABIALearner, FTable), (beta, lr)), #AB-FRL
+	((TDBrain, ABIALearner, SCFTable), (beta, lr)), #AB-SC-FRL
+	((TDBrain, ABIALearner, SCVBFTable), (beta, lr)) #SCVB-FRL
+
+]
+
+maze_models = maze_SCFRL
+
 
 motivational_models = maze_models + [((ConsolidationBrain, DQN, EfficientNetwork), (beta, lr, batch_size)),
 					   ((FixedDoorAttentionBrain, DQN, EfficientNetwork), (nmr, lr, batch_size)),
@@ -107,17 +127,37 @@ def extract_configuration_params(params):
 
 
 friendly_models_name_map = {'QLearner.QTable': 'SARL',
-							'UABQLearner.QTable': 'UABSARL',
-							'ABQLearner.QTable': 'ABSARL',
+							'UABQLearner.QTable': 'AB-SARL',
+							'ABQLearner.QTable': 'MAB-SARL',
+							'QLearner.MQTable': 'MD-SARL',
+							'ABQLearner.MQTable': 'MAB-MD-SARL',
+
 							'QLearner.OptionsTable': 'ORL',
-							'UABQLearner.OptionsTable': 'UABORL',
-							'ABQLearner.OptionsTable': 'ABORL',
+							'UABQLearner.OptionsTable': 'AB-ORL',
+							'ABQLearner.OptionsTable': 'MAB-ORL',
+							'QLearner.MOptionsTable': 'MD-ORL',
+							'ABQLearner.MOptionsTable': 'MAB-MD-ORL',
+
 							'IALearner.FTable': 'FRL',
-							'UABIALearner.FTable': 'UABFRL',
-							'ABIALearner.FTable': 'ABFRL',
-							'IALearner.ACFTable': 'SCFRL',
+							'UABIALearner.FTable': 'AB-FRL',
+							'ABIALearner.FTable': 'MAB-FRL',
+							'IALearner.MFTable': 'MD-FRL',
+							'ABIALearner.MFTable': 'MAB-MD-FRL',
+
+							'ABIALearner.SCFTable': 'SDV-MAB-FRL',
+							'ABIALearner.SCVBFTable': 'SDVAB-MAB-FRL',
+
+							'IALearner.SCFTable': 'SDV-FRL',
+							'UABIALearner.SCFTable': 'AB-SD-FRL',
+
+							'IALearner.SCVBFTable': 'VAB-SD-FRL',
+
 							'IAAluisiLearner.ACFTable': 'MFRL',
 							'MALearner.ACFTable': 'AARL',
+							'UABMALearner.ACFTable': 'AB-AARL',
+							'ABMALearner.ACFTable': 'MAB-AARL',
+
+
 							'MALearnerSimple.ACFTable':'MAARL',
 							'DQN.FCNet':'FCNet',
 							'DQN.FC2LayersNet':'FC2Net',
