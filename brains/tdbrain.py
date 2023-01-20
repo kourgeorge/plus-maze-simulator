@@ -19,7 +19,7 @@ class TDBrain(AbstractBrain):
 
     def think(self, obs, agent):
         action_value = np.stack(self.get_model()(obs, agent.get_motivation()))
-        action_dist = torch.softmax(self.beta*torch.from_numpy(action_value), axis=-1)
+        action_dist = torch.softmax(self.beta*torch.from_numpy(action_value), dim=-1)
         return action_dist
 
     def get_model(self):
