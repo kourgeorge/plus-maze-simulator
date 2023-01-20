@@ -472,7 +472,7 @@ def plot_models_fitting_result_per_stage_action_bias(data_file_path):
 
 
 def compare_fitting_criteria(data_file_path):
-	plt.rcParams.update({'font.size': 10})
+	plt.rcParams.update({'font.size': 16})
 
 	df = pd.read_csv(data_file_path)
 	df = df[['subject', 'model', 'likelihood', 'parameters', 'day in stage', 'stage', 'reward']].copy()
@@ -486,30 +486,32 @@ def compare_fitting_criteria(data_file_path):
 	#data['k'] = data.apply(lambda row: len(fitting_utils.string2list(row['parameters'])), axis=1)
 	data['k'] = data.apply(lambda row: 3 if row.model=='AARL' or row.model=='ACLNet2' else 2, axis=1)
 
-	data['AIC'] = - 2 * data.LL/data.n + 2 * data.k/data.n
+	data['AIC'] = - 2 * data.LL + 2 * data.k
 	data['BIC'] = (- 2 * data.LL + np.log(data.n) * data.k)/ data.n
-	data['LPT'] = data.likelihood
-
+	data['ALPT'] = data.likelihood
+	data['NLL'] = -data.LL/data.n
 	data.LL = -data.LL
 
 	# plot the average fitting quality for the entire population.
 	sum_df = data.groupby(['model']).mean().reset_index()
 
 	sns.set_palette(triplet_colors(3))
-	for criterion in ['AIC', 'BIC', 'LPT']:
+	for criterion in ['AIC', 'BIC', 'ALPT']:
 
-		plt.figure(figsize=(5, 4), dpi=120, facecolor='w')
+		plt.figure(figsize=(5.5, 4), dpi=120, facecolor='w')
 		axis = sns.barplot(y='model', x=criterion, data=sum_df, order=models_order_df(sum_df),)
 		minn = np.min(sum_df[criterion])
 		maxx = np.max(sum_df[criterion])
-		delta = 0.1 * (maxx - minn + 0.1)
+		delta = 0.1 * (maxx - minn)
 		plt.xlim([minn - delta, maxx + delta])
 
-		plt.subplots_adjust(left=0.22, bottom=0.12, right=0.99, top=0.99, wspace=0.2, hspace=0.4)
-		axis.spines['top'].set_visible(False)
-		axis.spines['right'].set_visible(False)
+		plt.subplots_adjust(left=0.25, bottom=0.15, right=0.95, top=0.99, wspace=0, hspace=0)
+		despine(axis)
 
 		axis.set_ylabel('')
+
+		axis.axhline(y=2 + 0.5, alpha=0.7, lw=1, color='grey', linestyle='-')
+		axis.axhline(y=5 + 0.5, alpha=0.7, lw=1, color='grey', linestyle='-')
 
 		fig = plt.figure(figsize=(35, 7), dpi=120, facecolor='w')
 		for subject in np.unique(data.subject):
