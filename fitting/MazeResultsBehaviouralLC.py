@@ -16,7 +16,7 @@ from itertools import product
 plt.rcParams.update({'font.size': 12})
 
 #stages = ['ODOR1', 'ODOR2', 'LED']
-stages = ['Baseline', 'IDshift', 'Mshift(Food)', 'MShift(Water)+IDshift', 'EDshift(Spatial)']
+stages = ['Initial', 'IDS', 'MS', 'MS+IDS', 'EDS(Spatial)']
 num_days_reported = [8, 2, 4, 2, 2]
 
 
