@@ -29,6 +29,9 @@ def get_inactive_doors(onehot_obs):
 	odor = cues[:, 0]  # odor for each door
 	return odor == encoding_size
 
+def flatten_list(l):
+	return [item for sublist in l for item in sublist]
+
 def flatten_dict(d: MutableMapping, sep: str= '.') -> MutableMapping:
     [flat_dict] = pd.json_normalize(d, sep=sep).to_dict(orient='records')
     return flat_dict
