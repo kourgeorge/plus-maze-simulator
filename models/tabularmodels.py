@@ -76,9 +76,8 @@ class QTable(AbstractTabularModel):
 			self.Q[np.array2string(state)][action] = value
 
 	def get_model_metrics(self):
-		res =  {'WMotivation_bias': utils.negentropy(self.action_bias['water']),
-				'FMotivation_bias': utils.negentropy(self.action_bias['food'])}
-
+		flattened_biases_values = utils.flatten_dict(self.action_bias)
+		res={k: np.sum(v.tolist()[0:2]) - np.sum(v.tolist()[2:4]) for k, v in flattened_biases_values.items()}
 		return res
 
 	def get_model_diff(self, brain2):
@@ -136,8 +135,8 @@ class OptionsTable(AbstractTabularModel):
 		return cues
 
 	def get_model_metrics(self):
-		return {'WMotivation_bias': utils.negentropy(self.action_bias['water'].tolist()),
-				'FMotivation_bias': utils.negentropy(self.action_bias['food'].tolist())}
+		flattened_biases_values = utils.flatten_dict(self.action_bias)
+		return {k: np.sum(v.tolist()[0:2]) - np.sum(v.tolist()[2:4]) for k, v in flattened_biases_values.items()}
 
 	def get_model_diff(self, brain2):
 		diff = [np.linalg.norm(self.C[state] - brain2.C[state]) for state in
@@ -207,8 +206,9 @@ class FTable(AbstractTabularModel):
 
 	def get_model_metrics(self):
 		flattened_biases_values = utils.flatten_dict(self.action_bias)
-		res = {k: np.sum(v.tolist()[0:1])-np.sum(v.tolist()[2:3]) for k, v in flattened_biases_values.items()}
-		#res['odor_value']= np.max(self.Q[RewardType.NONE.value]['odors'])
+		res = {k: np.sum(v.tolist()[0:2]) - np.sum(v.tolist()[2:4]) for k, v in flattened_biases_values.items()}
+		#res['odor']=np.sum(np.abs(self.Q['none']['odors']))
+		#res['spatial'] = np.sum(np.abs(self.Q['none']['spatial']))
 		return res
 
 	def get_model_diff(self, brain2):
@@ -233,8 +233,10 @@ class FTable(AbstractTabularModel):
 class SCFTable(FTable, SCDependantV):
 	pass
 
+
 class SCVBFTable(FTable, SCDependantVB):
 	pass
+
 
 class MFTable(FTable):
 	"""The state action value is dependent on the current motivation.
