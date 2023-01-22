@@ -491,14 +491,17 @@ def plot_models_fitting_result_per_stage_action_bias(data_file_path):
 	plt.savefig('fitting/Results/figures/all_models_by_stage_{}'.format(utils.get_timestamp()))
 
 
-def compare_fitting_criteria(data_file_path):
+def compare_fitting_criteria(data_file_path, models=None):
 	plt.rcParams.update({'font.size': 16})
 
 	df = pd.read_csv(data_file_path)
 	df = df[['subject', 'model', 'likelihood', 'parameters', 'day in stage', 'stage', 'reward']].copy()
 	df = rename_models(df)
-	df['LL'] = np.log(df.likelihood)
 
+	if models:
+		df = df[df.model.isin(models)]
+
+	df['LL'] = np.log(df.likelihood)
 	# # optimization average over trials
 	likelihood_trial = df.groupby(['subject', 'model', 'parameters']).agg({'reward': 'count', 'LL': 'sum', 'likelihood': 'mean'}).reset_index()
 	data = likelihood_trial.rename(columns={'reward': 'n'})
@@ -525,7 +528,7 @@ def compare_fitting_criteria(data_file_path):
 		delta = 0.1 * (maxx - minn)
 		plt.xlim([minn - delta, maxx + delta])
 
-		plt.subplots_adjust(left=0.25, bottom=0.15, right=0.95, top=0.99, wspace=0, hspace=0)
+		plt.subplots_adjust(left=0.26, bottom=0.15, right=0.95, top=0.99, wspace=0, hspace=0)
 		despine(axis)
 
 		axis.set_ylabel('')
