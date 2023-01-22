@@ -6,7 +6,6 @@ import numpy as np
 import pandas as pd
 import scipy
 import seaborn as sns
-from matplotlib.ticker import MaxNLocator
 from statannotations.Annotator import Annotator
 
 import utils
@@ -79,13 +78,14 @@ def unbox_model_variables(df_model):
 	df_no = df_model.drop('model_variables', axis=1).reset_index()
 	df_model = pd.concat([df_no, df_variables], axis=1)
 
-	df_model = df_model.groupby(['subject', 'model', 'parameters', 'stage', 'day in stage'],
-								sort=False).mean().reset_index()
+	# df_model = df_model.groupby(['subject', 'model', 'parameters', 'stage', 'day in stage', 'ind'],
+	# 							sort=False).mean().reset_index()
 
 	return df_model, variables_names
 
 
 def models_fitting_quality_over_times_average(data_file_path, models=None):
+	plt.rcParams.update({'font.size': 16})
 	df = pd.read_csv(data_file_path)
 	df = df[['subject', 'model', 'stage', 'day in stage', 'trial', 'likelihood', 'reward', 'model_reward']].copy()
 	df['NLL'] = -np.log(df.likelihood)
@@ -103,7 +103,7 @@ def models_fitting_quality_over_times_average(data_file_path, models=None):
 	model_df.sort_values('ind', axis=0, ascending=True, inplace=True)
 
 	fig = plt.figure(figsize=(7.5, 4), dpi=100, facecolor='w')
-	sns.set_palette("magma", len(models_order_df(model_df)))
+	sns.set_palette("colorblind", len(models_order_df(model_df)))
 	# colors = triplet_colors(3)
 	# sns.set_palette([colors[6],colors[8]])
 
@@ -122,7 +122,7 @@ def models_fitting_quality_over_times_average(data_file_path, models=None):
 	handles, labels = axis.get_legend_handles_labels()
 	plt.legend(handles, labels, loc="upper left", prop={'size': 14}, labelspacing=0.2)
 	despine(axis)
-	dilute_xticks(axis, k=1)
+	dilute_xticks(axis, k=2)
 	plt.subplots_adjust(left=0.12, bottom=0.15, right=0.98, top=0.98, wspace=0.2, hspace=0.1)
 
 
@@ -288,12 +288,12 @@ def WPI_WC_FC(data_file_path):
 
 	colors = triplet_colors(5)
 	colors =(colors[9], colors[10])
+	colors = sns.color_palette("Greys", n_colors=2)
+	colors = (colors[0], colors[1])
 
 	fig = plt.figure(figsize=(10, 5))
-	# axis = sns.boxplot(x="ind", y="reward", hue="reward_type",
-	# 						data=days_info_df)#, errorbar="se", err_style='band')
-	axis = sns.pointplot(x="ind", y="reward", hue="reward_type", data=days_info_df, errorbar="se", join=False, capsize=.5,
-						 palette=sns.color_palette(colors), scale=1, dodge=0.2, linestyles='--')
+	axis = sns.pointplot(x="ind", y="reward", hue="reward_type", data=days_info_df, errorbar="se", join=False, capsize=.2,
+						 palette=sns.color_palette(colors), scale=0.7, dodge=0.2, linestyles='--')
 
 	for stage_day in tr:
 		axis.axvline(x=stage_day - 0.5, alpha=0.5, dashes=(5, 2, 1, 2), lw=2, color='gray')
@@ -301,7 +301,7 @@ def WPI_WC_FC(data_file_path):
 	despine(axis)
 	axis.legend().set_title('')
 
-	axis.set_xlabel('Stage.Day')
+	axis.set_xlabel('Training Days in Stage')
 	axis.set_ylabel('Correct Choices')
 
 	df_temp = df[['subject', 'model', 'stage', 'day in stage', 'trial']].copy()
@@ -309,10 +309,12 @@ def WPI_WC_FC(data_file_path):
 	trials_in_day['total_trials'] = trials_in_day['trial']
 	trials_in_day.drop(['trial'], axis=1, inplace=True)
 
+	dilute_xticks(axis,2)
+
 	wp_df = pd.concat([days_info_df, trials_in_day], axis=1, join='inner')
 	wp_df['WPI'] = wp_df['trial'] / wp_df['total_trials']
 
-	wp_df = wp_df[wp_df['reward_type']=='Water']
+	wp_df = wp_df[wp_df['reward_type'] == 'Water']
 
 	# uniques = [days_info_df[i].unique().tolist() for i in ['subject', 'stage', 'day in stage', 'reward_type']]
 	# df_combo = pd.DataFrame(product(*uniques), columns=days_info_df.columns)
@@ -326,12 +328,11 @@ def WPI_WC_FC(data_file_path):
 	axis.axhline(y=0.5, alpha=0.7, lw=1, color='grey', linestyle='--')
 	axis.axhline(y=0.75, alpha=0.7, lw=1, color='grey', linestyle='--')
 
-
 	plt.subplots_adjust(left=0.08, bottom=0.15, right=0.99, top=0.99, wspace=0.1, hspace=0.4)
 
 
 def learning_curve_behavioral_boxplot(data_file_path):
-	plt.rcParams.update({'font.size': 12})
+	plt.rcParams.update({'font.size': 16})
 	df = pd.read_csv(data_file_path)
 	df = df[['subject', 'model', 'stage', 'day in stage', 'trial', 'reward', 'model_reward']].copy()
 	df = df[df.model == df.model[0]]
@@ -339,25 +340,27 @@ def learning_curve_behavioral_boxplot(data_file_path):
 
 	days_info_df, order, st = index_days(days_info_df)
 
-	axis = sns.boxplot(data=days_info_df, x='ind', y='reward',  order=order, palette="flare")
+	fig = plt.figure(figsize=(10, 5))
+	axis = sns.boxplot(data=days_info_df, x='ind', y='reward',  order=order, color='grey', width=0.65, fliersize=4)#, palette="crest")
 
-	for stage_day in [13, 18, 24, 27]:
-		axis.axvline(x=stage_day + 0.5, alpha=0.5, dashes=(5, 2, 1, 2), lw=2, color='grey')
+	for stage_day in st:
+		axis.axvline(x=stage_day - 0.5, alpha=0.5, dashes=(5, 2, 1, 2), lw=2, color='grey')
 
 	animals_in_day = [len(np.unique(days_info_df[days_info_df.ind==day_stage].subject)) for day_stage in order]
 	axis.axhline(y=0.5, alpha=0.7, lw=1, color='grey', linestyle='--')
+	axis.axhline(y=0.75, alpha=0.7, lw=1, color='grey', linestyle='--')
 
 	#add count of animals in each day.
 	axis.set_ylabel([0.3, 1])
 	for xtick in axis.get_xticks():
-		axis.text(xtick, 0.41, animals_in_day[xtick],
+		axis.text(xtick, 0.375, animals_in_day[xtick],
 				horizontalalignment='center',size='small',color='black',weight='semibold')
 
 	ticks = ["{}".format(int(x[2:])) if (int(x[2:])-1) % 2 == 0 else "" for ind, x in enumerate(order) ]
 	axis.set_xticklabels(ticks)
 
 	axis.set_xlabel('Training Day in Stage')
-	axis.set_ylabel('Success rate')
+	axis.set_ylabel('Correct Choice Rate')
 
 	axis.spines['top'].set_visible(False)
 	axis.spines['right'].set_visible(False)
@@ -414,7 +417,7 @@ def show_likelihood_trials_scatter(data_file_path):
 
 
 def plot_models_fitting_result_per_stage_action_bias(data_file_path):
-	plt.rcParams.update({'font.size': 10})
+	plt.rcParams.update({'font.size': 16})
 	df = pd.read_csv(data_file_path)
 	df = rename_models(df)
 	relevant_models= utils.flatten_list([(m,'B-'+m,'M(B)-'+m) for m in ['SARL','ORL','FRL']])
@@ -442,7 +445,7 @@ def plot_models_fitting_result_per_stage_action_bias(data_file_path):
 		sns.set_palette(colors[n*ind:n*ind+n])
 		df_model = df[df.model.str.contains(model)]
 		hue_order = [model_name for model_name in relevant_models if model in model_name]
-		args = dict(x = 'stage', y = y, hue = 'model', data=df_model, hue_order=hue_order)
+		args = dict(x='stage', y=y, hue='model', data=df_model, hue_order=hue_order)
 		ax[ind] = sns.barplot(**args, ax=ax[ind], errorbar='se' ,errwidth=1, capsize=.07, errcolor='gray', dodge=1)
 
 		ax[ind].set_ylim(0.25, 0.3)
@@ -477,16 +480,17 @@ def plot_models_fitting_result_per_stage_action_bias(data_file_path):
 	ax0.set_ylim(ax[0].get_ylim())
 
 	args = dict(x="model_name", y=y, hue="model_type", hue_order=['m', 'B-m', 'M(B)-m'])
-	pairs = utils.flatten_list([[((model, 'B-m'), (model, 'M(B)-m'))] for model in models])
+	pairs = utils.flatten_list([[((model, 'B-m'), (model, 'M(B)-m'))] for model in models])+[(('FRL', 'm'), ('FRL', 'M(B)-m'))]
 	annot = Annotator(ax0, pairs, **args, data=df)
-	annot.configure(test='t-test_paired', text_format='star', loc='inside', verbose=1)
+	annot.configure(test='t-test_paired', text_format='star', loc='inside', line_height=0.01, verbose=1)
 	annot.apply_test().annotate()
 
 	handles, labels = ax0.get_legend_handles_labels()
 	ax0.legend(handles, labels, loc='upper left', prop={'size': 12}, labelspacing=0)
 	despine(ax0)
+	ax0.set_ylabel('')
 
-	fig.subplots_adjust(left=0.08, bottom=0.07, right=0.99, top=0.99, wspace=0.3, hspace=0.3)
+	fig.subplots_adjust(left=0.08, bottom=0.07, right=0.99, top=1, wspace=0.3, hspace=0.3)
 
 	plt.savefig('fitting/Results/figures/all_models_by_stage_{}'.format(utils.get_timestamp()))
 
@@ -649,9 +653,9 @@ def action_bias_in_stage(data_file_path):
 
 		axis.set_xticklabels([]) if model_ind<len(models)-1 else 0
 	axis.set_xlabel('Training day in stage')
-	dilute_xticks(axis,1)
+	dilute_xticks(axis,2)
 	handles, labels = axis.get_legend_handles_labels()
-	fig.legend(handles, ['Water Motivation','Food Motivation'], loc="upper right", prop={'size': 11}, labelspacing=0.2)
+	fig.legend(handles, ['Water Motivation','Food Motivation'], loc="upper center", prop={'size': 11}, labelspacing=0.2)
 
 	fig.text(0.01, 0.5, 'Bias to Food Arms', va='center', rotation='vertical')
 
@@ -779,26 +783,28 @@ def average_likelihood_simple(data_file_path, models=None):
 	data['AIC'] = - 2 * data.LL + 2 * k
 	data['Geom_avg']= scipy.stats.mstats.gmean(data.likelihood, nan_policy='omit')
 
+	# For Stimuli Context dependant figure
 	pairs = [(('FRL','M(B)-m'), ('FRL','S(V)-M(B)-m')),
 			 (('FRL','M(B)-m'), ('FRL','S(VB)-M(B)-m'))]
 	sns.set_palette("magma", len(models_order_df(df)))
 
-	#pairs = [((m,'M(B)-m'), (m,'M(VB)-m')) for m in ['SARL','ORL','FRL']]
-	#pairs = [(('M(B)-' + m), ('M(VB)-' + m)) for m in [ 'FRL']]
-	#sns.set_palette(triplet_colors(len(models_order_df(data))))
+	# For Motivation dependant figure
+	# pairs = [((m,'M(B)-m'), (m,'M(VB)-m')) for m in ['SARL','ORL','FRL']]
+	# sns.set_palette("Greys", n_colors=3)
 
-	#sns.set_palette("Greys", n_colors=3)
-	# axis = sns.boxplot(y=criterion, x='model', data=df, order=models_order_df(data),)
 	criterion = 'likelihood'
 	args = dict(x="model_type", y=criterion, hue='model_struct', data=df)
 	axis = sns.barplot(**args, fill=True, errorbar='se')
 
 	if criterion == 'likelihood':
+
+		minn = 0.28
+		maxx = 0.38
+		delta = 0.1 * (maxx - minn)
+		plt.ylim([minn - delta, maxx + delta])
 		annot = Annotator(axis, pairs, **args)
-		annot.configure(test='t-test_paired', text_format='star', loc='inside', verbose=2)
+		annot.configure(test='t-test_paired', text_format='star', loc='inside', line_height=0.01, verbose=2)
 		annot.apply_test().annotate()
-		minn=0.27
-		maxx=0.37
 
 		axis.set_ylabel('Average Trial Likelihood')
 	else:
@@ -861,19 +867,61 @@ def average_likelihood_animal(data_file_path):
 		axis.axvline(x=likelihood, alpha=1, lw=2.5, color=colors[ind])
 
 if __name__ == '__main__':
-	file_path = '/Users/gkour/repositories/plusmaze/fitting/Results/Rats-Results/fitting_results_ActionBias.csv'
-	#file_path = '/Users/gkour/repositories/plusmaze/fitting/Results/Rats-Results/fitting_results_ActionBiasAARL.csv'
+
+	#file_path = '/Users/gkour/repositories/plusmaze/fitting/Results/Rats-Results/fitting_results_ActionBias.csv'
+	#file_path = '/Users/gkour/repositories/plusmaze/fitting/Results/Rats-Results/fitting_results_ActionBiasAndMotivation.csv'
+	#file_path = '/Users/gkour/repositories/plusmaze/fitting/Results/Rats-Results/fitting_results_SC_FRL.csv'
+	file_path = '/Users/gkour/repositories/plusmaze/fitting/Results/Rats-Results/fitting_results_Motivation_BV_newSARL.csv'
+
 	#learning_curve_behavioral_boxplot('/Users/gkour/repositories/plusmaze/fitting/Results/Rats-Results/fitting_results_2023_01_15_03_36_50.csv')
 	#WPI_WC_FC(file_path)
-	# models_fitting_quality_over_times_average(file_path)
-	# compare_model_subject_learning_curve_average(file_path)
-	plot_models_fitting_result_per_stage(file_path)
+	#models_fitting_quality_over_times_average(file_path, models=utils.flatten_list([['M(B)-'+m, 'M(VB)-'+m] for m in ['FRL']]))
+	#models_fitting_quality_over_times_average(file_path, models=utils.flatten_list([['M(B)-' + m, 'S(V)-M(B)-'+m,'S(VB)-M(B)-' + m] for m in ['FRL']]))
+	#compare_model_subject_learning_curve_average(file_path)
+	#plot_models_fitting_result_per_stage_action_bias(file_path)
 	# show_likelihood_trials_scatter(file_path)
 	#stage_transition_model_quality(file_path)
-	# show_fitting_parameters(file_path)
+	#show_fitting_parameters(file_path)
 	#compare_fitting_criteria(file_path)
-	average_likelihood(file_path)
+	#compare_fitting_criteria(file_path, models=utils.flatten_list([['M(B)-'+m,'M(V)-'+m, 'M(VB)-'+m] for m in ['SARL','ORL','FRL']]))
+	#average_likelihood_animal(file_path)
+	#average_likelihood_simple(file_path, models=utils.flatten_list([['M(B)-'+m,'M(V)-'+m, 'M(VB)-'+m] for m in ['SARL','ORL','FRL']]))
+	#average_likelihood_simple(file_path, ['M(B)-FRL', 'S(V)-M(B)-FRL','S(VB)-M(B)-FRL'])
 	#compare_neural_tabular_models(file_path)
 	#model_parameters_development(file_path, True)
-	action_bias_in_stage(file_path)
-	x = 1
+	#
+
+
+	#Fig 2: Animals Choice Accuracy, preference, and days to criterion.
+	# file_path = '/Users/gkour/repositories/plusmaze/fitting/Results/Rats-Results/fitting_results_ActionBias.csv'
+	# learning_curve_behavioral_boxplot(file_path)
+	# WPI_WC_FC(file_path)
+
+
+	#Fig 5: Action bias dependency on motivation state.
+	file_path = '/Users/gkour/repositories/plusmaze/fitting/Results/Rats-Results/fitting_results_ActionBias.csv'
+	# compare_fitting_criteria(file_path)
+	# average_likelihood_animal(file_path)
+	# plot_models_fitting_result_per_stage_action_bias(file_path)
+
+
+
+	#Fig 6: Action bias response to changes.
+	file_path = '/Users/gkour/repositories/plusmaze/fitting/Results/Rats-Results/fitting_results_action_bias_dynamics.csv'
+	# action_bias_in_stage(file_path)
+	# model_values_development(file_path)
+
+	#Fig 7: The effect of Motivational Context om Stimuli values and action biases.
+	file_path = '/Users/gkour/repositories/plusmaze/fitting/Results/Rats-Results/fitting_results_Motivation_BV.csv'
+	# average_likelihood_simple(file_path, models=utils.flatten_list([['M(B)-'+m,'M(V)-'+m, 'M(VB)-'+m] for m in ['SARL','ORL','FRL']]))
+	# models_fitting_quality_over_times_average(file_path, models=utils.flatten_list([['M(B)-'+m, 'M(VB)-'+m] for m in ['ORL']]))
+
+
+	#Fig 8: Stimuli context association with stimuli and action bias in FRL model.
+
+	file_path = '/Users/gkour/repositories/plusmaze/fitting/Results/Rats-Results/fitting_results_SC_FRL.csv'
+	average_likelihood_simple(file_path, ['M(B)-FRL', 'S(V)-M(B)-FRL', 'S(VB)-M(B)-FRL'])
+	models_fitting_quality_over_times_average(file_path, models=utils.flatten_list(
+		[['M(B)-' + m, 'S(V)-M(B)-' + m, 'S(VB)-M(B)-' + m] for m in ['FRL']]))
+
+	x=1

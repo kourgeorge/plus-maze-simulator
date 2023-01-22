@@ -4,7 +4,7 @@ import numpy as np
 
 import utils
 from learners.abstractlearner import AbstractLearner
-from models.tabularmodels import QTable, FTable, ACFTable, OptionsTable
+from models.tabularmodels import QTable, FTable, ACFTable
 from rewardtype import RewardType
 
 
@@ -35,6 +35,11 @@ class ABQLearner(QLearner):
 		learning_rate = self.optimizer['learning_rate']
 
 		for action in np.unique(actions):
+			delta = np.mean(deltas[actions == action])
+			if (action == 0 or action == 1) and delta < 0:
+				foor_actions = self.model.action_bias['food']
+				print("a:{} - Q:{} - delta:{} - food_actions={} - food_bias={}".format(action, self.model(state_batch, motivation)[0][action],
+													  deltas[actions == action], foor_actions,np.sum(foor_actions[0:2]) - np.sum(foor_actions[2:4])))
 			self.model.action_bias[motivation.value][action] += learning_rate*np.mean(deltas[actions==action])
 
 		return deltas
@@ -99,9 +104,38 @@ class ABIALearner(IALearner):
 		learning_rate = self.optimizer['learning_rate']
 
 		for action in np.unique(actions):
+			delta = np.mean(deltas[actions == action])
+			if (action == 0 or action == 1) and motivation.value=='food' and delta < 0:
+				foor_actions = self.model.action_bias['food']
+				print("a:{} - Q:{} - delta:{} - food_actions={} - food_bias={}".format(action, self.model(state_batch, motivation)[0][action],
+													  deltas[actions == action], foor_actions,np.sum(foor_actions[0:2]) - np.sum(foor_actions[2:4])))
+
+
 			self.model.action_bias[motivation.value][action] += learning_rate*np.mean(deltas[actions==action])
 
 		return deltas
+
+#
+# class ABIALearnerG(IALearner):
+# 	def __init__(self, model: FTable, learning_rate=0.01):
+# 		super().__init__(model=model, learning_rate=learning_rate)
+#
+# 	def learn(self, state_batch, action_batch, reward_batch, action_values, nextstate_batch, motivation):
+# 		deltas = super().learn(state_batch, action_batch, reward_batch, action_values, nextstate_batch, motivation)
+# 		actions = np.argmax(action_batch, axis=1)
+# 		learning_rate = self.optimizer['learning_rate']
+#
+# 		for action in np.unique(actions):
+# 			delta = np.mean(deltas[actions == action])
+# 			if (action == 0 or action == 1) and motivation.value=='food' and delta < 0:
+# 				foor_actions = self.model.action_bias['food']
+# 				print("a:{} - Q:{} - delta:{} - food_actions={} - food_bias={}".
+# 					  format(action, self.model(state_batch, motivation)[0][action],deltas[actions == action],
+# 												 foor_actions, np.sum(foor_actions[0:2]) - np.sum(foor_actions[2:4])))
+#
+# 			self.model.action_bias[motivation.value][action] += learning_rate*np.mean(deltas[actions==action])
+#
+# 		return deltas
 
 
 class UABIALearner(IALearner):
