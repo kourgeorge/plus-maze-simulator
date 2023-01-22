@@ -233,7 +233,7 @@ def model_values_development(data_file_path):
 	x=1
 
 
-def compare_model_subject_learning_curve_average(data_file_path):
+def compare_model_subject_learning_curve_average(data_file_path, models=None):
 	df = pd.read_csv(data_file_path)
 
 	df = rename_models(df)
@@ -242,6 +242,10 @@ def compare_model_subject_learning_curve_average(data_file_path):
 	model_df = df.groupby(['subject', 'model', 'stage', 'day in stage'], sort=False).mean().reset_index()
 
 	model_df = filter_days(model_df)
+
+	if models:
+		model_df = model_df[model_df.model.isin(models)]
+
 	model_df, order, tr = index_days(model_df)
 	# this is needed because there is no good way to order the x-axis in lineplot.
 	model_df.sort_values('ind', axis=0, ascending=True, inplace=True)
@@ -258,13 +262,13 @@ def compare_model_subject_learning_curve_average(data_file_path):
 	for stage_day in tr:
 		axis.axvline(x=stage_day - 0.5, alpha=0.5, dashes=(5, 2, 1, 2), lw=2, color='gray')
 
-	axis.set_xlabel('Stage.Day')
+	axis.set_xlabel('Training day in stage')
 	axis.set_ylabel('Success Rate')
 
 	handles, labels = axis.get_legend_handles_labels()
 	plt.legend(handles, labels, loc="upper left", prop={'size': 14}, labelspacing=0.2)
-	axis.spines['top'].set_visible(False)
-	axis.spines['right'].set_visible(False)
+	despine(axis)
+	dilute_xticks(axis,2)
 	plt.subplots_adjust(left=0.12, bottom=0.15, right=0.98, top=0.98, wspace=0.2, hspace=0.1)
 
 	plt.savefig('fitting/Results/paper_figures/learning_curve_{}'.format(utils.get_timestamp()))
