@@ -660,100 +660,164 @@ def action_bias_in_stage(data_file_path):
 	x=1
 
 
-
-
 def model_parameters_development(data_file_path, show_per_subject=False):
 	plt.rcParams.update({'font.size': 14})
 	df_all = pd.read_csv(data_file_path)
 	df = df_all[['subject', 'model', 'parameters', 'stage', 'day in stage', 'trial', 'model_variables', 'likelihood']].copy()
 
 	df = df[df['model_variables'].notna()].reset_index()
-
+	df, order, st = index_days(df)
 	df = rename_models(df)
 	df = filter_days(df)
-	df, order, st = index_days(df)
+
 	# this is needed because there is no good way to order the x-axis in lineplot.
 	df.sort_values('ind', axis=0, ascending=True, inplace=True)
 
 	for model in np.unique(df.model): # ['AARL','ACLNet2']:
 		df_model = df[df.model == model]
-		# format the model_variables entry
-		df_model['model_variables'] = df_model['model_variables'].apply(lambda s: s.replace("\'", "\""))
-		df_model['model_variables'] = df_model['model_variables'].apply(json.loads)
+		df, order, st = index_days(df)
 
-		variables_names = df_model['model_variables'].tolist()[0].keys()
-		df_variables = pd.DataFrame(df_model['model_variables'].tolist())
+		df_model, variables_names= unbox_model_variables(df_model)
 
-		df_no = df_model.drop('model_variables', axis=1).reset_index()
-		df_model = pd.concat([df_no, df_variables], axis=1)
 
-		df_model = df_model.groupby(['subject', 'model', 'parameters', 'stage', 'day in stage'],
-									sort=False).mean().reset_index()
+		variables_names = [name for name in list(variables_names) if 'none' not in name]
+		#variables_names.remove('none')
 
-		df_model, order, st= index_days(df_model)
-		# this is needed because there is no good way to order the x-axis in lineplot.
-		df_model.sort_values('ind', axis=0, ascending=True, inplace=True)
-
-		fig = plt.figure(figsize=(7.5, 4), dpi=120, facecolor='w')
-		sns.set_palette("Set2", n_colors=3)
+		fig = plt.figure(figsize=(7, 3), dpi=120, facecolor='w')
+		sns.set_palette("colorblind", n_colors=5)
 		axis = fig.add_subplot(111)
 		for variable_name in variables_names:
-			sns.lineplot(x="ind", y=variable_name, data=df_model, errorbar="se", err_style='band', ax=axis, label=variable_name.split('_')[0], marker='o')
-		axis.legend(loc='upper left')
+			axis = sns.lineplot(x="ind", y=variable_name, data=df_model, errorbar="se", err_style='band', ax=axis, label=variable_name.split('_')[0], marker='o')
+		#axis.legend([], [], frameon=False)
 
-		for stage_day in np.cumsum(num_days_reported)[:-1]:
+		for stage_day in st:
 			axis.axvline(x=stage_day - 0.5, alpha=0.5, dashes=(5, 2, 1, 2), lw=2, color='gray')
 
-		plt.xlabel('Stage.Day')
-		plt.ylabel('Attention')
+		axis.axhline(y=0, alpha=0.7, lw=1, color='grey', linestyle='-')
+
+		despine(axis)
+		dilute_xticks(axis,1)
+
+		plt.xlabel('Day in Stage. n={}'.format(len(np.unique(df_model.subject))))
+		plt.ylabel('Action Bias Norm')
+
+		axis.text(0.01, 0.5, 'Bias to Food Arms', va='center', rotation='vertical')
+
 		plt.title(model)
 
+		#
+		# handles, labels = axis.get_legend_handles_labels()
+		# plt.legend(handles, labels, loc="upper left", prop={'size': 16}, labelspacing=0.2)
+		# plt.subplots_adjust(left=0.12, bottom=0.15, right=0.97, top=0.9, wspace=0.2, hspace=0.4)
+
 		handles, labels = axis.get_legend_handles_labels()
-		plt.legend(handles, labels, loc="upper left", prop={'size': 16}, labelspacing=0.2)
-
-		plt.subplots_adjust(left=0.12, bottom=0.15, right=0.97, top=0.9, wspace=0.2, hspace=0.4)
-
-		axis.spines['top'].set_visible(False)
-		axis.spines['right'].set_visible(False)
+		#axis.legend(handles, ['Water', 'Food'], loc='upper left', prop={'size': 16}, labelspacing=0.4)
+		plt.subplots_adjust(left=0.14, bottom=0.2, right=0.99, top=0.9, wspace=0.2, hspace=0.8)
 
 		plt.savefig('fitting/Results/paper_figures/attention_{}'.format(utils.get_timestamp()))
 
-		plt.rcParams.update({'font.size': 10})
-		fig = plt.figure(figsize=(9, 7), dpi=120, facecolor='w')
-		animals_ind = np.unique(df_model.subject)
-		for i, subject in enumerate(animals_ind):
+		if show_per_subject:
+			plt.rcParams.update({'font.size': 10})
+			fig = plt.figure(figsize=(12, 5), dpi=120, facecolor='w')
+			animals_ind = np.unique(df_model.subject)
+			for i, subject in enumerate(animals_ind):
 
-			df_sub = df_model[df_model.subject == subject]
-			axis = fig.add_subplot(int(np.ceil(len(animals_ind)/2)), 2, i+1)
+				df_sub = df_model[df_model.subject == subject]
+				axis = fig.add_subplot(int(np.ceil(len(animals_ind)/5)), 5, i+1)
 
-			_, order, st = index_days(df_sub)
+				_, order, st_s = index_days(df_sub)
 
-			for variable_name in variables_names:
-				axis = sns.lineplot(x="ind", y=variable_name, data=df_sub, errorbar="se", err_style='band', ax=axis, label=variable_name.split('_')[0])
+				for variable_name in variables_names:
+					axis = sns.lineplot(x="ind", y=variable_name, data=df_sub, errorbar="se", err_style='band', ax=axis, label=variable_name.split('_')[0])
 
-			for stage_day in st:
-				axis.axvline(x=stage_day - 0.5, alpha=0.5, dashes=(5, 2, 1, 2), lw=2, color='gray')
+				for stage_day in st_s:
+					axis.axvline(x=stage_day - 0.5, alpha=0.5, dashes=(5, 2, 1, 2), lw=2, color='gray')
 
-			axis.legend([], [], frameon=False)
-			axis.spines['top'].set_visible(False)
-			axis.spines['right'].set_visible(False)
+				axis.legend([], [], frameon=False)
+				despine(axis)
+				axis.axhline(y=0, alpha=0.7, lw=1, color='grey', linestyle='-')
 
-			params_list = np.round(fitting_utils.string2list(df_sub.parameters.tolist()[0]),3)
-			axis.set_title('S{}: {}'.format(subject, params_list))
+				params_list = np.round(fitting_utils.string2list(df_sub.parameters.tolist()[0]),3)
+				#axis.set_title('S{}: {}'.format(subject, params_list))
 
-			axis.set_xlabel('Stage.Day') if i > len(animals_ind)-3 else axis.set_xlabel('')
-			axis.set_ylabel('') #axis.set_ylabel("Attention") if i % 2 == 0 else axis.set_ylabel('')
-			plt.tick_params(axis='both', which='major', labelsize=9)
+				axis.set_xlabel('Training Day in Stage') if i > len(animals_ind)-3 else axis.set_xlabel('')
+				axis.set_ylabel('') #axis.set_ylabel("Attention") if i % 2 == 0 else axis.set_ylabel('')
+				plt.tick_params(axis='both', which='major', labelsize=9)
 
-			ticks = ["{}".format(int(x[2:])) if (int(x[2:]) - 1) % 2 == 0 else "" for ind, x in enumerate(order)]
-			axis.set_xticklabels(ticks)
+				dilute_xticks(axis,2)
 
-		plt.subplots_adjust(left=0.1, bottom=0.1, right=0.99, top=0.95, wspace=0.2, hspace=0.8)
+			plt.suptitle(model)
+			fig.text(0.01, 0.5, 'Bias to Food Arms', va='center', rotation='vertical')
+			plt.subplots_adjust(left=0.06, bottom=0.07, right=0.99, top=0.90, wspace=0.2, hspace=0.8)
 
-	handles, labels = axis.get_legend_handles_labels()
-	fig.legend(handles, labels, loc=(0.1,0.9), prop={'size': 11}, labelspacing=0.2)
+			handles, labels = axis.get_legend_handles_labels()
+			fig.legend(handles, ['Water Motivation', 'Food Motivation'], loc="upper left", prop={'size': 10}, labelspacing=0.2)
 
 	x = 1
+
+
+def average_likelihood_simple(data_file_path, models=None):
+	plt.rcParams.update({'font.size': 16})
+	df = pd.read_csv(data_file_path)
+	df = df[['subject', 'model', 'likelihood', 'day in stage', 'trial', 'stage', 'reward']].copy()
+
+	df['LL'] = np.log(df.likelihood)
+	df['NLL'] = -np.log(df.likelihood)
+
+	df = rename_models(df)
+
+	if models:
+		df=df[df.model.isin(models)]
+
+	df = extract_model_name_type(df)
+
+	data = df.groupby(['model_type','model_struct']).agg({'reward': 'count', 'LL': 'sum', 'likelihood': 'mean'}).reset_index()
+	data = data.rename(columns={'reward': 'n'})
+
+	k=2
+	data['AIC'] = - 2 * data.LL/data.n + 2 * k/data.n
+	data['AIC'] = - 2 * data.LL + 2 * k
+	data['Geom_avg']= scipy.stats.mstats.gmean(data.likelihood, nan_policy='omit')
+
+	pairs = [(('FRL','M(B)-m'), ('FRL','S(V)-M(B)-m')),
+			 (('FRL','M(B)-m'), ('FRL','S(VB)-M(B)-m'))]
+	sns.set_palette("magma", len(models_order_df(df)))
+
+	#pairs = [((m,'M(B)-m'), (m,'M(VB)-m')) for m in ['SARL','ORL','FRL']]
+	#pairs = [(('M(B)-' + m), ('M(VB)-' + m)) for m in [ 'FRL']]
+	#sns.set_palette(triplet_colors(len(models_order_df(data))))
+
+	#sns.set_palette("Greys", n_colors=3)
+	# axis = sns.boxplot(y=criterion, x='model', data=df, order=models_order_df(data),)
+	criterion = 'likelihood'
+	args = dict(x="model_type", y=criterion, hue='model_struct', data=df)
+	axis = sns.barplot(**args, fill=True, errorbar='se')
+
+	if criterion == 'likelihood':
+		annot = Annotator(axis, pairs, **args)
+		annot.configure(test='t-test_paired', text_format='star', loc='inside', verbose=2)
+		annot.apply_test().annotate()
+		minn=0.27
+		maxx=0.37
+
+		axis.set_ylabel('Average Trial Likelihood')
+	else:
+		minn = np.min(data[criterion])
+		maxx = np.max(data[criterion])
+		axis.set_ylabel(criterion)
+
+	delta = 0.1 * (maxx - minn)
+	plt.ylim([minn - delta, maxx + delta])
+
+	axis.legend([], [], frameon=False)
+	handles, labels = axis.get_legend_handles_labels()
+	axis.legend(handles, labels, loc="upper right", prop={'size': 14}, labelspacing=0.2)
+
+	axis.set_xlabel('')
+	plt.subplots_adjust(left=0.18, bottom=0.1, right=0.97, top=0.98, wspace=0.2, hspace=0.7)
+	despine(axis)
+
+	x=1
 
 
 def average_likelihood(data_file_path):
