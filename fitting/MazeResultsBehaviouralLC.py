@@ -591,7 +591,9 @@ def show_fitting_parameters(data_file_path):
 
 
 def action_bias_in_stage(data_file_path):
-	plt.rcParams.update({'font.size': 8})
+	"""Showing the action bias estimated by the models for each stage containing
+	only rats that particiapted in the entire reported days of the stage."""
+	plt.rcParams.update({'font.size': 10})
 	df_all = pd.read_csv(data_file_path)
 	df = df_all[
 		['subject', 'model', 'parameters', 'stage', 'day in stage', 'trial', 'model_variables', 'likelihood']].copy()
@@ -603,21 +605,20 @@ def action_bias_in_stage(data_file_path):
 	df, order, st = index_days(df)
 
 	days_per_rat = df[['subject', 'stage', 'day in stage']].drop_duplicates()
-	days_per_rat=days_per_rat.groupby(['subject','stage'],).max().reset_index()
+	days_per_rat = days_per_rat.groupby(['subject', 'stage'], ).max().reset_index()
 
-	min_days_in_stage = [5,2,3,2,2]
-	sns.set_palette("hls", n_colors=2)
-	fig = plt.figure(figsize=(12, 5), dpi=120, facecolor='w')
+	min_days_in_stage = [5, 2, 3, 2, 2]
+	sns.set_palette("colorblind", n_colors=2)
+	fig = plt.figure(figsize=(7, 5), dpi=120, facecolor='w')
 
-	models = ['MAB-SARL', 'MAB-ORL', 'MAB-FRL']
-	ylim = [[-.0001,0.01],[-0.0001,0.005], [-0.0001,0.07]]
-	ax_i = 0
+	models = ['M(B)-SARL', 'M(B)-ORL', 'M(B)-FRL']
+
 	for model_ind, model in enumerate(models):
 		model_df = df[df.model==model]
 
+		data_for_model = pd.DataFrame()
 		for stg_ind, stage in enumerate(stages):
 			#find the rates that maintained at least the number of days: 5,2,3,2,2
-			# plot the days in a lineplot in a figure with 5 sbplots
 
 			min_days = min_days_in_stage[stg_ind]
 			relevant_rats = days_per_rat[(days_per_rat.stage == stg_ind + 1) & (days_per_rat['day in stage'] >= min_days)]
@@ -627,24 +628,34 @@ def action_bias_in_stage(data_file_path):
 			df_relevant_rats = model_df[(model_df.subject.isin(relevant_rats)) & (model_df.stage == stg_ind + 1)]
 
 			df_relevant_rats, variable_names = unbox_model_variables(df_relevant_rats)
-			variable_names = [name for name in list(variable_names) if 'bias' in name]
+			variable_names = [name for name in list(variable_names) if 'none' not in name]
 
-			ax_i += 1
-			axis = fig.add_subplot(len(models), len(stages), ax_i)
-			# maxx = df_relevant_rats[variable_name]
-			for variable_name in variable_names:
-				axis = sns.lineplot(x="day in stage", y=variable_name, data=df_relevant_rats, errorbar="se",
-									err_style='band', ax=axis, label=variable_name.split('_')[0], marker='o')
-				axis.set_xlabel(stage) if ax_i > 10 else axis.set_xlabel('')
-				axis.set_ylabel(model) if (ax_i - 1) % 5 == 0 else axis.set_ylabel('')
-				axis.legend([], [], frameon=False)
-				despine(axis)
-				axis.set_ylim(ylim[model_ind])
+			data_for_model = pd.concat([data_for_model,df_relevant_rats], axis=0)
+		axis = fig.add_subplot(len(models), 1, model_ind+1)
+		data_for_model, order, st = index_days(data_for_model)
+		for variable_name in variable_names:
+			axis = sns.lineplot(x="ind", y=variable_name, data=data_for_model, errorbar="se",
+								err_style='band', ax=axis, label=variable_name.split('_')[0])
 
+		for stage_day in st:
+			axis.axvline(x=stage_day - 0.5, alpha=0.5, dashes=(5, 2, 1, 2), lw=2, color='gray')
+
+		axis.axhline(y=0, alpha=0.5, lw=1, color='gray')
+
+		axis.set_xlabel('')
+		axis.set_ylabel(model)
+		axis.legend([], [], frameon=False)
+		despine(axis)
+
+		axis.set_xticklabels([]) if model_ind<len(models)-1 else 0
+	axis.set_xlabel('Training day in stage')
+	dilute_xticks(axis,1)
 	handles, labels = axis.get_legend_handles_labels()
-	fig.legend(handles, labels, loc="upper left", prop={'size': 11}, labelspacing=0.2)
+	fig.legend(handles, ['Water Motivation','Food Motivation'], loc="upper right", prop={'size': 11}, labelspacing=0.2)
 
-	plt.subplots_adjust(left=0.06, bottom=0.07, right=0.99, top=0.95, wspace=0.3, hspace=0.5)
+	fig.text(0.01, 0.5, 'Bias to Food Arms', va='center', rotation='vertical')
+
+	plt.subplots_adjust(left=0.15, bottom=0.1, right=0.99, top=0.95, wspace=0.2, hspace=0.2)
 
 	x=1
 
