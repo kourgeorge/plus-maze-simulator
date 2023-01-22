@@ -1,17 +1,17 @@
-import numpy as np
-
-import pandas as pd
-import matplotlib.pyplot as plt
-from statannotations.Annotator import Annotator
 import functools
+import json
+
+import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
+import scipy
+import seaborn as sns
+from matplotlib.ticker import MaxNLocator
+from statannotations.Annotator import Annotator
 
 import utils
 from fitting import fitting_utils
 from fitting.fitting_utils import stable_unique, rename_models, models_order_df
-from matplotlib.ticker import MaxNLocator
-import seaborn as sns
-import json
-from itertools import product
 
 plt.rcParams.update({'font.size': 12})
 
@@ -25,24 +25,27 @@ def triplet_colors(n):
 	deep = sns.color_palette("deep", n)
 	dark = sns.color_palette("dark", n)
 
-	def flatten(l):
-		return [item for sublist in l for item in sublist]
-
-	colors = flatten(list(zip(pastel, deep, dark)))
+	colors = utils.flatten_list(list(zip(pastel, deep, dark)))
 	return colors
+
 
 def despine(axis):
 	axis.spines['top'].set_visible(False)
 	axis.spines['right'].set_visible(False)
 
 
-def dilute_xticks(axis):
-	ticks = ["{}".format(int(x._text[2:])) if (int(x._text[2:]) - 1) % 2 == 0 else "" for ind, x in enumerate(axis.get_xticklabels())]
+def dilute_xticks(axis, k=2):
+	ticks = ["{}".format(int(x._text[2:])) if (int(x._text[2:]) - 1) % k == 0 else "" for ind, x in enumerate(axis.get_xticklabels())]
 	axis.set_xticklabels(ticks)
 
 def filter_days(df):
 	for ind, stage in enumerate(stages):
 		df = df[~((df.stage == ind+1) & (df['day in stage'] > num_days_reported[ind]))]
+	return df
+
+def extract_model_name_type(df):
+	df['model_type'] = df.model.apply(lambda x: x.split('-')[-1])
+	df['model_struct'] = df.model.apply(lambda x: 'm' if len(x.split('-')) == 1 else '-'.join(x.split('-')[:-1])+'-m')
 	return df
 
 

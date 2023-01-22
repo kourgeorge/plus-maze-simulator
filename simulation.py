@@ -4,6 +4,7 @@ import numpy as np
 import pandas as pd
 
 from brains.lateoutcomeevaluationbrain import LateOutcomeEvaluationBrain
+from models.tabularmodels import MQTable, MOptionsTable, MFTable
 from motivatedagent import MotivatedAgent
 from environment import PlusMazeOneHotCues2ActiveDoors, CueType, PlusMazeOneHotCues
 
@@ -22,14 +23,15 @@ from brains.tdbrain import TDBrain
 
 brains = [  # ((TDBrain, QLearner, QTable), (4.5, 0.032)),
 	# ((TDBrain, OptionsLearner, OptionsTable), (4.6, 0.0087)),
-	# ((TDBrain, IALearner, ACFTable), (6.3, 0.0065)),
+	((TDBrain, IALearner, FTable), (2, 0.26)),
 	# ((TDBrain, IAAluisiLearner, ACFTable), (6.0, 0.0036)),
-	# ((TDBrain, MALearner, ACFTable), (5.9, 0.0094, 0.051)),
+	#((TDBrain, MALearner, ACFTable), (5.9, 0.0094, 0.051)),
 	# # (TDBrain, MALearnerSimple, ACFTable),
-	((ConsolidationBrain, DQN, UANet), (config.BETA, config.LEARNING_RATE)),
-	((ConsolidationBrain, DQN, ACLNet), (config.BETA, config.LEARNING_RATE)),
-	((ConsolidationBrain, DQN, FCNet), (config.BETA, config.LEARNING_RATE)),
-	((ConsolidationBrain, DQN, FC2LayersNet), (config.BETA, config.LEARNING_RATE)),
+	#((ConsolidationBrain, DQN, FC2LayersNet), (3, 0.26)),
+	#((ConsolidationBrain, DQN, ACLNet), (config.BETA, config.LEARNING_RATE)),
+	((ConsolidationBrain, DQN, UANet), (2, 0.26)),
+	#((ConsolidationBrain, DQN, FCNet), (0.5, 0.079)),
+	# ((ConsolidationBrain, DQN, FC2LayersNet), (config.BETA, config.LEARNING_RATE)),
 	#((ConsolidationBrain, DQN, EfficientNetwork), (config.BETA, config.LEARNING_RATE)),
 	# (FixedDoorAttentionBrain, DQN, EfficientNetwork),
 	# (MotivationDependantBrain, DQN, SeparateMotivationAreasNetwork),
@@ -37,6 +39,26 @@ brains = [  # ((TDBrain, QLearner, QTable), (4.5, 0.032)),
 	# (LateOutcomeEvaluationBrain, DQN, SeparateMotivationAreasNetwork)
 ]
 
+brains=[
+	#((TDBrain, QLearner, QTable), (config.BETA, config.LEARNING_RATE)),
+	 # ((TDBrain, QLearner, MQTable), (config.BETA, config.LEARNING_RATE)),
+	# ((TDBrain, UABQLearner, QTable), (config.BETA, config.LEARNING_RATE)),
+	#((TDBrain, ABQLearner, QTable), (config.BETA, config.LEARNING_RATE)),
+
+	#((TDBrain, QLearner, OptionsTable), (config.BETA, config.LEARNING_RATE)),
+	#((TDBrain, QLearner, MOptionsTable), (config.BETA, config.LEARNING_RATE)),
+	# ((TDBrain, UABQLearner, OptionsTable), (config.BETA, config.LEARNING_RATE)),
+	# ((TDBrain, ABQLearner, OptionsTable), (config.BETA, config.LEARNING_RATE)),
+	#((TDBrain, IALearner, FTable), (config.BETA, config.LEARNING_RATE)),
+	# ((TDBrain, ABIALearner, SCFDependantV), (config.BETA, config.LEARNING_RATE)),
+	((TDBrain, ABIALearner, FTable), (config.BETA, config.LEARNING_RATE)),
+((TDBrain, IALearner, MFTable), (config.BETA, config.LEARNING_RATE)),
+((TDBrain, ABIALearner, MFTable), (config.BETA, config.LEARNING_RATE)),
+
+]
+
+
+repetitions = 7
 
 def sample_from_estimated_parameters(model_name):
 	ranges = [(0, 30), (0.001, 0.2), (0.001, 0.2)]
@@ -55,7 +77,6 @@ def sample_from_estimated_parameters(model_name):
 
 
 def run_simulation(env):
-	repetitions = 20
 
 	all_experiment_data = pd.DataFrame()
 	brains_reports = []
@@ -102,14 +123,14 @@ def run_simulation(env):
 		'/Users/gkour/repositories/plusmaze/fitting/Results/simulations_results/simulation_{}_{}.csv'.format(
 			repetitions, utils.get_timestamp()))
 
-	plot_days_per_stage(brains_reports, file_path=os.path.join('Results', 'days_per_stage.png'))
+	plot_days_per_stage(brains_reports)
 
 	for brain_report in brains_reports:
 		plot_behavior_results(brain_report)
 
 
 if __name__ == '__main__':
-	# env = PlusMazeOneHotCues2ActiveDoors(relevant_cue=CueType.ODOR, stimuli_encoding=8)
+	#env = PlusMazeOneHotCues2ActiveDoors(relevant_cue=CueType.ODOR, stimuli_encoding=8)
 	env = PlusMazeOneHotCues(relevant_cue=CueType.ODOR, stimuli_encoding=10)
 	run_simulation(env)
 	x = 1
