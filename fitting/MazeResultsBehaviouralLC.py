@@ -896,39 +896,43 @@ if __name__ == '__main__':
 
 
 	#Fig 2: Animals Choice Accuracy, preference, and days to criterion.
-	# file_path = '/Users/gkour/repositories/plusmaze/fitting/Results/Rats-Results/fitting_results_ActionBias.csv'
+	file_path = 'fitting/Results/Rats-Results/fitting_results_ActionBias.csv'
 	# learning_curve_behavioral_boxplot(file_path)
 	# WPI_WC_FC(file_path)
 
 
 	#Fig 5: Action bias dependency on motivation state.
-	file_path = '/fitting/Results/Rats-Results/reported_results_motivation_shifting/fitting_results_ActionBias.csv'
+	file_path = 'fitting/Results/Rats-Results/reported_results_motivation_shifting/fitting_results_Action_Bias.csv'
 	# compare_fitting_criteria(file_path)
 	# average_likelihood_animal(file_path)
 	# plot_models_fitting_result_per_stage_action_bias(file_path)
 
-
+	#additional results: Success rate.
+	#compare_model_subject_learning_curve_average(file_path, ['M(B)-'+m for m in ['SARL','ORL','FRL']])
+	#compare_model_subject_learning_curve_average(file_path, ['B-' + m for m in ['SARL', 'ORL', 'FRL']])
+	#compare_model_subject_learning_curve_average(file_path, ['SARL', 'ORL', 'FRL'])
+	#show_fitting_parameters(file_path)
 
 	#Fig 6: Action bias response to changes.
-	file_path = '/fitting/Results/Rats-Results/reported_results_motivation_shifting/fitting_results_Action_Bias_dynamics.csv'
-	action_bias_in_stage(file_path)
-	model_values_development(file_path)
+	file_path = 'fitting/Results/Rats-Results/reported_results_motivation_shifting/fitting_results_Action_Bias_dynamics.csv'
+	#action_bias_in_stage(file_path)
+	#model_values_development(file_path)
 
-	#Fig 7: The effect of Motivational Context om Stimuli values and action biases.
-	file_path = '/fitting/Results/Rats-Results/reported_results_motivation_shifting/fitting_results_Motivation_BV.csv'
+	#Fig 7: The effect of Motivational Context on Stimuli values and action biases.
+	file_path = 'fitting/Results/Rats-Results/reported_results_motivation_shifting/fitting_results_Motivation_BV.csv'
 	# average_likelihood_simple(file_path, models=utils.flatten_list([['M(B)-'+m,'M(V)-'+m, 'M(VB)-'+m] for m in ['SARL','ORL','FRL']]))
 	# models_fitting_quality_over_times_average(file_path, models=utils.flatten_list([['M(B)-'+m, 'M(VB)-'+m] for m in ['ORL']]))
 
 
 	#Fig 8: Stimuli context association with stimuli and action bias in FRL model.
-	file_path = '/fitting/Results/Rats-Results/reported_results_motivation_shifting/fitting_results_SC_FRL.csv'
+	file_path = 'fitting/Results/Rats-Results/reported_results_motivation_shifting/fitting_results_SC_FRL.csv'
 	# average_likelihood_simple(file_path, ['M(B)-FRL', 'S(V)-M(B)-FRL', 'S(VB)-M(B)-FRL'])
 	# models_fitting_quality_over_times_average(file_path, models=utils.flatten_list(
 	# 	[['M(B)-' + m, 'S(V)-M(B)-' + m, 'S(VB)-M(B)-' + m] for m in ['FRL']]))
 
 
 	# Table: Non-motivated reward value
-	file_path = './fitting/Results/Rats-Results/fitting_results_nmr_M(B).csv'
+	file_path = 'fitting/Results/Rats-Results/fitting_results_nmr_M(B).csv'
 	compare_model_subject_learning_curve_average(file_path)
 	show_fitting_parameters(file_path)
 	average_likelihood_simple(file_path, models=utils.flatten_list([['M(B)-'+m] for m in ['SARL','ORL','FRL']]))
