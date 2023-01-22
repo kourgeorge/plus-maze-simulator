@@ -926,4 +926,12 @@ if __name__ == '__main__':
 	# models_fitting_quality_over_times_average(file_path, models=utils.flatten_list(
 	# 	[['M(B)-' + m, 'S(V)-M(B)-' + m, 'S(VB)-M(B)-' + m] for m in ['FRL']]))
 
+
+	# Table: Non-motivated reward value
+	file_path = './fitting/Results/Rats-Results/fitting_results_nmr_M(B).csv'
+	compare_model_subject_learning_curve_average(file_path)
+	show_fitting_parameters(file_path)
+	average_likelihood_simple(file_path, models=utils.flatten_list([['M(B)-'+m] for m in ['SARL','ORL','FRL']]))
+	models_fitting_quality_over_times_average(file_path, models=utils.flatten_list([['M(B)-'+m] for m in ['SARL','ORL','FRL']]))
+
 	x=1
