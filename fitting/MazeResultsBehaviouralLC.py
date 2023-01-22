@@ -85,10 +85,7 @@ def unbox_model_variables(df_model):
 	return df_model, variables_names
 
 
-
-
-
-def models_fitting_quality_over_times_average(data_file_path):
+def models_fitting_quality_over_times_average(data_file_path, models=None):
 	df = pd.read_csv(data_file_path)
 	df = df[['subject', 'model', 'stage', 'day in stage', 'trial', 'likelihood', 'reward', 'model_reward']].copy()
 	df['NLL'] = -np.log(df.likelihood)
@@ -97,66 +94,36 @@ def models_fitting_quality_over_times_average(data_file_path):
 	model_df['ML'] = np.exp(-model_df.NLL)
 
 	model_df = rename_models(model_df)
+	if models:
+		model_df = model_df[model_df.model.isin(models)]
+
 	model_df = filter_days(model_df)
 	model_df, order, tr = index_days(model_df)
 	# this is needed because there is no good way to order the x-axis in lineplot.
 	model_df.sort_values('ind', axis=0, ascending=True, inplace=True)
 
 	fig = plt.figure(figsize=(7.5, 4), dpi=100, facecolor='w')
+	sns.set_palette("magma", len(models_order_df(model_df)))
+	# colors = triplet_colors(3)
+	# sns.set_palette([colors[6],colors[8]])
 
-	#sns.set_palette("tab10", len(models_order_df(model_df)))
-	axis = sns.lineplot(x="ind", y="likelihood", hue="model", size_order=order, sort=False,
+	axis = sns.lineplot(x="ind", y="likelihood", hue="model", size_order=order.reverse(), sort=False,
 						hue_order=models_order_df(model_df),
 						data=model_df, errorbar="se", err_style='band')
 
 	for stage_day in tr:
 		axis.axvline(x=stage_day - 0.5, alpha=0.5, dashes=(5, 2, 1, 2), lw=2, color='gray')
 
-	axis.set_xlabel('Stage.Day')
+	axis.axhline(y=0.25, alpha=0.5, linestyle='--' , lw=1, color='gray')
+
+	axis.set_xlabel('Training Day in stage')
 	axis.set_ylabel('Average Likelihood')
 
 	handles, labels = axis.get_legend_handles_labels()
 	plt.legend(handles, labels, loc="upper left", prop={'size': 14}, labelspacing=0.2)
 	despine(axis)
+	dilute_xticks(axis, k=1)
 	plt.subplots_adjust(left=0.12, bottom=0.15, right=0.98, top=0.98, wspace=0.2, hspace=0.1)
-
-def models_fitting_quality_over_times(data_file_path):
-	df = pd.read_csv(data_file_path)
-	df = df[['subject', 'model', 'stage', 'day in stage', 'trial', 'likelihood', 'reward', 'model_reward']].copy()
-	df['NLL'] = -np.log(df.likelihood)
-
-	fig = plt.figure(figsize=(35, 7), dpi=120, facecolor='w')
-	for i, subject in enumerate(stable_unique(df["subject"])):
-		df_sub = df[df["subject"] == subject]
-		axis = fig.add_subplot(330 + i + 1)
-
-		for model in stable_unique(df_sub["model"]):
-			df_sub_model = df_sub[df_sub["model"] == model]
-
-			model_subject_df = df_sub_model.groupby(['subject', 'model', 'stage', 'day in stage'], sort=False).mean().reset_index()
-			days = list(model_subject_df.index + 1)
-			model_subject_df['ML'] = np.exp(-model_subject_df.NLL)
-			axis.plot(days, model_subject_df.ML, label=model, alpha=0.6)
-			axis.xaxis.set_major_locator(MaxNLocator(integer=True))
-			#axis.set_yticklabels(['']) if i % 3 != 0 else 0
-
-		axis.set_xlabel('Days') if i > 5 else 0
-		axis.set_ylabel("Likelihood") if i % 3 == 0 else 0
-		axis.set_title("Subject {}".format(i+1))
-		stage_transition_days = np.where(model_subject_df['day in stage'] == 1)[0][1:]
-		for stage_day in stage_transition_days:
-			axis.axvline(x=stage_day + 0.5, alpha=0.5, dashes=(5, 2, 1, 2), lw=2)
-
-		#axis.set_ylim(0.45, 1)
-		axis.axhline(y=0.5, alpha=0.7, lw=1, color='grey', linestyle='--')
-
-	handles, labels = axis.get_legend_handles_labels()
-	fig.legend(handles, labels, loc="upper left", prop={'size': 9}, labelspacing=0.3)  # loc=(0.55,0.1), prop={'size': 7}
-
-	plt.subplots_adjust(left=0.05, bottom=0.1, right=0.99, top=0.8, wspace=0.1, hspace=0.4)
-
-	plt.savefig('fitting/Results/figures/daily_likl_{}'.format(fitting_utils.get_timestamp()))
-	plt.show()
 
 
 def compare_neural_tabular_models(data_file_path):
