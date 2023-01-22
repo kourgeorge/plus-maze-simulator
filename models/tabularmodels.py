@@ -43,6 +43,9 @@ class AbstractTabularModel:
 	def get_model_diff(self, brain2):
 		raise NotImplementedError()
 
+	def get_observations_values(self, observations, motivation):
+		raise NotImplementedError()
+
 	def __str__(self):
 		return self.__class__.__name__
 
@@ -58,13 +61,17 @@ class QTable(AbstractTabularModel):
 	def __call__(self, *args, **kwargs):
 		env_obs = args[0]
 		motivation = args[1]
-		state_actions_value = []
-		for state in self.state_representation(env_obs, motivation):
-			state_actions_value.append(self.Q[np.array2string(state)])
-		state_actions_value = np.array(state_actions_value)
+		state_actions_value = self.get_observations_values(env_obs, motivation)
 		state_actions_value += self.action_bias[motivation.value]
 		inactive_doors = utils.get_inactive_doors(env_obs)
 		state_actions_value[inactive_doors] = -np.inf
+		return state_actions_value
+
+	def get_observations_values(self, observations, motivation):
+		state_actions_value = []
+		for state in self.state_representation(observations, motivation):
+			state_actions_value.append(self.Q[np.array2string(state)])
+		state_actions_value = np.array(state_actions_value)
 		return state_actions_value
 
 	def state_representation(self, obs, motivation):
@@ -108,16 +115,25 @@ class OptionsTable(AbstractTabularModel):
 		self.use_location_cue = use_location_cue
 
 	def __call__(self, *args, **kwargs):
-		states = args[0]
+		observations = args[0]
 		motivation = args[1]
 		state_actions_value = []
-		for state in self.state_representation(states, motivation):
+		for state in self.state_representation(observations, motivation):
 			obs_action_value = []
 			for option in self.get_cues_combinations(state):
 				obs_action_value += [self.C[option]] if option[0] != self.encoding_size else [-np.inf]
 			obs_action_value += self.action_bias[motivation.value]
 			state_actions_value.append(obs_action_value)
 		return np.array(state_actions_value)
+
+	def get_observations_values(self, observations, motivation):
+		state_actions_value = []
+		for state in self.state_representation(observations, motivation):
+			obs_action_value = []
+			for option in self.get_cues_combinations(state):
+				obs_action_value += [self.C[option]] if option[0] != self.encoding_size else [-np.inf]
+			state_actions_value.append(obs_action_value)
+		return state_actions_value
 
 	def state_representation(self, obs, motivation):
 		return utils.stimuli_1hot_to_cues(obs, self.encoding_size)
@@ -175,17 +191,22 @@ class FTable(AbstractTabularModel):
 				self.Q[motivation.value][stimuli] = self.initial_value * np.ones([self.encoding_size + 1])
 
 	def __call__(self, *args, **kwargs):
-		states = args[0]
+		observations = args[0]
 		motivation = args[1]
 
-		cues = utils.stimuli_1hot_to_cues(states, self.encoding_size)
+		action_values = self.get_observations_values(observations, motivation) + self.action_bias[motivation.value]
+		inactive_doors = utils.get_inactive_doors(observations)
+		action_values[inactive_doors] = -np.inf  # avoid selecting inactive doors.
+		return action_values
+
+	def get_observations_values(self, observtions, motivation):
+		cues = utils.stimuli_1hot_to_cues(observtions, self.encoding_size)
 		odor = cues[:, 0]  # odor for each door
 		color = cues[:, 1]  # color for each door
 		door = np.array(range(4))
 		action_values = (self.get_stimulus_value('odors', odor, motivation) +
 						 self.get_stimulus_value('colors', color, motivation) +
-						 self.get_stimulus_value('spatial', door, motivation)) + self.action_bias[motivation.value]
-		action_values[odor == self.encoding_size] = -np.inf  # avoid selecting inactive doors.
+						 self.get_stimulus_value('spatial', door, motivation))
 		return action_values
 
 	def get_selected_door_stimuli(self, states, doors):
