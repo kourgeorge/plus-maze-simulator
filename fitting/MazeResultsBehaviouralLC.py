@@ -183,6 +183,56 @@ def compare_neural_tabular_models(data_file_path):
 	#plt.show()
 
 
+def model_values_development(data_file_path):
+	df = pd.read_csv(data_file_path)
+
+	df = rename_models(df)
+
+	df = df[['subject', 'model', 'stage', 'day in stage', 'trial', 'reward', 'model_reward', 'stimuli_value', 'action_bias']].copy()
+	model_df = df.groupby(['subject', 'model', 'stage', 'day in stage'], sort=False).mean().reset_index()
+
+	model_df = filter_days(model_df)
+	model_df, order, tr = index_days(model_df)
+	# this is needed because there is no good way to order the x-axis in lineplot.
+	model_df.sort_values('ind', axis=0, ascending=True, inplace=True)
+
+	colors = sns.color_palette("mako_r", n_colors=2)
+	models=models_order_df(model_df)
+	fig = plt.figure(figsize=(7, 5), dpi=120, facecolor='w')
+	for model_ind, model in enumerate(models):
+		axis = fig.add_subplot(len(models), 1, model_ind + 1)
+		curr_model_df = model_df[model_df.model==model]
+		axis = sns.lineplot(x="ind", y="stimuli_value", #hue="model", hue_order=models_order_df(model_df),
+						data=curr_model_df, errorbar="se", err_style='band', color=colors[0], legend=True,)
+		ax2 = axis.twinx()
+		ax2 = sns.lineplot(x="ind", y="action_bias", #hue="model", hue_order=models_order_df(model_df),,
+						data=curr_model_df, errorbar="se", err_style='band', color=colors[1],)
+
+		axis.set_ylim([0,1])
+
+		for stage_day in tr:
+			axis.axvline(x=stage_day - 0.5, alpha=0.5, dashes=(5, 2, 1, 2), lw=2, color='gray')
+
+		axis.set(xticklabels=[]) if model_ind<2 else 0
+
+		axis.set_xlabel('')
+		ax2.set_xlabel('')
+		axis.set_ylabel('')
+		ax2.set_ylabel('')
+
+		fig.text(0.01, 0.5, 'Stimuli Value', va='center', rotation='vertical', color=colors[0] )
+		fig.text(0.95, 0.5, 'Bias Value', va='center', rotation='vertical', color=colors[1])
+
+		axis.spines['top'].set_visible(False)
+		ax2.spines['top'].set_visible(False)
+
+	axis.set_xlabel('Training Day in Stage')
+	dilute_xticks(axis,3)
+
+	plt.subplots_adjust(left=0.09, bottom=0.1, right=0.87, top=0.95, wspace=0.3, hspace=0.3)
+	x=1
+
+
 def compare_model_subject_learning_curve_average(data_file_path):
 	df = pd.read_csv(data_file_path)
 
