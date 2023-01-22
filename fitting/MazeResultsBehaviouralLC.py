@@ -565,6 +565,9 @@ def compare_fitting_criteria(data_file_path, models=None):
 
 
 def show_fitting_parameters(data_file_path):
+	params = ['nmr','beta', 'alpha']
+	#params = ['beta', 'alpha']
+
 	df_all = pd.read_csv(data_file_path)
 	df = df_all[['subject', 'model', 'parameters', 'likelihood']].copy()
 	df = rename_models(df)
@@ -572,7 +575,7 @@ def show_fitting_parameters(data_file_path):
 	k = df.parameters.apply(lambda row: fitting_utils.string2list(row))
 	parameters = k.apply(pd.Series)
 	df = df.join(parameters)
-	df = df.rename(columns={0: "beta", 1: "alpha", 2: "alpha_phi"})
+	df = df.rename(columns={k:v for k,v in enumerate(params)})
 	df['subject'] = df['subject'].astype('category')
 
 	param_mean = df.groupby(['model']).mean().reset_index()
@@ -581,21 +584,17 @@ def show_fitting_parameters(data_file_path):
 	params_info = param_mean.merge(param_std, on=['model'])
 	params_info = params_info.sort_values(['model'], ascending=False)
 
-	params_info['alpha'] = params_info.apply(lambda row: "${:.2} \\pm {:.2}$".format(row.alpha_x, row.alpha_y), axis=1)
-	params_info['beta'] = params_info.apply(lambda row: "${:.2} \\pm {:.2}$".format(row.beta_x, row.beta_y), axis=1)
-	if 'alpha_phi' in df.columns:
-		params_info['alpha_phi'] = params_info.apply(lambda row: "${:.2} \\pm {:.2}$".format(row.alpha_phi_x, row.alpha_phi_y),
-													 axis=1)
-		params_info = params_info[['model', 'alpha', 'beta', 'alpha_phi' ]]
-	else:
-		params_info = params_info[['model', 'alpha', 'beta']]
+	for parameter in params:
+		params_info[parameter] = params_info.apply(lambda row: "${:.2} \\pm {:.2}$".format(row[parameter+'_x'], row[parameter+'_y']), axis=1)
+
+	params_info = params_info[['model']+params]
 	print(params_info)
 
-	# ax = sns.scatterplot(data=df, x='alpha', y='alpha_phi', hue='model')
+	ax = sns.scatterplot(data=df, x='alpha', y='nmr', hue='model')
 	# ax.set_xlim([-0.01, 0.1])
 	# ax.set_ylim([-0.01, 0.1])
-	# ax = sns.pairplot(hue='model', data=df, diag_kind="hist")
-	# ax.set(xscale="log", yscale="log")
+	ax = sns.pairplot(hue='model', data=df, diag_kind="hist")
+	ax.set(xscale="log", yscale="log")
 
 
 def action_bias_in_stage(data_file_path):
