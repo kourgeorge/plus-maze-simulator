@@ -820,7 +820,8 @@ def average_likelihood_simple(data_file_path, models=None):
 	x=1
 
 
-def average_likelihood(data_file_path):
+def average_likelihood_animal(data_file_path):
+	plt.rcParams.update({'font.size': 16})
 	df = pd.read_csv(data_file_path)
 	data = df[['subject', 'model', 'likelihood', 'day in stage', 'trial', 'stage', 'reward']].copy()
 	data = data.groupby(['subject', 'model'], sort=['likelihood']).mean().reset_index()
