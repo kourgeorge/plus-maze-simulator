@@ -51,7 +51,7 @@ class AbstractTabularModel:
 
 
 class QTable(AbstractTabularModel):
-	def __init__(self, encoding_size, num_channels, num_actions, initial_value=config.INITIAL_FEATURE_VALUE):
+	def __init__(self, encoding_size, num_channels, num_actions, initial_value=config.INITIAL_FEATURE_VALUE, *args, **kwargs):
 		super().__init__()
 		self._num_actions = num_actions
 		self.Q = defaultdict(lambda: initial_value * np.ones(self._num_actions))
@@ -105,7 +105,7 @@ class MQTable(QTable):
 class OptionsTable(AbstractTabularModel):
 
 	def __init__(self, encoding_size, num_channels, num_actions, use_location_cue=True,
-				 initial_value=config.INITIAL_FEATURE_VALUE):
+				 initial_value=config.INITIAL_FEATURE_VALUE, *args, **kwargs):
 		super().__init__()
 		self._num_actions = num_actions
 		self.C = defaultdict(lambda: float(

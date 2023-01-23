@@ -144,7 +144,8 @@ class MazeBayesianModelFitting:
 				rat_data_with_likelihood['subject'] = subject_id
 				rat_data_with_likelihood["model"] = utils.brain_name(model)
 				rat_data_with_likelihood["parameters"] = [search_result.x] * len(rat_data_with_likelihood)
-				rat_data_with_likelihood["algorithm"] = "Bayesian" if fitting_config.BAYESIAN_OPTIMIZATION else "BFGS"
+				rat_data_with_likelihood["algorithm"] = \
+					"{}_{}".format('Bayesian' if fitting_config.BAYESIAN_OPTIMIZATION else 'BGFS', fitting_config.FITTING_ITERATIONS)
 
 				results_df = results_df.append(rat_data_with_likelihood, ignore_index=True)
 			results_df.to_csv('fitting/Results/Rats-Results/fitting_results_{}_{}_tmp.csv'.format(timestamp, n_calls))
