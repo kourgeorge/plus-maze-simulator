@@ -261,23 +261,9 @@ class SCVBFTable(FTable, SCDependantVB):
 
 class MFTable(FTable):
 	"""The state action value is dependent on the current motivation.
-	Different models for diffrent motivations"""
+	Different models for different motivations."""
 	def __init__(self, *args, **kwargs):
 		super().__init__(*args, **kwargs)
-
-	def __call__(self, *args, **kwargs):
-		states = args[0]
-		motivation = args[1]
-
-		cues = utils.stimuli_1hot_to_cues(states, self.encoding_size)
-		odor = cues[:, 0]  # odor for each door
-		color = cues[:, 1]  # color for each door
-		door = np.array(range(4))
-		action_values = (self.get_stimulus_value('odors', odor, motivation) +
-						 self.get_stimulus_value('colors', color, motivation) +
-						 self.get_stimulus_value('spatial', door, motivation)) + self.action_bias[motivation.value]
-		action_values[odor == self.encoding_size] = -np.inf  # avoid selecting inactive doors.
-		return action_values
 
 	def get_stimulus_value(self, dimension, feature, motivation):
 		return self.Q[motivation.value][dimension][feature]
