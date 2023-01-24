@@ -2,6 +2,7 @@ __author__ = 'gkour'
 
 import numpy as np
 
+import config
 import utils
 from learners.abstractlearner import AbstractLearner
 from models.tabularmodels import QTable, FTable, ACFTable
@@ -9,7 +10,7 @@ from rewardtype import RewardType
 
 
 class QLearner(AbstractLearner):
-	def __init__(self, model: QTable, learning_rate=0.01):
+	def __init__(self, model: QTable, learning_rate=config.LEARNING_RATE, *args, **kwargs):
 		super().__init__(model=model, optimizer={'learning_rate': learning_rate})
 
 	def learn(self, state_batch, action_batch, reward_batch, action_values, nextstate_batch, motivation):
@@ -26,8 +27,9 @@ class QLearner(AbstractLearner):
 
 
 class ABQLearner(QLearner):
-	def __init__(self, model: QTable, learning_rate=0.01):
-		super().__init__(model=model, learning_rate=learning_rate)
+	def __init__(self, model: QTable, learning_rate=config.LEARNING_RATE, alpha_bias=None, *args, **kwargs):
+		super().__init__(model=model, learning_rate=learning_rate,  *args, **kwargs)
+		self.alpha_bias = alpha_bias if alpha_bias is not None else learning_rate
 
 	def learn(self, state_batch, action_batch, reward_batch, action_values, nextstate_batch, motivation):
 		deltas = super().learn(state_batch, action_batch, reward_batch, action_values, nextstate_batch, motivation)
@@ -35,34 +37,29 @@ class ABQLearner(QLearner):
 		learning_rate = self.optimizer['learning_rate']
 
 		for action in np.unique(actions):
-			delta = np.mean(deltas[actions == action])
-			if (action == 0 or action == 1) and delta < 0:
-				foor_actions = self.model.action_bias['food']
-				print("a:{} - Q:{} - delta:{} - food_actions={} - food_bias={}".format(action, self.model(state_batch, motivation)[0][action],
-													  deltas[actions == action], foor_actions,np.sum(foor_actions[0:2]) - np.sum(foor_actions[2:4])))
-			self.model.action_bias[motivation.value][action] += learning_rate*np.mean(deltas[actions==action])
+			self.model.action_bias[motivation.value][action] += self.alpha_bias*np.mean(deltas[actions==action])
 
 		return deltas
 
 
 class UABQLearner(QLearner):
-	def __init__(self, model: QTable, learning_rate=0.01):
-		super().__init__(model=model, learning_rate=learning_rate)
+	def __init__(self, model: QTable, learning_rate=config.LEARNING_RATE, alpha_bias=None, *args, **kwargs):
+		super().__init__(model=model, learning_rate=learning_rate, alpha_bias=None, *args, **kwargs)
+		self.alpha_bias = alpha_bias if alpha_bias is not None else learning_rate
 
 	def learn(self, state_batch, action_batch, reward_batch, action_values, nextstate_batch, motivation):
 		deltas = super().learn(state_batch, action_batch, reward_batch, action_values, nextstate_batch, motivation)
 		actions = np.argmax(action_batch, axis=1)
-		learning_rate = self.optimizer['learning_rate']
 
 		for action in np.unique(actions):
-			self.model.action_bias[RewardType.WATER.value][action] += learning_rate * np.mean(deltas[actions == action])
-			self.model.action_bias[RewardType.FOOD.value][action] += learning_rate * np.mean(deltas[actions == action])
+			self.model.action_bias[RewardType.WATER.value][action] += self.alpha_bias * np.mean(deltas[actions == action])
+			self.model.action_bias[RewardType.FOOD.value][action] += self.alpha_bias * np.mean(deltas[actions == action])
 
 		return deltas
 
 
 class IALearner(AbstractLearner):
-	def __init__(self, model: FTable, learning_rate=0.01):
+	def __init__(self, model: FTable, learning_rate=0.01, *args, **kwargs):
 		super().__init__(model=model, optimizer={'learning_rate': learning_rate})
 
 	def learn(self, state_batch, action_batch, reward_batch, action_values, nextstate_batch, motivation):
@@ -95,23 +92,16 @@ class IALearner(AbstractLearner):
 
 
 class ABIALearner(IALearner):
-	def __init__(self, model: FTable, learning_rate=0.01):
-		super().__init__(model=model, learning_rate=learning_rate)
+	def __init__(self, model: FTable,  learning_rate=config.LEARNING_RATE, alpha_bias=None, *args, **kwargs):
+		super().__init__(model=model, learning_rate=learning_rate, *args, **kwargs)
+		self.alpha_bias = alpha_bias if alpha_bias is not None else learning_rate
 
 	def learn(self, state_batch, action_batch, reward_batch, action_values, nextstate_batch, motivation):
 		deltas = super().learn(state_batch, action_batch, reward_batch, action_values, nextstate_batch, motivation)
 		actions = np.argmax(action_batch, axis=1)
-		learning_rate = self.optimizer['learning_rate']
 
 		for action in np.unique(actions):
-			delta = np.mean(deltas[actions == action])
-			if (action == 0 or action == 1) and motivation.value=='food' and delta < 0:
-				foor_actions = self.model.action_bias['food']
-				print("a:{} - Q:{} - delta:{} - food_actions={} - food_bias={}".format(action, self.model(state_batch, motivation)[0][action],
-													  deltas[actions == action], foor_actions,np.sum(foor_actions[0:2]) - np.sum(foor_actions[2:4])))
-
-
-			self.model.action_bias[motivation.value][action] += learning_rate*np.mean(deltas[actions==action])
+			self.model.action_bias[motivation.value][action] += self.alpha_bias*np.mean(deltas[actions==action])
 
 		return deltas
 
@@ -139,17 +129,17 @@ class ABIALearner(IALearner):
 
 
 class UABIALearner(IALearner):
-	def __init__(self, model: FTable, learning_rate=0.01):
-		super().__init__(model=model, learning_rate=learning_rate)
+	def __init__(self, model: FTable, alpha_bias=config.LEARNING_RATE, *args, **kwargs):
+		super().__init__(model=model, *args, **kwargs)
+		self.alpha_bias = alpha_bias
 
 	def learn(self, state_batch, action_batch, reward_batch, action_values, nextstate_batch, motivation):
 		deltas = super().learn(state_batch, action_batch, reward_batch, action_values, nextstate_batch, motivation)
 		actions = np.argmax(action_batch, axis=1)
-		learning_rate = self.optimizer['learning_rate']
 
 		for action in np.unique(actions):
-			self.model.action_bias[RewardType.WATER.value][action] += learning_rate * np.mean(deltas[actions == action])
-			self.model.action_bias[RewardType.FOOD.value][action] += learning_rate * np.mean(deltas[actions == action])
+			self.model.action_bias[RewardType.WATER.value][action] += self.alpha_bias * np.mean(deltas[actions == action])
+			self.model.action_bias[RewardType.FOOD.value][action] += self.alpha_bias * np.mean(deltas[actions == action])
 
 		return deltas
 
