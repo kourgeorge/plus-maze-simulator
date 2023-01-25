@@ -67,6 +67,23 @@ def index_days(df):
 	return df, order, transition
 
 
+def calculate_goal_choice(df):
+	df = filter_days(df)
+
+	df = df[['subject', 'model', 'stage', 'day in stage', 'trial', 'action', 'reward']].copy()
+	df['reward_type'] = df['action'].map(lambda x: 'Food' if x in [1, 2] else 'Water')
+	data = df.groupby(['model', 'subject', 'stage', 'day in stage', 'reward_type'], sort=False). \
+		agg({'trial': 'count'}).reset_index()
+
+	dd = data.pivot(index=['model', 'subject', 'stage', 'day in stage'], columns='reward_type').reset_index()
+	dd.columns = [' '.join(col).strip() for col in dd.columns.values]
+	dd['gc'] = dd.apply(lambda row: (row['trial Water'] - row['trial Food']) / (row['trial Water'] + row['trial Food']),
+						axis=1)
+
+	return dd
+
+
+
 def unbox_model_variables(df_model):
 	# format the model_variables entry
 	df_model['model_variables'] = df_model['model_variables'].apply(lambda s: s.replace("\'", "\""))
@@ -272,6 +289,34 @@ def compare_model_subject_learning_curve_average(data_file_path, models=None):
 	plt.subplots_adjust(left=0.12, bottom=0.15, right=0.98, top=0.98, wspace=0.2, hspace=0.1)
 
 	plt.savefig('fitting/Results/paper_figures/learning_curve_{}'.format(utils.get_timestamp()))
+
+
+def goal_choice_index(data_file_path, simulations=False):
+	plt.rcParams.update({'font.size': 16})
+	df = pd.read_csv(data_file_path)
+
+	if not simulations:
+		df = df[df.model==df.model[0]]
+
+	dd = calculate_goal_choice(df)
+	dd, order, tr = index_days(dd)
+
+	fig = plt.figure(figsize=(10, 5))
+	axis = sns.pointplot(x="ind", y="gc", data=dd, errorbar="se", join=False, order=order,
+						 capsize=.3, scale=1.5, dodge=0.2, color='black', linestyles='--')
+
+	for stage_day in tr:
+		axis.axvline(x=stage_day - 0.5, alpha=0.5, dashes=(5, 2, 1, 2), lw=2, color='gray')
+
+	axis.axhline(y=0, alpha=0.5, lw=2, color='gray', linestyle='--')
+
+	axis.set_ylim([-1, 1])
+	despine(axis)
+	dilute_xticks(axis,2)
+	axis.set_ylabel('Goal Choice')
+	axis.set_xlabel('Training Day in Stage')
+
+	plt.subplots_adjust(left=0.08, bottom=0.15, right=0.99, top=0.98, wspace=0.1, hspace=0.4)
 
 
 def WPI_WC_FC(data_file_path):
