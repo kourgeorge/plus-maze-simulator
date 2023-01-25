@@ -29,7 +29,8 @@ class SCDependantVB():
 
 	def new_stimuli_context(self):
 		self.initialize_state_values()
-		self.action_bias = {'water': np.zeros(self._num_actions), 'food': np.zeros(self._num_actions)}
+		for motivation in RewardType:
+			self.action_bias[motivation.value] = np.zeros(self._num_actions)
 
 
 class AbstractTabularModel:
@@ -273,6 +274,9 @@ class MFTable(FTable):
 
 	def update_stimulus_value(self, dimension, feature, motivation, delta):
 		self.Q[motivation.value][dimension][feature] += delta
+
+class  MSCFTable(MFTable, SCDependantV):
+	pass
 
 
 class ACFTable(FTable):
