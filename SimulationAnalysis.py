@@ -1,14 +1,11 @@
 import pandas as pd
 import matplotlib.pyplot as plt
 
-from fitting.MazeResultsBehaviouralLC import index_days, calculate_goal_choice, dilute_xticks
+from fitting.MazeResultsBehaviouralLC import index_days, calculate_goal_choice, dilute_xticks, despine
 from fitting.fitting_utils import stable_unique, rename_models, models_order_df
 import seaborn as sns
 from environment import PlusMazeOneHotCues, PlusMazeOneHotCues2ActiveDoors
 
-def despine(axis):
-	axis.spines['top'].set_visible(False)
-	axis.spines['right'].set_visible(False)
 
 
 stages = PlusMazeOneHotCues2ActiveDoors.stage_names
@@ -35,8 +32,10 @@ def show_days_to_criterion(simulation_df):
 	despine(g1)
 
 
-def goal_choice_index_model(data_file_path):
+def water_preference_index_model(data_file_path):
+	sns.set_style("ticks",{'axes.grid' : True})
 	plt.rcParams.update({'font.size': 16})
+
 	df = pd.read_csv(data_file_path)
 
 	df['day in stage'] += 1
@@ -59,14 +58,18 @@ def goal_choice_index_model(data_file_path):
 	axis.set_ylim([-1, 1])
 	despine(axis)
 	dilute_xticks(axis,2)
-	axis.set_ylabel('Goal Choice')
+	axis.set_ylabel('Water Preference Index')
 	axis.set_xlabel('Training Day in Stage')
-	plt.subplots_adjust(left=0.08, bottom=0.15, right=0.99, top=0.98, wspace=0.1, hspace=0.4)
 
 	axis.legend([], [], frameon=False)
 	handles, labels = axis.get_legend_handles_labels()
 	axis.legend(handles, labels, loc="lower right", prop={'size': 16},
 			   labelspacing=0.3)
+
+	plt.grid(color='whitesmoke', linestyle='-', linewidth=20, which='major', axis='x')
+	axis.yaxis.grid(False)
+
+	plt.subplots_adjust(left=0.1, bottom=0.15, right=0.99, top=0.95, wspace=0.1, hspace=0.4)
 
 
 	x=1
@@ -77,7 +80,8 @@ def goal_choice_index_model(data_file_path):
 if __name__ == '__main__':
 
 	#show_days_to_criterion('/Users/gkour/repositories/plusmaze/fitting/Results/simulations_results/simulation_20_2023_01_13_13_19.csv')
-	#show_days_to_criterion('/Users/gkour/repositories/plusmaze/fitting/Results/simulations_results/simulation_10_2023_01_25_18_52.csv')
-	goal_choice_index_model('/Users/gkour/repositories/plusmaze/fitting/Results/simulations_results/simulation_10_2023_01_25_18_52.csv')
+	show_days_to_criterion('fitting/Results/simulations_results/simulation_ORL_0nmr.csv')
+	#goal_choice_index_model('/fitting/Results/simulations_results/simulation_FRL_0nmr.csv')
+	water_preference_index_model('fitting/Results/simulations_results/simulation_ORL_0nmr.csv')
 
 
