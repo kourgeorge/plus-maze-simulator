@@ -236,6 +236,29 @@ def learning_curve_behavioral_boxplot(data_file_path):
 
 	plt.subplots_adjust(left=0.08, bottom=0.15, right=0.99, top=0.99, wspace=0.1, hspace=0.4)
 
+def show_days_to_criterion(data_file_path):
+	df = pd.read_csv(data_file_path)
+
+	df = df[df.model==df.model[0]]
+	df = df[['subject', 'stage', 'day in stage', 'model', 'trial', 'reward']].copy()
+
+	df = rename_models(df)
+	df = fitting_utils.cut_off_data_when_reaching_criterion(df)
+	sns.set_palette('OrRd', n_colors=len(stages))
+	df = df.groupby(['subject', 'model', 'stage'], sort=False).agg({'day in stage': 'max'}).reset_index()
+	fig = plt.figure(figsize=(4, 4))
+	g1 = sns.barplot(x='stage', y='day in stage', order=list(range(1, len(stages)+1)),
+					 data=df, errorbar='se', errwidth=1, capsize=.05)
+
+	g1.set(xlabel='', ylabel='Days Until Criterion')
+	# handles, labels = g1.get_legend_handles_labels()
+	# g1.legend(handles, stages, loc='upper left', prop={'size': 12}, labelspacing=0.2)
+	g1.set_xticklabels(stages)
+	despine(g1)
+	plt.subplots_adjust(left=0.2, bottom=0.1, right=0.99, top=0.95, wspace=0.1, hspace=0.4)
+
+	x=1
+
 
 def compare_model_subject_learning_curve(data_file_path):
 	df = pd.read_csv(data_file_path)
@@ -662,17 +685,18 @@ def average_likelihood(data_file_path):
 
 if __name__ == '__main__':
 	file_path = 'fitting/Results/Rats-Results/reported_results_tabular_modelling/main_results_reported_10_1.csv' #reported
-	learning_curve_behavioral_boxplot('fitting/Results/Rats-Results/reported_results_tabular_modelling/all_data.csv')
-	models_fitting_quality_over_times_average(file_path)
+	#learning_curve_behavioral_boxplot('fitting/Results/Rats-Results/reported_results_tabular_modelling/all_data.csv')
+	show_days_to_criterion('fitting/Results/Rats-Results/reported_results_dimensional_shifting/all_data.csv')
+	# models_fitting_quality_over_times_average(file_path)
 	#models_fitting_quality_over_times(file_path)
-	compare_model_subject_learning_curve_average(file_path)
+	# compare_model_subject_learning_curve_average(file_path)
 	##compare_model_subject_learning_curve(file_path)
-	plot_models_fitting_result_per_stage(file_path)
-	show_likelihood_trials_scatter(file_path)
+	# plot_models_fitting_result_per_stage(file_path)
+	# show_likelihood_trials_scatter(file_path)
 	#stage_transition_model_quality(file_path)
-	show_fitting_parameters(file_path)
-	compare_fitting_criteria(file_path)
-	average_likelihood(file_path)
+	# show_fitting_parameters(file_path)
+	#compare_fitting_criteria(file_path)
+	# average_likelihood(file_path)
 	#compare_neural_tabular_models(file_path)
-	model_parameters_development(file_path)
+	# model_parameters_development(file_path)
 	x = 2
