@@ -6,7 +6,10 @@ import numpy as np
 import pandas as pd
 import scipy
 import seaborn as sns
+from matplotlib.ticker import FormatStrFormatter
 from statannotations.Annotator import Annotator
+import statsmodels.api as sm
+from statsmodels.formula.api import ols
 
 import utils
 from fitting import fitting_utils
@@ -15,7 +18,7 @@ from fitting.fitting_utils import stable_unique, rename_models, models_order_df
 plt.rcParams.update({'font.size': 12})
 
 #stages = ['ODOR1', 'ODOR2', 'LED']
-stages = ['Initial', 'IDS', 'MS', 'MS+IDS', 'EDS(Spatial)']
+stages = ['Initial', 'IDS', 'MS', 'MS+IDS', 'EDS (Spatial)']
 num_days_reported = [8, 2, 4, 2, 2]
 
 
@@ -431,6 +434,33 @@ def learning_curve_behavioral_boxplot(data_file_path):
 	plt.subplots_adjust(left=0.08, bottom=0.15, right=0.99, top=0.99, wspace=0.1, hspace=0.4)
 
 
+def show_days_to_criterion(data_file_path):
+	df = pd.read_csv(data_file_path)
+
+	df = df[df.model==df.model[0]]
+	df = df[['subject', 'stage', 'day in stage', 'model', 'trial', 'reward']].copy()
+
+	df = rename_models(df)
+	df = fitting_utils.cut_off_data_when_reaching_criterion(df, num_stages=5)
+	df = df.groupby(['subject', 'model', 'stage'], sort=False).agg({'day in stage': 'max'}).reset_index()
+	fig = plt.figure(figsize=(10, 5))
+	g1 = sns.barplot(x='stage', y='day in stage', order=list(range(1, len(stages)+1)),
+					 fill=False, data=df, errorbar='se', errwidth=1, capsize=.05)
+
+	g1.set(xlabel='', ylabel='Days Until Criterion')
+
+	pairs = [((2), (3)), ((3), (4)),
+			  ((3), (5)),((1), (2)), ((1), (3)), ((1), (4)), ((1), (5)) ]
+	annot = Annotator(g1, pairs, x='stage', y='day in stage',data=df)
+	annot.configure(test='t-test_paired', text_format='star', loc='inside', verbose=2, line_height=0.05,
+					comparisons_correction="Bonferroni")
+	annot.apply_test().annotate()
+	g1.set_xticklabels(stages)
+	despine(g1)
+	plt.subplots_adjust(left=0.08, bottom=0.1, right=0.99, top=0.95, wspace=0.1, hspace=0.4)
+
+	x=1
+
 def show_likelihood_trials_scatter(data_file_path):
 	df = pd.read_csv(data_file_path)
 	df = df[['subject', 'model', 'stage', 'day in stage', 'trial', 'likelihood']].copy()
@@ -516,7 +546,10 @@ def plot_models_fitting_result_per_stage_action_bias(data_file_path):
 		pairs = [[((loc, model), (loc, 'B-'+model)), ((loc, 'B-'+model), (loc, 'M(B)-'+model))] for loc in range(1,6)]
 		pairs = utils.flatten_list(pairs)
 		annot = Annotator(ax[ind], pairs, **args)
-		annot.configure(test='t-test_paired', text_format='star', loc='inside', verbose=2, line_height=0.05)
+
+		annot.configure(test='t-test_paired', text_format='star', loc='inside', verbose=2, line_height=0.05,
+						comparisons_correction="bonferroni")
+
 		annot.apply_test().annotate()
 
 
@@ -544,7 +577,8 @@ def plot_models_fitting_result_per_stage_action_bias(data_file_path):
 	args = dict(x="model_type", y=y, hue="model_struct", hue_order=['m', 'B-m', 'M(B)-m'])
 	pairs = utils.flatten_list([[((model, 'B-m'), (model, 'M(B)-m'))] for model in models])
 	annot = Annotator(ax0, pairs, **args, data=df)
-	annot.configure(test='t-test_paired', text_format='star', loc='inside', line_height=0.01, verbose=1)
+	annot.configure(test='t-test_paired', text_format='star', loc='inside', line_height=0.01, verbose=1,
+					comparisons_correction="bonferroni")
 	annot.apply_test().annotate()
 
 	handles, labels = ax0.get_legend_handles_labels()
@@ -861,14 +895,19 @@ def average_likelihood_simple(data_file_path, models, pairs):
 	axis = sns.barplot(**args, fill=True, errorbar='se')
 
 	if criterion == 'likelihood':
-
+		args = dict(x="model_type", y=criterion, hue='model_struct', data=df)
+		axis = sns.barplot(**args, fill=True, errorbar='se')
 		minn = 0.32
 		maxx = 0.38
 		delta = 0.1 * (maxx - minn)
 		plt.ylim([minn - delta, maxx + delta])
-		annot = Annotator(axis, pairs, **args)
-		annot.configure(test='t-test_paired', text_format='star', loc='inside', line_height=0.01, verbose=2)
-		annot.apply_test().annotate()
+
+		one_way_anova(df, criterion, 'model_struct')
+		if pairs:
+			annot = Annotator(axis, pairs, **args)
+			annot.configure(test='t-test_paired', text_format='star', loc='inside', line_height=0.01, verbose=2,
+							comparisons_correction="bonferroni")
+			annot.apply_test().annotate()
 
 		axis.set_ylabel('Average Trial Likelihood')
 	else:
@@ -1081,11 +1120,11 @@ if __name__ == '__main__':
 
 
 	#Fig 2: Animals Choice Accuracy, preference, and days to criterion.
-	#file_path = 'fitting/Results/Rats-Results/fitting_results_Action_Bias.csv'
-	# learning_curve_behavioral_boxplot(file_path)
-	# WPI_WC_FC(file_path)
-	# water_preference_index(file_path)
-	# show_fitting_parameters(file_path)
+	#file_path = 'fitting/Results/Rats-Results/fitting_results_2023_01_27_23_05_20.csv'
+	learning_curve_behavioral_boxplot(file_path)
+	show_days_to_criterion(file_path)
+	water_preference_index(file_path)
+	show_fitting_parameters(file_path)
 
 
 	#Fig 5: Action bias dependency on motivation state.
