@@ -236,6 +236,7 @@ def learning_curve_behavioral_boxplot(data_file_path):
 
 	plt.subplots_adjust(left=0.08, bottom=0.15, right=0.99, top=0.99, wspace=0.1, hspace=0.4)
 
+
 def show_days_to_criterion(data_file_path):
 	df = pd.read_csv(data_file_path)
 
@@ -251,8 +252,13 @@ def show_days_to_criterion(data_file_path):
 					 data=df, errorbar='se', errwidth=1, capsize=.05)
 
 	g1.set(xlabel='', ylabel='Days Until Criterion')
-	# handles, labels = g1.get_legend_handles_labels()
-	# g1.legend(handles, stages, loc='upper left', prop={'size': 12}, labelspacing=0.2)
+
+	pairs = [((2), (3)), ((1), (2)), ((1), (3)), ]
+	annot = Annotator(g1, pairs, x='stage', y='day in stage', data=df)
+	annot.configure(test='t-test_paired', text_format='star', loc='inside', verbose=2, line_height=0.05,
+					comparisons_correction="Bonferroni")
+	annot.apply_test().annotate()
+
 	g1.set_xticklabels(stages)
 	despine(g1)
 	plt.subplots_adjust(left=0.2, bottom=0.1, right=0.99, top=0.95, wspace=0.1, hspace=0.4)
