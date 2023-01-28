@@ -995,6 +995,48 @@ def average_nmr_animal(data_file_path, models=None):
 
 	x=1
 
+
+def bias_effect_nmr(data_file_path):
+	plt.rcParams.update({'font.size': 16})
+	df = pd.read_csv(data_file_path)
+	data = df[['subject', 'model', 'parameters']].copy()
+
+	data = unbox_parameters(data, params=['nmr', 'beta', 'alpha', 'alpha_bias'])
+	data = rename_models(data)
+	models = utils.flatten_list([[m, 'B-'+m, 'M(V)-'+m, 'M(VB)-'+m] for m in ['SARL', 'ORL', 'FRL']])
+
+	data = data[data.model.isin(models)]
+	data = extract_model_name_type(data)
+
+	data = data[['subject', 'model_type', 'model_struct','nmr', ]].copy()
+
+	data['is_model_biased'] = data.apply(lambda row: 'w/AB' if 'B' in row.model_struct else 'wo/AB', axis=1)
+	data['meta_struct'] = data.apply(lambda row: 'M(V), M(VB): '+row.model_type if 'M' in row.model_struct else 'm, B-m: '+row.model_type, axis=1)
+
+	sns.set_palette(triplet_colors(3))
+	fig = plt.figure(figsize=(5, 4), dpi=120, facecolor='w')
+	# axis = sns.lineplot(x='is_model_biased', y='nmr', hue='meta_struct', data=data,
+	# 				alpha=0.8, markers='*', errorbar='se', err_style='bars', sort=False)
+
+	axis = sns.pointplot(x='is_model_biased', y='nmr', hue='meta_struct', data=data,
+						 errorbar='se')
+
+	axis.axvline(x=0.5, alpha=0.5,linestyle='--', lw=2, color='gray')
+	axis.set_ylim([-1,1])
+	despine(axis)
+
+	plt.subplots_adjust(left=0.2, bottom=0.1, right=0.83, top=0.95, wspace=0.2, hspace=0.4)
+	axis.legend([], [], frameon=False)
+	handles, labels = axis.get_legend_handles_labels()
+	fig.legend(handles, labels, loc="upper right", prop={'size': 13},
+				labelspacing=0, fancybox=False, framealpha=0.1)
+
+	axis.set_xlabel('')
+
+	x=1
+
+
+
 if __name__ == '__main__':
 
 	#file_path = '/Users/gkour/repositories/plusmaze/fitting/Results/Rats-Results/fitting_results_ActionBias.csv'
