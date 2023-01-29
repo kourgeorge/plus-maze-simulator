@@ -78,7 +78,7 @@ def PlusMazeExperimentFitting(env: PlusMaze, agent: MotivatedAgent, experiment_d
                                                                                                                       fitting_info.iloc[trial])
             model_action_dists = np.append(model_action_dists, np.expand_dims(model_action_dist, axis=0), axis=0)
 
-            fitting_info.at[trial,'likelihood'] = likelihood
+            fitting_info.at[trial,'likelihood'] = np.round(likelihood,4)
             fitting_info.at[trial, 'model_action_dist'] = np.round(model_action_dist,3)
             fitting_info.at[trial, 'model_action'] = model_action
             fitting_info.at[trial, 'model_reward'] = 0 if model_action_outcome == RewardType.NONE else 1

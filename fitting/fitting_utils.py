@@ -3,6 +3,7 @@ __author__ = 'gkour'
 import os
 import sys
 import numpy as np
+import pandas as pd
 
 import config
 from fitting.PlusMazeExperimentFitting import PlusMazeExperimentFitting
@@ -59,7 +60,7 @@ def episode_rollout_on_real_data(env: PlusMazeOneHotCues, agent: MotivatedAgent,
 	return steps, total_reward, act_dist, model_action_dist, info.model_action+1, likelihood, model_action_outcome
 
 
-def run_model_on_animal_data(env, rat_data, model_arch, parameters):
+def run_model_on_animal_data(env, rat_data, model_arch, parameters, initial_motivation, silent=True):
 	(brain, learner, model) = model_arch
 	model_instance = model(env.stimuli_encoding_size(), 2, env.num_actions())
 
@@ -67,19 +68,19 @@ def run_model_on_animal_data(env, rat_data, model_arch, parameters):
 		(beta, lr, attention_lr) = parameters
 		learner_instance = learner(model_instance, learning_rate=lr, alpha_phi=attention_lr)
 	else:
-		(beta, lr) = parameters
-		learner_instance = learner(model_instance, learning_rate=lr)
+		(nmr, beta, lr, bias_lr) = parameters
+		learner_instance = learner(model_instance, learning_rate=lr, alpha_bias=bias_lr)
 
-	#blockPrint()
+	if silent: blockPrint()
+
 	env.init()
 	agent = MotivatedAgent(brain(learner_instance, beta=beta),
-						   motivation=RewardType.WATER,
-						   motivated_reward_value=config.MOTIVATED_REWARD,
-						   non_motivated_reward_value=config.NON_MOTIVATED_REWARD, exploration_param=0)
+						   motivation=initial_motivation, motivated_reward_value=config.MOTIVATED_REWARD,
+						   non_motivated_reward_value=nmr, exploration_param=0)
 
 	experiment_stats, rat_data_with_likelihood = PlusMazeExperimentFitting(env, agent, dashboard=False,
 																		   experiment_data=rat_data)
-	#enablePrint()
+	if silent: enablePrint()
 
 	return experiment_stats, rat_data_with_likelihood
 

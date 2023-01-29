@@ -27,41 +27,19 @@ warnings.filterwarnings("ignore")
 class MazeBayesianModelFitting:
 	LvsNLL = []
 
-	def __init__(self, env, experiment_data, model, parameters_space, n_calls):
+	def __init__(self, env, experiment_data, model, parameters_space, n_calls, initial_motivation=RewardType.WATER):
 		self.env = env
 		self.experiment_data = experiment_data
 		self.model = model
 		self.parameters_space = parameters_space
 		self.n_calls = n_calls
+		self.initial_motivation=initial_motivation
 
-	def _run_model(self, parameters):
-		(brain, learner, model) = self.model
-		model_instance = model(self.env.stimuli_encoding_size(), 2, self.env.num_actions())
-
-		if issubclass(learner, MALearner) or issubclass(learner, DQNAtt):
-			(beta, lr, attention_lr) = parameters
-			learner_instance = learner(model_instance, learning_rate=lr, alpha_phi=attention_lr)
-		else:
-			(beta, lr) = parameters
-			learner_instance = learner(model_instance, learning_rate=lr)
-
-		blockPrint()
-		self.env.init()
-		agent = MotivatedAgent(brain(learner_instance, beta=beta),
-			motivation=RewardType.WATER,
-			motivated_reward_value=config.MOTIVATED_REWARD,
-			non_motivated_reward_value=config.NON_MOTIVATED_REWARD, exploration_param=0)
-
-		experiment_stats, rat_data_with_likelihood = PlusMazeExperimentFitting(self.env, agent, dashboard=False,
-																			   experiment_data=self.experiment_data)
-		enablePrint()
-
-		return experiment_stats, rat_data_with_likelihood
 
 	def _calc_experiment_likelihood(self, parameters):
-		model = self.model
 
-		experiment_stats, rat_data_with_likelihood = self._run_model(parameters)
+		experiment_stats, rat_data_with_likelihood = fitting_utils.run_model_on_animal_data(self.env, self.experiment_data, self.model,
+																							parameters, initial_motivation=self.initial_motivation)
 		rat_data_with_likelihood['NLL'] = -np.log(rat_data_with_likelihood.likelihood)
 		likelihood_day = rat_data_with_likelihood.groupby(['stage', 'day in stage']).mean().reset_index()
 		likelihood_stage = likelihood_day.groupby('stage').mean()
@@ -132,18 +110,23 @@ class MazeBayesianModelFitting:
 		timestamp = utils.get_timestamp()
 		fitting_results = {}
 		results_df = pd.DataFrame()
-		for subject_id, curr_rat in enumerate(animal_data):
-			print("{}".format(subject_id))
+		for subject_id, (file_name,curr_rat) in enumerate(animal_data):
+			if 'expr7' in file_name:
+				rat_initial_motivation = RewardType.FOOD
+			else:
+				rat_initial_motivation = RewardType.WATER
+			print("\n#################### Subject: {} - {} #####################\n".format(subject_id, rat_initial_motivation.value))
 			curr_rat = fitting_utils.maze_experimental_data_preprocessing(curr_rat)
 			fitting_results[subject_id] = {}
 			for curr_model in all_models:
 				model, parameters_space = curr_model
 				search_result, experiment_stats, rat_data_with_likelihood = \
-					MazeBayesianModelFitting(env, curr_rat, model, parameters_space, n_calls).optimize()
+					MazeBayesianModelFitting(env, curr_rat, model, parameters_space, n_calls, rat_initial_motivation).optimize()
 
 				rat_data_with_likelihood['subject'] = subject_id
 				rat_data_with_likelihood["model"] = utils.brain_name(model)
-				rat_data_with_likelihood["parameters"] = [search_result.x] * len(rat_data_with_likelihood)
+				rat_data_with_likelihood["initial_motivation"] = rat_initial_motivation.value
+				rat_data_with_likelihood["parameters"] = [np.round(search_result.x,4)] * len(rat_data_with_likelihood)
 				rat_data_with_likelihood["algorithm"] = \
 					"{}_{}".format('Bayesian' if fitting_config.BAYESIAN_OPTIMIZATION else 'BGFS', fitting_config.FITTING_ITERATIONS)
 
