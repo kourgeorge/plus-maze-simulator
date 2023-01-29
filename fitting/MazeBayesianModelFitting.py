@@ -55,7 +55,7 @@ class MazeBayesianModelFitting:
 		y = meanNLL
 
 		print("{}. x={}, AIC:{:2f} (meanNLL={:.2f}, medianNLL={:.2f}, sumNLL={:.2f}, stages={}), \t(meanL={:.2f}, "
-			  "medianL={:.3f}, gmeanL={:.3f}, stages={})".format(utils.brain_name(model),
+			  "medianL={:.3f}, gmeanL={:.3f}, stages={})".format(utils.brain_name(self.model),
 																 list(np.round(parameters, 4)),
 																 aic,
 																 meanNLL, np.nanmedian(NLL), np.nansum(NLL),
@@ -72,12 +72,13 @@ class MazeBayesianModelFitting:
 		if fitting_config.BAYESIAN_OPTIMIZATION:
 			search_result = gp_minimize(self._calc_experiment_likelihood, self.parameters_space, n_calls=self.n_calls)
 		else:
-			x0 = np.array([5,0.01,0.15])
+			x0 = np.array([0, 5,0.01,0.01 ])
 			search_result = scipy.optimize.minimize(
 				self._calc_experiment_likelihood, x0=x0[:len(self.parameters_space)],
 				bounds=self.parameters_space,
 				options={'maxiter':self.n_calls})
-		experiment_stats, rat_data_with_likelihood = self._run_model(search_result.x)
+		experiment_stats, rat_data_with_likelihood = fitting_utils.run_model_on_animal_data(self.env, self.experiment_data, self.model,
+																							search_result.x, initial_motivation=self.initial_motivation)
 		n = len(rat_data_with_likelihood)
 		aic = - 2 * np.sum(np.log(rat_data_with_likelihood.likelihood))/n + 2 * len(search_result.x)/n
 		print("Best Parameters: {} - AIC:{:.3}".format(np.round(search_result.x, 4), aic))
@@ -95,7 +96,7 @@ class MazeBayesianModelFitting:
 		if issubclass(learner, MALearner) or issubclass(learner, DQNAtt):
 			x = (1.5, 0.05, 15)
 		else:
-			x= (1.5, 0.05)
+			x= (config.NON_MOTIVATED_REWARD,config.BETA,config.LEARNING_RATE, config.LEARNING_RATE)
 
 		obj = Object()
 		obj.x = x
@@ -104,7 +105,7 @@ class MazeBayesianModelFitting:
 
 	@staticmethod
 	def all_subjects_all_models_optimization(env, animals_data_folder, all_models, n_calls=35):
-		animal_data = [pd.read_csv(os.path.join(animals_data_folder, rat_file))
+		animal_data = [[rat_file, pd.read_csv(os.path.join(animals_data_folder, rat_file))]
 					   for rat_file in list(np.sort(os.listdir(animals_data_folder)))]
 
 		timestamp = utils.get_timestamp()
