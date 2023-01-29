@@ -102,8 +102,8 @@ def calculate_goal_choice(df):
 
 	dd = data.pivot(index=['model', 'subject', 'stage', 'day in stage'], columns='reward_type').reset_index()
 	dd.columns = [' '.join(col).strip() for col in dd.columns.values]
-	dd['gc'] = dd.apply(lambda row: (row['trial Water'] - row['trial Food']) / (row['trial Water'] + row['trial Food']),
-						axis=1)
+	dd['gc'] = dd.apply(lambda row: (row['trial Water'] - row['trial Food']) / (row['trial Water'] + row['trial Food']) if row.subject<10 else
+								 (row['trial Food'] - row['trial Water']) / (row['trial Food'] + row['trial Water']), axis=1)
 
 	return dd
 
