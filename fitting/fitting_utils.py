@@ -149,7 +149,36 @@ def models_order_df(df):
 	return stable_unique([model for model in friendly_models_name_map.values() if model in models_in_df])
 
 
+def models_struct_order_df(df):
+	models_in_df = np.unique(df.model_struct)
+	model_structs = ['m','B-m', 'M(B)-m', 'M(V)-m', 'M(VB)-m', 'E(V)-m', 'E(V)-m', 'E(V)-M(B)-m','E(V)-M(VB)-m']
+	return stable_unique([model_struct for model_struct in model_structs if model_struct in models_in_df])
+
+
 def rename_models(model_df):
 	model_df["model"] = model_df.model.map(
 		lambda x: friendly_models_name_map[x] if x in friendly_models_name_map.keys() else x)
 	return model_df
+
+
+def cut_off_data_when_reaching_criterion(df, num_stages=3):
+
+	df_res = pd.DataFrame()
+	df_sum = df.groupby(['subject', 'stage', 'day in stage'], sort=False).agg(
+		{'reward': 'mean', 'trial': 'count'}).reset_index()
+
+	for subject in np.unique(df_sum.subject):
+		df_res_subject = pd.DataFrame()
+		sub_df = df_sum[df_sum.subject == subject]
+		criteria_days = []
+		for stage in range(num_stages):
+			st=stage+1
+			stage_data = sub_df[sub_df.stage==st]
+			first_criterion_day = np.where(np.array(stage_data.reward) >= .75)
+
+			criterion_day =len(stage_data.reward) if len(first_criterion_day[0]) == 0 else first_criterion_day[0][0]+1
+			relevant_trials = df[(df.subject==subject) & (df.stage==st) &(df['day in stage']<=criterion_day)]
+			df_res_subject=pd.concat([df_res_subject,relevant_trials], axis=0)
+			criteria_days += [criterion_day]
+		df_res = pd.concat([df_res,df_res_subject], axis=0)
+	return df_res
