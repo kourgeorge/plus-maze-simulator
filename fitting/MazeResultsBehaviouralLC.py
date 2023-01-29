@@ -246,7 +246,7 @@ def compare_neural_tabular_models(data_file_path):
 	#plt.show()
 
 
-def model_values_development(data_file_path, rel_models):
+def model_values_development(data_file_path, rel_models=None):
 	plt.rcParams.update({'font.size': 14})
 	df = pd.read_csv(data_file_path)
 
@@ -296,7 +296,7 @@ def model_values_development(data_file_path, rel_models):
 	axis.set_xlabel('Training Day in Stage')
 	dilute_xticks(axis,3)
 
-	plt.subplots_adjust(left=0.09, bottom=0.1, right=0.87, top=0.95, wspace=0.3, hspace=0.3)
+	plt.subplots_adjust(left=0.15, bottom=0.12, right=0.85, top=0.95, wspace=0.3, hspace=0.3)
 	x=1
 
 
@@ -485,6 +485,8 @@ def show_days_to_criterion(data_file_path):
 	g1.set_xticklabels(stages)
 	despine(g1)
 	plt.subplots_adjust(left=0.08, bottom=0.1, right=0.99, top=0.95, wspace=0.1, hspace=0.4)
+	
+	RM_anova(df, 'day in stage', 'subject', within='stage')
 
 	x=1
 
@@ -568,14 +570,14 @@ def plot_models_fitting_result_per_stage_action_bias(data_file_path):
 		args = dict(x='stage', y=y, hue='model', data=df_model, hue_order=hue_order)
 		ax[ind] = sns.barplot(**args, ax=ax[ind], errorbar='se' ,errwidth=1, capsize=.07, errcolor='gray', dodge=1)
 
-		ax[ind].set_ylim(0.25, 0.3)
+		ax[ind].set_ylim(0.27, 0.38)
 
-		pairs = [[((loc, model), (loc, 'B-'+model)), ((loc, 'B-'+model), (loc, 'M(B)-'+model))] for loc in range(1,6)]
+		pairs = [[((loc, model), (loc, 'B-'+model)), ((loc, model), (loc, 'M(B)-'+model))] for loc in range(1,6)]
 		pairs = utils.flatten_list(pairs)
 		annot = Annotator(ax[ind], pairs, **args)
 
 		annot.configure(test='t-test_paired', text_format='star', loc='inside', verbose=2, line_height=0.05,
-						comparisons_correction="bonferroni")
+						comparisons_correction="bonferroni", line_offset=0)
 
 		annot.apply_test().annotate()
 
@@ -639,16 +641,18 @@ def compare_fitting_criteria(data_file_path, models=None):
 	#data['k'] = data.apply(lambda row: len(fitting_utils.string2list(row['parameters'])), axis=1)
 	data['k'] = data.apply(lambda row: 3 if row.model in ['SARL','ORL','FRL'] else 4, axis=1)
 
-	data['AIC'] = (- 2 * data.LL + 2 * data.k)/data.n #normalize each subject bu the number of trials.
-	data['BIC'] = (- 2 * data.LL + np.log(data.n) * data.k)/ data.n
+	data['AIC'] = (- 2 * data.LL + 2 * data.k).astype(int) #normalize each subject by the number of trials.
+	data['BIC'] = (- 2 * data.LL + np.log(data.n) * data.k).astype(int)
 	data['ALPT'] = data.likelihood
 	data['NLL'] = -data.LL/data.n
 	data.LL = -data.LL
 
 	sum_df = data.groupby(['model']).mean().reset_index()
 	#sum_df = data
-	sns.set_palette(triplet_colors(3))
-	for criterion in ['AIC', 'BIC', 'ALPT']:
+	if len(models)%3==0:
+		sns.set_palette(triplet_colors(3))
+	else:
+		sns.set_palette("colorblind")
 
 		plt.figure(figsize=(5, 4), dpi=120, facecolor='w')
 		#axis = sns.barplot(y='model_type', x=criterion, hue='model_struct', data=sum_df)#, order=models_order_df(sum_df),)
@@ -663,8 +667,12 @@ def compare_fitting_criteria(data_file_path, models=None):
 
 		axis.set_ylabel('')
 
-		axis.axhline(y=2 + 0.5, alpha=0.7, lw=1, color='grey', linestyle='-')
-		axis.axhline(y=5 + 0.5, alpha=0.7, lw=1, color='grey', linestyle='-')
+		if len(models)==9:
+			axis.axhline(y=2 + 0.5, alpha=0.7, lw=1, color='grey', linestyle='-')
+			axis.axhline(y=5 + 0.5, alpha=0.7, lw=1, color='grey', linestyle='-')
+
+		plt.subplots_adjust(left=0.3, bottom=0.15, right=0.95, top=0.99, wspace=0, hspace=0)
+		x=1
 
 		# fig = plt.figure(figsize=(35, 7), dpi=120, facecolor='w')
 		#plt.rcParams.update({'font.size': 7})
@@ -690,7 +698,7 @@ def compare_fitting_criteria(data_file_path, models=None):
 		# fig.subplots_adjust(left=0.02, bottom=0.05, right=0.99, top=0.97, wspace=0.2, hspace=0.1)
 
 
-def show_fitting_parameters(data_file_path):
+def show_fitting_parameters(data_file_path, models=None):
 	params = ['nmr', 'beta', 'alpha', 'alpha_bias']
 
 	df_all = pd.read_csv(data_file_path)
@@ -711,15 +719,16 @@ def show_fitting_parameters(data_file_path):
 	params_info = params_info[['model']+params]
 	print(params_info)
 
-	# plt.figure()
-	# ax = sns.scatterplot(data=df, x='alpha', y='nmr', hue='model')
+	plt.figure()
+	ax = sns.scatterplot(data=df, x='alpha', y='alpha_bias', hue='model')
 	# # ax.set_xlim([-0.01, 0.1])
 	# # ax.set_ylim([-0.01, 0.1])
 	# ax = sns.pairplot(hue='model', data=df, diag_kind="hist")
-	# ax.set(xscale="log", yscale="log")
+	ax.set(xscale="log", yscale="log")
+	ax.legend([], [], frameon=False)
 
 
-def action_bias_in_stage(data_file_path, models):
+def bias_variables_in_stage(data_file_path, models):
 	"""Showing the action bias estimated by the models for each stage containing
 	only rats that particiapted in the entire reported days of the stage."""
 	plt.rcParams.update({'font.size': 14})
@@ -901,20 +910,14 @@ def average_likelihood_simple(data_file_path, models, pairs):
 
 	df = extract_model_name_type(df)
 
-	data = df.groupby(['subject', 'model_type','model_struct']).agg({'reward': 'count', 'LL': 'sum', 'likelihood': 'mean'}).reset_index()
-	data = data.rename(columns={'reward': 'n'})
-
-	k=2
-	data['AIC'] = - 2 * data.LL/data.n + 2 * k/data.n
-	data['AIC'] = - 2 * data.LL + 2 * k
-	data['ML'] = data.likelihood/data.n
-	data['Geom_avg']= scipy.stats.mstats.gmean(data.likelihood, nan_policy='omit')
-
 	# For Stimuli Context dependant figure
-	sns.set_palette("magma", len(models_order_df(df)))
+	#sns.set_palette("magma", len(models_order_df(df)))
 
 	# For Motivation dependant figure
-	#sns.set_palette("Greys", n_colors=3)
+	if len(models)>4:
+		sns.set_palette("Greys", n_colors=3)
+	else:
+		sns.set_palette("colorblind")
 
 	fig = plt.figure(figsize=(5, 4), dpi=120, facecolor='w')
 	criterion = 'likelihood'
@@ -922,7 +925,8 @@ def average_likelihood_simple(data_file_path, models, pairs):
 	axis = sns.barplot(**args, fill=True, errorbar='se')
 
 	if criterion == 'likelihood':
-		args = dict(x="model_type", y=criterion, hue='model_struct', data=df)
+		df = df.groupby(['subject', 'model', 'model_type', 'model_struct']).mean().reset_index()
+		args = dict(x="model_type", y=criterion, hue='model_struct', data=df, hue_order=fitting_utils.models_struct_order_df(df))
 		axis = sns.barplot(**args, fill=True, errorbar='se')
 		minn = 0.32
 		maxx = 0.38
@@ -1030,21 +1034,23 @@ def average_nmr_animal(data_file_path, models=None):
 
 	criterion = 'nmr'
 	data = sort_subject_by_criterion(data, criterion)
+	data.subject= data.subject.astype(int)
 
 	fig = plt.figure(figsize=(8, 4), dpi=120, facecolor='w')
 	sns.set_palette("tab10", n_colors=len(models_order_df(data)))
-	axis = sns.scatterplot(y='subject', x=criterion, hue='model', alpha=1, data=data, s=10,
-						   hue_order=models_order_df(data))
+	axis = sns.scatterplot(y='subject', x=criterion, hue='model', alpha=1, data=data, s=20,
+						  hue_order=models_order_df(data))
 
 	despine(axis)
 
 	axis.set_ylabel('Animal')
-	axis.set_xlabel('Non-Motivated Reward')
+	axis.set_xlabel('nmr')
 
 	axis.legend([], [], frameon=False)
 	handles, labels = axis.get_legend_handles_labels()
 	# displabels = [label if i%3==0 else '' for i,label in enumerate(labels)]
-	axis.legend(handles, labels, loc="lower left", prop={'size': 9},labelspacing=0)
+	axis.legend(handles, labels, loc="upper left", prop={'size': 11},
+				labelspacing=0,  fancybox=False, framealpha=0)
 
 	colors = sns.color_palette()
 	averages = data.groupby(['model'], sort=False).mean().reset_index()
@@ -1054,10 +1060,10 @@ def average_nmr_animal(data_file_path, models=None):
 	#for ind, (model, likelihood) in enumerate(list(averages.itertuples(index=False, name=None))):
 	for ind, model in enumerate(models_order_df(data)):
 		likelihood = averages[averages.model==model][criterion].values[0]
-		width = (np.exp(averages[averages.model==model].likelihood.values[0]))**1.5
-		axis.axvline(x=likelihood, alpha=1, lw=width, color=colors[ind])
+		width = (np.exp(averages[averages.model==model].likelihood.values[0]))**2
+		axis.axvline(x=likelihood, alpha=0.7, lw=width, color=colors[ind])
 
-	plt.subplots_adjust(left=0.05, bottom=0.15, right=0.97, top=0.95, wspace=0.2, hspace=0.4)
+	plt.subplots_adjust(left=0.1, bottom=0.15, right=0.97, top=0.95, wspace=0.2, hspace=0.4)
 
 	x=1
 
@@ -1102,109 +1108,3 @@ def bias_effect_nmr(data_file_path):
 	x=1
 
 
-
-if __name__ == '__main__':
-
-	#file_path = '/Users/gkour/repositories/plusmaze/fitting/Results/Rats-Results/fitting_results_ActionBias.csv'
-	#file_path = '/Users/gkour/repositories/plusmaze/fitting/Results/Rats-Results/fitting_results_ActionBiasAndMotivation.csv'
-	file_path = 'fitting/Results/Rats-Results/fitting_results_full_model_scipy_20.csv'
-
-	#file_path = 'fitting/Results/Rats-Results/reported_results_motivation_shifting/fitting_results_Action_Bias.csv'
-
-	#learning_curve_behavioral_boxplot('fitting/Results/Rats-Results/fitting_results_Action_Bias.csv')
-	#WPI_WC_FC(file_path)
-	#models_fitting_quality_over_times_average(file_path, models=utils.flatten_list([['M(B)-'+m, 'M(VB)-'+m] for m in ['FRL']]))
-	#models_fitting_quality_over_times_average(file_path, models=utils.flatten_list([['M(B)-'+m] for m in ['SARL','ORL','FRL']]))
-	#models_fitting_quality_over_times_average(file_path, ['B-'+m for m in ['SARL', 'ORL', 'FRL']])
-	#models_fitting_quality_over_times_average(file_path, ['M(B)-'+m for m in ['SARL','ORL','FRL']])
-	#models_fitting_quality_over_times_average(file_path, ['B-FRL', 'M(B)-FRL'])
-
-	#models_fitting_quality_over_times_average(file_path, models=utils.flatten_list([['M(B)-' + m, 'S(V)-M(B)-'+m,'S(VB)-M(B)-' + m] for m in ['FRL']]))
-
-	# compare_model_subject_learning_curve_average(file_path, models=utils.flatten_list([['M(B)-'+m] for m in ['SARL','ORL','FRL']]))
-	# compare_model_subject_learning_curve_average(file_path, models=utils.flatten_list(
-	# 	[['B-' + m] for m in ['SARL', 'ORL', 'FRL']]))
-	# compare_model_subject_learning_curve_average(file_path, models=['SARL', 'ORL', 'FRL'])
-
-	#plot_models_fitting_result_per_stage_action_bias(file_path)
-	# show_likelihood_trials_scatter(file_path)
-	#stage_transition_model_quality(file_path)
-	show_fitting_parameters(file_path)
-	#compare_fitting_criteria(file_path)
-	#compare_fitting_criteria(file_path, models=utils.flatten_list([['M(B)-'+m,'M(V)-'+m, 'M(VB)-'+m] for m in ['SARL','ORL','FRL']]))
-	#average_likelihood_animal(file_path)
-	average_nmr_animal(file_path)
-	# average_likelihood_simple(file_path, models=utils.flatten_list([['M(B)-'+m,'M(V)-'+m, 'M(VB)-'+m] for m in ['SARL','ORL','FRL']]))
-	#average_likelihood_simple(file_path, ['M(B)-FRL', 'S(V)-M(B)-FRL','S(VB)-M(B)-FRL'])
-	#compare_neural_tabular_models(file_path)
-	#model_parameters_development(file_path, True)
-	#daily_sucess_vs_likelihood(file_path, ['SARL','M(B)-SARL'])
-	#action_bias_in_stage(file_path, ['M(B)-'+m for m in ['SARL','ORL','FRL']])
-	# model_values_development(file_path, ['M(B)-'+m for m in ['SARL','ORL','FRL']])
-	#daily_success_vs_likelihood(file_path, ['M(B)-ORL','M(VB)-ORL'] )
-	#average_likelihood_simple(file_path)
-	#
-
-
-	#Fig 2: Animals Choice Accuracy, preference, and days to criterion.
-	#file_path = 'fitting/Results/Rats-Results/fitting_results_2023_01_27_23_05_20.csv'
-	learning_curve_behavioral_boxplot(file_path)
-	show_days_to_criterion(file_path)
-	water_preference_index(file_path)
-	show_fitting_parameters(file_path)
-
-
-	#Fig 5: Action bias dependency on motivation state.
-	#file_path = 'fitting/Results/Rats-Results/reported_results_motivation_shifting/fitting_results_Action_Bias.csv'
-	models = utils.flatten_list([[m,'B-'+m, 'M(B)-'+m] for m in ['SARL','ORL','FRL']])
-
-	# compare_fitting_criteria(file_path, models=models)
-	average_likelihood_animal(file_path, models=models)
-	# plot_models_fitting_result_per_stage_action_bias(file_path)
-
-	# Additional results: Success rate.
-	# compare_model_subject_learning_curve_average(file_path, ['M(B)-'+m for m in ['SARL','ORL','FRL']])
-	# compare_model_subject_learning_curve_average(file_path, ['B-' + m for m in ['SARL', 'ORL', 'FRL']])
-	# compare_model_subject_learning_curve_average(file_path, ['SARL', 'ORL', 'FRL'])
-	# show_fitting_parameters(file_path)
-
-	#Fig 6: Action bias response to changes.
-	#file_path = 'fitting/Results/Rats-Results/reported_results_motivation_shifting/fitting_results_Action_Bias_dynamics.csv'
-	models = utils.flatten_list([['M(B)-' + m] for m in ['SARL', 'ORL', 'FRL']])
-	# action_bias_in_stage(file_path, models)
-	# model_values_development(file_path, models)
-
-	#Fig 7: The effect of Motivational Context on Stimuli values and action biases.
-	#file_path = 'fitting/Results/Rats-Results/reported_results_motivation_shifting/fitting_results_Motivation_BV.csv'
-	#file_path = 'fitting/Results/Rats-Results/fitting_results_2023_01_23_11_45_50_tmp.csv'
-	# average_likelihood_simple(file_path, models=utils.flatten_list([['M(B)-'+m,'M(V)-'+m, 'M(VB)-'+m] for m in ['SARL','ORL','FRL']]),
-	# 						  pairs = [((m,'M(B)-m'), (m,'M(VB)-m')) for m in ['SARL','ORL','FRL']])
-	# models_fitting_quality_over_times_average(file_path, models=utils.flatten_list([['M(B)-'+m, 'M(VB)-'+m] for m in ['SARL']]))
-
-
-	#Fig 8: Stimuli context association with stimuli and action bias in FRL model.
-	# file_path = 'fitting/Results/Rats-Results/reported_results_motivation_shifting/fitting_results_SC_FRL.csv'
-	# file_path = 'fitting/Results/Rats-Results/fitting_results_full_model_SC_FRL_50_combined.csv'
-	#
-
-	average_likelihood_simple(file_path, ['M(B)-FRL', 'S(VB)-FRL', 'S(V)-M(B)-FRL', 'S(V)-M(VB)-FRL', 'S(V)-M(VB)-FRL', 'S(VB)-M(B)-FRL',],
-							  pairs=[(('FRL', 'M(B)-m'), ('FRL', 'S(VB)-m')),
-									 (('FRL', 'M(B)-m'), ('FRL', 'S(V)-M(B)-m')),
-									 (('FRL', 'S(V)-M(VB)-m'), ('FRL', 'S(V)-M(B)-m')),
-									 (('FRL', 'S(V)-M(VB)-m'), ('FRL', 'S(VB)-M(B)-m'))])
-	models_fitting_quality_over_times_average(file_path, models=utils.flatten_list(
-		[['S(V)-M(B)-' + m, 'S(VB)-M(B)-'+m] for m in ['FRL']]))
-
-	models = utils.flatten_list([['S(V)-M(B)-' + m, 'S(VB)-M(B)-' + m] for m in ['FRL']])
-	action_bias_in_stage(file_path, models)
-	model_values_development(file_path, models)
-
-
-	# Table: Non-motivated reward value
-	# file_path = 'fitting/Results/Rats-Results/fitting_results_nmr_M(B).csv'
-	# compare_model_subject_learning_curve_average(file_path)
-	# show_fitting_parameters(file_path)
-	# average_likelihood_simple(file_path, models=utils.flatten_list([['M(B)-'+m] for m in ['SARL','ORL','FRL']]))
-	# models_fitting_quality_over_times_average(file_path, models=utils.flatten_list([['M(B)-'+m] for m in ['SARL','ORL','FRL']]))
-
-	x=1
