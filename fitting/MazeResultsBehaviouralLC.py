@@ -4,12 +4,14 @@ import json
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+import pingouin
 import scipy
 import seaborn as sns
 from matplotlib.ticker import FormatStrFormatter
 from statannotations.Annotator import Annotator
 import statsmodels.api as sm
 from statsmodels.formula.api import ols
+from statsmodels.stats.anova import AnovaRM
 
 import utils
 from fitting import fitting_utils
@@ -30,6 +32,26 @@ def triplet_colors(n):
 	colors = utils.flatten_list(list(zip(pastel, deep, dark)))
 	return colors
 
+def one_way_anova(df, target, c):
+	model = ols('{} ~ C({})'.format(target,c), data=df).fit()
+	result = sm.stats.anova_lm(model, type=2)
+	print(result)
+
+
+def RM_anova(df, depvar, subjects, within):
+	#results = AnovaRM(data=df, depvar=depvar, subject=subjects, within=[within]).fit() #, aggregate_func='mean'
+	aov = pingouin.rm_anova(data=df, dv=depvar, subject=subjects, within=within,  detailed=True)
+	aov.round(3)
+
+	print(aov)
+
+
+def two_way_anova(df, target, c1, c2):
+	model = ols('{} ~ C({}) + C({}) +\
+	C({}):C({})'.format(target,c1,c2,c1,c2),
+				data=df).fit()
+	result = sm.stats.anova_lm(model, type=2)
+	print(result)
 
 def despine(axis):
 	axis.spines['top'].set_visible(False)
@@ -106,6 +128,7 @@ def unbox_parameters(df, params):
 	df['subject'] = df['subject'].astype('category')
 
 	return df
+
 
 def unbox_model_variables(df_model):
 	# format the model_variables entry
@@ -443,6 +466,10 @@ def show_days_to_criterion(data_file_path):
 	df = rename_models(df)
 	df = fitting_utils.cut_off_data_when_reaching_criterion(df, num_stages=5)
 	df = df.groupby(['subject', 'model', 'stage'], sort=False).agg({'day in stage': 'max'}).reset_index()
+
+	RM_anova(df, 'day in stage', 'subject', within='stage')
+	
+
 	fig = plt.figure(figsize=(10, 5))
 	g1 = sns.barplot(x='stage', y='day in stage', order=list(range(1, len(stages)+1)),
 					 fill=False, data=df, errorbar='se', errwidth=1, capsize=.05)
