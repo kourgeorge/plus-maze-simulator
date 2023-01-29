@@ -91,7 +91,7 @@ class QTable(AbstractTabularModel):
 
 	def get_model_metrics(self):
 		flattened_biases_values = utils.flatten_dict(self.action_bias)
-		res={k: np.sum(v.tolist()[0:2]) - np.sum(v.tolist()[2:4]) for k, v in flattened_biases_values.items()}
+		res={k: np.round(np.sum(v.tolist()[0:2]) - np.sum(v.tolist()[2:4]),4) for k, v in flattened_biases_values.items()}
 		return res
 
 	def get_model_diff(self, brain2):
@@ -165,7 +165,7 @@ class OptionsTable(AbstractTabularModel):
 
 	def get_model_metrics(self):
 		flattened_biases_values = utils.flatten_dict(self.action_bias)
-		return {k: np.sum(v.tolist()[0:2]) - np.sum(v.tolist()[2:4]) for k, v in flattened_biases_values.items()}
+		return {k: np.round(np.sum(v.tolist()[0:2]) - np.sum(v.tolist()[2:4]),4) for k, v in flattened_biases_values.items()}
 
 	def get_model_diff(self, brain2):
 		diff = [np.linalg.norm(self.C[state] - brain2.C[state]) for state in
@@ -246,7 +246,7 @@ class FTable(AbstractTabularModel):
 
 	def get_model_metrics(self):
 		flattened_biases_values = utils.flatten_dict(self.action_bias)
-		res = {k: np.sum(v.tolist()[0:2]) - np.sum(v.tolist()[2:4]) for k, v in flattened_biases_values.items()}
+		res = {k: np.round(np.sum(v.tolist()[0:2]) - np.sum(v.tolist()[2:4]),4) for k, v in flattened_biases_values.items()}
 		#res['odor']=np.sum(np.abs(self.Q['none']['odors']))
 		#res['spatial'] = np.sum(np.abs(self.Q['none']['spatial']))
 		return res
