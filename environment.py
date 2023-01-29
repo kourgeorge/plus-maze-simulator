@@ -179,11 +179,11 @@ class PlusMaze:
 																np.argmax(self.get_correct_cue_value())))
 
 		elif self.get_stage() == 2:
-			agent.set_motivation(RewardType.FOOD)
+			agent.shift_motivation()
 			print("Stage {}: {}".format(self._stage, self.stage_names[self._stage]))
 
 		elif self.get_stage() == 3:
-			agent.set_motivation(RewardType.WATER)
+			agent.shift_motivation()
 			self.set_random_odor_set()
 			signal_new_stimuli_context()
 			print("Stage {}: {} (Odors: {}. Correct {})".format(self._stage, self.stage_names[self._stage],

@@ -51,6 +51,12 @@ class MotivatedAgent:
     def get_motivation(self):
         return self._motivation
 
+    def shift_motivation(self):
+        if self.get_motivation() == RewardType.WATER:
+            self.set_motivation(RewardType.FOOD)
+        else:
+            self.set_motivation(RewardType.WATER)
+
     def get_memory(self) -> ReplayMemory:
         return self._memory
 
