@@ -63,7 +63,7 @@ class QTable(AbstractTabularModel):
 		env_obs = args[0]
 		motivation = args[1]
 		state_actions_value = self.get_observations_values(env_obs, motivation)
-		state_actions_value += self.action_bias[motivation.value]
+		state_actions_value += self.get_bias_values(motivation)
 		inactive_doors = utils.get_inactive_doors(env_obs)
 		state_actions_value[inactive_doors] = -np.inf
 		return state_actions_value
@@ -74,6 +74,12 @@ class QTable(AbstractTabularModel):
 			state_actions_value.append(self.Q[np.array2string(state)])
 		state_actions_value = np.array(state_actions_value)
 		return state_actions_value
+
+	def get_bias_values(self, motivation):
+		return self.action_bias[motivation.value]
+
+	def set_bias_value(self, motivation, action, value):
+		self.action_bias[motivation.value][action]=value
 
 	def state_representation(self, obs, motivation):
 		return utils.stimuli_1hot_to_cues(obs, self.encoding_size)
@@ -123,9 +129,15 @@ class OptionsTable(AbstractTabularModel):
 			obs_action_value = []
 			for option in self.get_cues_combinations(state):
 				obs_action_value += [self.C[option]] if option[0] != self.encoding_size else [-np.inf]
-			obs_action_value += self.action_bias[motivation.value]
+			obs_action_value += self.get_bias_values(motivation)
 			state_actions_value.append(obs_action_value)
 		return np.array(state_actions_value)
+
+	def get_bias_values(self, motivation):
+		return self.action_bias[motivation.value]
+
+	def set_bias_value(self, motivation, action, value):
+		self.action_bias[motivation.value][action]=value
 
 	def get_observations_values(self, observations, motivation):
 		state_actions_value = []
@@ -195,7 +207,7 @@ class FTable(AbstractTabularModel):
 		observations = args[0]
 		motivation = args[1]
 
-		action_values = self.get_observations_values(observations, motivation) + self.action_bias[motivation.value]
+		action_values = self.get_observations_values(observations, motivation) + self.get_bias_values(motivation)
 		inactive_doors = utils.get_inactive_doors(observations)
 		action_values[inactive_doors] = -np.inf  # avoid selecting inactive doors.
 		return action_values
@@ -209,6 +221,12 @@ class FTable(AbstractTabularModel):
 						 self.get_stimulus_value('colors', color, motivation) +
 						 self.get_stimulus_value('spatial', door, motivation))
 		return action_values
+
+	def get_bias_values(self, motivation:RewardType):
+		return self.action_bias[motivation.value]
+
+	def set_bias_value(self, motivation:RewardType, action, value):
+		self.action_bias[motivation.value][action]=value
 
 	def get_selected_door_stimuli(self, states, doors):
 		cues = utils.stimuli_1hot_to_cues(states, self.encoding_size)
