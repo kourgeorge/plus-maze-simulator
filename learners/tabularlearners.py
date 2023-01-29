@@ -101,7 +101,9 @@ class ABIALearner(IALearner):
 		actions = np.argmax(action_batch, axis=1)
 
 		for action in np.unique(actions):
-			self.model.action_bias[motivation.value][action] += self.alpha_bias*np.mean(deltas[actions==action])
+			new_action_bias_value = self.model.get_bias_values(motivation)[action] + \
+									self.alpha_bias*np.mean(deltas[actions==action])
+			self.model.set_bias_value(motivation, action, new_action_bias_value)
 
 		return deltas
 
@@ -138,8 +140,10 @@ class UABIALearner(IALearner):
 		actions = np.argmax(action_batch, axis=1)
 
 		for action in np.unique(actions):
-			self.model.action_bias[RewardType.WATER.value][action] += self.alpha_bias * np.mean(deltas[actions == action])
-			self.model.action_bias[RewardType.FOOD.value][action] += self.alpha_bias * np.mean(deltas[actions == action])
+			new_action_bias_value = self.model.get_bias_values(motivation)[action] + \
+									self.alpha_bias * np.mean(deltas[actions == action])
+			self.model.set_bias_value(RewardType.FOOD, action, new_action_bias_value)
+			self.model.set_bias_value(RewardType.WATER, action, new_action_bias_value)
 
 		return deltas
 
