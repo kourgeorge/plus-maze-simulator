@@ -8,7 +8,7 @@ import random
 
 from fitting.fitting_config import configs, extract_configuration_params, REPETITIONS, MOTIVATED_ANIMAL_DATA_PATH, \
 	MOTIVATED_ANIMAL_BATCHES, MAZE_ANIMAL_DATA_PATH, MAZE_ANIMALS
-from fitting.fitting_utils import get_timestamp
+from utils import get_timestamp
 from motivatedagent import MotivatedAgent
 from environment import PlusMazeOneHotCues2ActiveDoors, CueType, PlusMazeOneHotCues
 from rewardtype import RewardType
