@@ -39,7 +39,7 @@ class MazeBayesianModelFitting:
 	def _calc_experiment_likelihood(self, parameters):
 
 		experiment_stats, rat_data_with_likelihood = fitting_utils.run_model_on_animal_data(self.env, self.experiment_data, self.model,
-																							parameters, initial_motivation=self.initial_motivation)
+																							parameters, initial_motivation=self.initial_motivation, silent=True)
 		rat_data_with_likelihood['NLL'] = -np.log(rat_data_with_likelihood.likelihood)
 		likelihood_day = rat_data_with_likelihood.groupby(['stage', 'day in stage']).mean().reset_index()
 		likelihood_stage = likelihood_day.groupby('stage').mean()
@@ -54,14 +54,22 @@ class MazeBayesianModelFitting:
 		aic = 2 * np.sum(NLL)/n + 2 * len(parameters) / n
 		y = meanNLL
 
-		print("{}. x={}, AIC:{:2f} (meanNLL={:.2f}, medianNLL={:.2f}, sumNLL={:.2f}, stages={}), \t(meanL={:.2f}, "
-			  "medianL={:.3f}, gmeanL={:.3f}, stages={})".format(utils.brain_name(self.model),
+		# print("{}. x={}, AIC:{:2f} (meanNLL={:.2f}, medianNLL={:.2f}, sumNLL={:.2f}, stages={}), \t(meanL={:.2f}, "
+		# 	  "medianL={:.3f}, gmeanL={:.3f}, stages={})".format(utils.brain_name(self.model),
+		# 														 list(np.round(parameters, 4)),
+		# 														 aic,
+		# 														 meanNLL, np.nanmedian(NLL), np.nansum(NLL),
+		# 														 np.round(likelihood_stage.NLL.to_numpy(), 2),
+		# 														 meanL, np.nanmedian(L),
+		# 														 geomeanL,
+		# 														 np.round(likelihood_stage.likelihood.to_numpy(), 2)))
+		
+		print("x={}, AIC:{:2f} (meanNLL={:.2f}, stages={}), \t(meanL={:.2f}, stages={})".format(
 																 list(np.round(parameters, 4)),
 																 aic,
-																 meanNLL, np.nanmedian(NLL), np.nansum(NLL),
+																 meanNLL,
 																 np.round(likelihood_stage.NLL.to_numpy(), 2),
-																 meanL, np.nanmedian(L),
-																 geomeanL,
+																 meanL, 
 																 np.round(likelihood_stage.likelihood.to_numpy(), 2)))
 
 		MazeBayesianModelFitting.LvsNLL+=[[meanL, meanNLL]]
@@ -71,17 +79,24 @@ class MazeBayesianModelFitting:
 	def optimize(self):
 		if fitting_config.BAYESIAN_OPTIMIZATION:
 			search_result = gp_minimize(self._calc_experiment_likelihood, self.parameters_space, n_calls=self.n_calls)
-		else:
+			x0 = search_result.x
+			bounds = [bound.bounds for bound in self.parameters_space]
+		else: 
 			x0 = np.array([0, 5,0.01,0.01 ])
-			search_result = scipy.optimize.minimize(
-				self._calc_experiment_likelihood, x0=x0[:len(self.parameters_space)],
-				bounds=self.parameters_space,
+			bounds = self.parameters_space
+
+		print("\t\t-----Finished Bayesian parameter estimation: {} -----".format(np.round(x0,4)))
+		search_result = scipy.optimize.minimize(
+				self._calc_experiment_likelihood, x0=x0,
+				bounds=bounds,
+		#		tol=0.002,
 				options={'maxiter':self.n_calls})
+		
 		experiment_stats, rat_data_with_likelihood = fitting_utils.run_model_on_animal_data(self.env, self.experiment_data, self.model,
 																							search_result.x, initial_motivation=self.initial_motivation)
 		n = len(rat_data_with_likelihood)
 		aic = - 2 * np.sum(np.log(rat_data_with_likelihood.likelihood))/n + 2 * len(search_result.x)/n
-		print("Best Parameters: {} - AIC:{:.3}".format(np.round(search_result.x, 4), aic))
+		print("Best Parameters: {} - AIC:{:.3}\n".format(np.round(search_result.x, 4), aic))
 
 		return search_result, experiment_stats, rat_data_with_likelihood
 
@@ -112,7 +127,7 @@ class MazeBayesianModelFitting:
 		fitting_results = {}
 		results_df = pd.DataFrame()
 		for subject_id, (file_name,curr_rat) in enumerate(animal_data):
-			if 'expr7' in file_name:
+			if 'expr7' in file_name: #TODO: fix it as it is already mentioned in the file.
 				rat_initial_motivation = RewardType.FOOD
 			else:
 				rat_initial_motivation = RewardType.WATER
@@ -121,6 +136,7 @@ class MazeBayesianModelFitting:
 			fitting_results[subject_id] = {}
 			for curr_model in all_models:
 				model, parameters_space = curr_model
+				print("-----{}-----".format(utils.brain_name(model)))
 				search_result, experiment_stats, rat_data_with_likelihood = \
 					MazeBayesianModelFitting(env, curr_rat, model, parameters_space, n_calls, rat_initial_motivation).optimize()
 
