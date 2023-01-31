@@ -21,6 +21,17 @@ class SCDependantV():
 	def new_stimuli_context(self):
 		self.initialize_state_values()
 
+
+class SCDependantB():
+	'''
+	Motivation dependant Tabular model.
+	It initializes the state value and action bias data when a new stimuli is encountered.
+	'''
+
+	def new_stimuli_context(self):
+		for motivation in RewardType:
+			self.action_bias[motivation.value] = np.zeros(self._num_actions)
+			
 class SCDependantVB():
 	'''
 	Motivation dependant Tabular model.
@@ -31,6 +42,7 @@ class SCDependantVB():
 		self.initialize_state_values()
 		for motivation in RewardType:
 			self.action_bias[motivation.value] = np.zeros(self._num_actions)
+
 
 
 class AbstractTabularModel:
@@ -275,6 +287,15 @@ class SCFTable(FTable, SCDependantV):
 
 
 class SCVBFTable(FTable, SCDependantVB):
+	pass
+
+class SCBFTable(FTable, SCDependantB):
+	pass
+
+class SCBQTable(QTable, SCDependantB):
+	pass
+
+class SCBOptionsTable(OptionsTable, SCDependantB):
 	pass
 
 
