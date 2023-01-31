@@ -17,7 +17,7 @@ class CueType(Enum):
 
 
 class PlusMaze:
-	stage_names = ['Baseline', 'IDshift', 'Mshift(Food)', 'MShift(Water)+IDshift', 'EDshift(Spatial)']
+	stage_names = ['Initial', 'IDS', 'MS', 'MS+ID', 'EDS (Spatial)']
 
 	def __init__(self, relevant_cue: CueType = CueType.ODOR):
 		# relevant_cue: 0 is odor, 1 is light
@@ -180,13 +180,14 @@ class PlusMaze:
 
 		elif self.get_stage() == 2:
 			agent.shift_motivation()
-			print("Stage {}: {}".format(self._stage, self.stage_names[self._stage]))
+			print("Stage {}: {} ({})".format(self._stage, self.stage_names[self._stage], agent.get_motivation().value))
 
 		elif self.get_stage() == 3:
 			agent.shift_motivation()
 			self.set_random_odor_set()
 			signal_new_stimuli_context()
-			print("Stage {}: {} (Odors: {}. Correct {})".format(self._stage, self.stage_names[self._stage],
+			print("Stage {}: {} ({}) (Odors: {}. Correct {})".format(self._stage, self.stage_names[self._stage], 
+																	agent.get_motivation().value,
 																[np.argmax(encoding) for encoding in
 																 self.get_odor_cues()],
 																np.argmax(self.get_correct_cue_value())))
