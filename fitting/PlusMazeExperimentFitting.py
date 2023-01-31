@@ -46,9 +46,10 @@ def PlusMazeExperimentFitting(env: PlusMaze, agent: MotivatedAgent, experiment_d
     trial = 0
     last_day_reported_trial = 0
     print('============================ Brain:{}, Network:{} ======================='.format(str(agent.get_brain()), str(agent.get_brain().get_model())))
-    print("Stage {}: {} - Water Motivated, odor relevant. (Odors: {}, Correct: {})".format(env.get_stage(), env.stage_names[env.get_stage()],
-                                                                                           [np.argmax(encoding) for encoding in env.get_odor_cues()],
-                                                                                             np.argmax(env.get_correct_cue_value())))
+    print("Stage {}: {} - {} Motivated, odor relevant. (Odors: {}, Correct: {})".format(env.get_stage(), env.stage_names[env.get_stage()],
+                                                                                        agent.get_motivation().value,
+                                                                                        [np.argmax(encoding) for encoding in env.get_odor_cues()],
+                                                                                        np.argmax(env.get_correct_cue_value())))
     model_action_dists = np.empty([1, env.num_actions()])
     loss = 0
     while trial < len(fitting_info):
