@@ -151,7 +151,7 @@ def models_order_df(df):
 
 def models_struct_order_df(df):
 	models_in_df = np.unique(df.model_struct)
-	model_structs = ['m','B-m', 'M(B)-m', 'M(V)-m', 'M(VB)-m', 'E(V)-m', 'E(V)-m', 'E(V)-M(B)-m','E(V)-M(VB)-m']
+	model_structs = ['m','B-m', 'M(B)-m', 'M(V)-m', 'M(VB)-m', 'E(V)-m', 'E(V)-m', 'E(B)-m', 'E(V)-M(B)-m','E(V)-M(VB)-m']
 	return stable_unique([model_struct for model_struct in model_structs if model_struct in models_in_df])
 
 
