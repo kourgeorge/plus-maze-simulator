@@ -7,13 +7,12 @@ import numpy as np
 import pandas as pd
 from skopt import gp_minimize
 import scipy
-import fitting.fitting_config as fitting_config
+import fitting.fitting_config_motivation as fitting_config
 
 import config
 import utils
 from environment import PlusMazeOneHotCues2ActiveDoors, CueType, PlusMazeOneHotCues
 from fitting import fitting_utils
-from fitting.fitting_config import maze_models, MAZE_ANIMAL_DATA_PATH
 from fitting.PlusMazeExperimentFitting import PlusMazeExperimentFitting
 from fitting.fitting_utils import blockPrint, enablePrint
 from learners.networklearners import DQNAtt
@@ -76,20 +75,19 @@ class MazeBayesianModelFitting:
 		return np.clip(y, a_min=-5000, a_max=5000)
 
 	def optimize(self):
-		if fitting_config.BAYESIAN_OPTIMIZATION:
+		if fitting_config.OPTIMIZATION_METHOD in ['Bayesian', 'Hybrid']:
 			search_result = gp_minimize(self._calc_experiment_likelihood, self.parameters_space, n_calls=self.n_calls)
 			x0 = search_result.x
-			bounds = [bound.bounds for bound in self.parameters_space]
-		else: 
-			x0 = np.array([0, 5,0.01,0.01 ])
-			bounds = self.parameters_space
 
-		print("\t\t-----Finished Bayesian parameter estimation: {} -----".format(np.round(x0,4)))
-		search_result = scipy.optimize.minimize(
-				self._calc_experiment_likelihood, x0=x0,
-				bounds=bounds,
-		#		tol=0.002,
-				options={'maxiter':self.n_calls})
+		if fitting_config.OPTIMIZATION_METHOD in ['Newton', 'Hybrid']:
+			bounds = [bound.bounds for bound in self.parameters_space]
+			x0 = np.array([0, 5, 0.01, 0.01]) if fitting_config.OPTIMIZATION_METHOD == 'Newton' else x0
+			print("\t\t-----Finished Bayesian parameter estimation: {} -----".format(np.round(x0,4)))
+			search_result = scipy.optimize.minimize(
+					self._calc_experiment_likelihood, x0=x0,
+					bounds=bounds,
+			#		tol=0.002,
+					options={'maxiter':self.n_calls})
 		
 		experiment_stats, rat_data_with_likelihood = fitting_utils.run_model_on_animal_data(self.env, self.experiment_data, self.model,
 																							search_result.x)
@@ -126,7 +124,9 @@ class MazeBayesianModelFitting:
 		fitting_results = {}
 		results_df = pd.DataFrame()
 		for subject_id, (file_name,curr_rat) in enumerate(animal_data):
-			print("\n#################### Subject: {} - {} #####################\n".format(subject_id, curr_rat.iloc[0].initial_motivation))
+			initial_motivation = curr_rat.iloc[0].initial_motivation if 'initial_motivation' in curr_rat.columns else 'water'
+
+			print("\n#################### Subject: {} - {}. Env: {} #####################\n".format(subject_id, initial_motivation, str(env)))
 			curr_rat = fitting_utils.maze_experimental_data_preprocessing(curr_rat)
 			fitting_results[subject_id] = {}
 			for curr_model in all_models:
@@ -139,7 +139,7 @@ class MazeBayesianModelFitting:
 				rat_data_with_likelihood["model"] = utils.brain_name(model)
 				rat_data_with_likelihood["parameters"] = [np.round(search_result.x,4)] * len(rat_data_with_likelihood)
 				rat_data_with_likelihood["algorithm"] = \
-					"{}_{}".format('Bayesian' if fitting_config.BAYESIAN_OPTIMIZATION else 'BGFS', fitting_config.FITTING_ITERATIONS)
+					"{}_{}".format(fitting_config.OPTIMIZATION_METHOD, fitting_config.FITTING_ITERATIONS)
 
 				results_df = results_df.append(rat_data_with_likelihood, ignore_index=True)
 			results_df.to_csv('fitting/Results/Rats-Results/fitting_results_{}_{}_tmp.csv'.format(timestamp, n_calls))
@@ -150,9 +150,9 @@ class MazeBayesianModelFitting:
 if __name__ == '__main__':
 	# MazeBayesianModelFitting.all_subjects_all_models_optimization(
 	# 	PlusMazeOneHotCues2ActiveDoors(relevant_cue=CueType.ODOR, stimuli_encoding=10),
-	# 	MAZE_ANIMAL_DATA_PATH, maze_models, n_calls=30)
+	# 	fitting_config.MAZE_ANIMAL_DATA_PATH, fitting_config.maze_models, n_calls=30)
 
 	MazeBayesianModelFitting.all_subjects_all_models_optimization(
 		PlusMazeOneHotCues(relevant_cue=CueType.ODOR, stimuli_encoding=10), fitting_config.MOTIVATED_ANIMAL_DATA_PATH,
-		maze_models, n_calls=fitting_config.FITTING_ITERATIONS)
+		fitting_config.maze_models, n_calls=fitting_config.FITTING_ITERATIONS)
 

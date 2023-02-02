@@ -199,6 +199,9 @@ class PlusMaze:
 			print("Stage {}: {} (Correct Doors: {})".format(self._stage, self.stage_names[self._stage],
 															self.get_correct_cue_value()))
 
+	def __str__(self):
+		return self.__class__.__name__
+	
 
 class PlusMazeOneHotCues(PlusMaze):
 	def __init__(self, stimuli_encoding = 10, *args, **kwargs):

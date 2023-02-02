@@ -7,7 +7,7 @@ import pandas as pd
 
 import config
 from fitting.PlusMazeExperimentFitting import PlusMazeExperimentFitting
-from fitting.fitting_config import friendly_models_name_map
+from fitting.fitting_config_motivation import friendly_models_name_map
 from learners.networklearners import DQNAtt
 from learners.tabularlearners import MALearner
 from motivatedagent import MotivatedAgent
@@ -60,7 +60,7 @@ def episode_rollout_on_real_data(env: PlusMazeOneHotCues, agent: MotivatedAgent,
 	return steps, total_reward, act_dist, model_action_dist, info.model_action+1, likelihood, model_action_outcome
 
 
-def run_model_on_animal_data(env, rat_data, model_arch, parameters, initial_motivation=None, silent=True):
+def run_model_on_animal_data(env, rat_data, model_arch, parameters, initial_motivation=RewardType.WATER, silent=True):
 	if initial_motivation is None:
 		initial_motivation = RewardType(rat_data.iloc[0].initial_motivation)
 	(brain, learner, model) = model_arch

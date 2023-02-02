@@ -4,7 +4,7 @@ from fitting.MazeResultsBehaviouralLC import *
 
 if __name__ == '__main__':
 
-	#file_path = '/Users/gkour/repositories/plusmaze/fitting/Results/Rats-Results/fitting_results_2023_01_31_00_04_25_tmp.csv'
+	#file_path = '/Users/gkour/repositories/plusmaze/fitting/Results/Rats-Results/fitting_results_2023_01_31_18_29_50_tmp.csv'
 	file_path = '/Users/gkour/repositories/plusmaze/fitting/Results/Rats-Results/fitting_results_motivation_reported_30_1_new.csv'
 
 	####################################################
@@ -29,9 +29,9 @@ if __name__ == '__main__':
 
 
 	# Additional results: Success rate.
-	# compare_model_subject_learning_curve_average(file_path, ['M(B)-'+m for m in ['SARL','ORL','FRL']])
-	# compare_model_subject_learning_curve_average(file_path, ['B-' + m for m in ['SARL', 'ORL', 'FRL']])
-	# compare_model_subject_learning_curve_average(file_path, ['SARL', 'ORL', 'FRL'])
+	compare_model_subject_learning_curve_average(file_path, ['M(B)-'+m for m in ['SARL','ORL','FRL']])
+	compare_model_subject_learning_curve_average(file_path, ['B-' + m for m in ['SARL', 'ORL', 'FRL']])
+	compare_model_subject_learning_curve_average(file_path, ['SARL', 'ORL', 'FRL'])
 	# show_fitting_parameters(file_path)
 
 	# Fig 4: Separate reinforcement learning systems for different motivational contexts
@@ -45,7 +45,7 @@ if __name__ == '__main__':
 	# compare_fitting_criteria(file_path, models=models)
 	# average_likelihood_simple(file_path, models=models,  pairs=pairs)
 	# models_fitting_quality_over_times_average(file_path, models=utils.flatten_list([['M(B)-' + m, 'M(V)-' + m, 'M(VB)-' + m] for m in ['SARL']]))
-	# 
+
 
 	x=1
 
@@ -72,15 +72,10 @@ if __name__ == '__main__':
 	# models_fitting_quality_over_times_average(file_path, models=models, palette='Paired')
 	# 
 	
-	
-	#
-	models = utils.flatten_list([['E(V)-M(B)-' + m, 'E(VB)-M(B)-' + m] for m in ['FRL']])
-	bias_variables_in_stage(file_path, models)
-	model_values_development(file_path, models)
 
 	#Figure 7: Parameters analysis
 	# show_fitting_parameters(file_path)
-	# average_nmr_animal(file_path)
+	average_nmr_animal(file_path)
 
 	# file_path = 'fitting/Results/Rats-Results/fitting_results_nmr_M(B).csv'
 	# compare_model_subject_learning_curve_average(file_path)
@@ -98,8 +93,9 @@ if __name__ == '__main__':
 	# bias_variables_in_stage(file_path, models)
 	# model_values_development(file_path, models)
 
-	models = ['M(B)-' + m for m in ['SARL', 'ORL', 'FRL']]
-	# bias_variables_in_stage(file_path, models)
-	# model_values_development(file_path, models)
+	models = ['M(B)-' + m for m in ['SARL', 'ORL']]+['E(V)-M(B)-FRL']
+	bias_variables_in_stage(file_path, models)
+	model_values_development(file_path, models)
 	# show_fitting_parameters(file_path)
+
 

@@ -41,6 +41,7 @@ def water_preference_index_model(data_file_path):
 	df['day in stage'] += 1
 	#df = df[df.model==df.model[0]]
 
+	df['initial_motivation'] = 'water'
 	dd = calculate_goal_choice(df)
 
 	dd = rename_models(dd)
@@ -76,9 +77,9 @@ def water_preference_index_model(data_file_path):
 
 if __name__ == '__main__':
 
-	show_days_to_criterion('/Users/gkour/repositories/plusmaze/fitting/Results/Rats-Results/reported_results_dimensional_shifting/all_data.csv')
+	#show_days_to_criterion('/Users/gkour/repositories/plusmaze/fitting/Results/Rats-Results/reported_results_dimensional_shifting/all_data.csv')
 	#show_days_to_criterion('fitting/Results/simulations_results/simulation_ORL_0nmr.csv')
 	#goal_choice_index_model('/fitting/Results/simulations_results/simulation_FRL_0nmr.csv')
-	water_preference_index_model('fitting/Results/simulations_results/simulation_20_2023_01_27_01_52.csv')
+	water_preference_index_model('/Users/gkour/repositories/plusmaze/fitting/Results/Rats-Results/reported_results_motivation_shifting/simulation_FRL_0nmr.csv')
 
 

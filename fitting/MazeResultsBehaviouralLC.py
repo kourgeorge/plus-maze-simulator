@@ -93,14 +93,15 @@ def index_days(df):
 def calculate_goal_choice(df):
 	df = filter_days(df)
 
-	df = df[['subject', 'model', 'stage', 'day in stage', 'trial', 'action', 'reward']].copy()
+	df = df[['subject', 'model', 'stage', 'day in stage', 'trial', 'action', 'reward', 'initial_motivation']].copy()
 	df['reward_type'] = df['action'].map(lambda x: 'Food' if x in [1, 2] else 'Water')
-	data = df.groupby(['model', 'subject', 'stage', 'day in stage', 'reward_type'], sort=False). \
+	data = df.groupby(['model', 'subject', 'stage', 'day in stage', 'reward_type','initial_motivation'], sort=False). \
 		agg({'trial': 'count'}).reset_index()
+	
 
-	dd = data.pivot(index=['model', 'subject', 'stage', 'day in stage'], columns='reward_type').reset_index()
+	dd = data.pivot(index=['model', 'subject', 'stage', 'day in stage', 'initial_motivation'], columns='reward_type').reset_index()
 	dd.columns = [' '.join(col).strip() for col in dd.columns.values]
-	dd['gc'] = dd.apply(lambda row: (row['trial Water'] - row['trial Food']) / (row['trial Water'] + row['trial Food']) if row.subject<10 else
+	dd['gc'] = dd.apply(lambda row: (row['trial Water'] - row['trial Food']) / (row['trial Water'] + row['trial Food']) if row.initial_motivation == 'water' else
 								 (row['trial Food'] - row['trial Water']) / (row['trial Food'] + row['trial Water']), axis=1)
 
 	return dd
@@ -403,6 +404,7 @@ def compare_neural_tabular_models(data_file_path):
 
 
 def compare_model_subject_learning_curve_average(data_file_path, models=None):
+	plt.rcParams.update({'font.size': 18})
 	df = pd.read_csv(data_file_path)
 
 	df = rename_models(df)
@@ -436,10 +438,10 @@ def compare_model_subject_learning_curve_average(data_file_path, models=None):
 	axis.set_ylabel('Success Rate')
 
 	handles, labels = axis.get_legend_handles_labels()
-	plt.legend(handles, labels, loc="upper left", prop={'size': 14}, labelspacing=0.2)
+	plt.legend(handles, labels, loc="lower right", prop={'size': 18}, labelspacing=0)
 	despine(axis)
 	dilute_xticks(axis,2)
-	plt.subplots_adjust(left=0.12, bottom=0.15, right=0.98, top=0.98, wspace=0.2, hspace=0.1)
+	plt.subplots_adjust(left=0.12, bottom=0.17, right=0.98, top=0.98, wspace=0.2, hspace=0.1)
 
 	plt.savefig('fitting/Results/paper_figures/learning_curve_{}'.format(utils.get_timestamp()))
 
@@ -834,7 +836,7 @@ def average_nmr_animal(data_file_path, models=None):
 	despine(axis)
 
 	axis.set_ylabel('Animal')
-	axis.set_xlabel('nmr')
+	axis.set_xlabel(r'$nmr$')
 
 	axis.legend([], [], frameon=False)
 	handles, labels = axis.get_legend_handles_labels()
@@ -853,7 +855,7 @@ def average_nmr_animal(data_file_path, models=None):
 		width = (np.exp(averages[averages.model==model].likelihood.values[0]))**2
 		axis.axvline(x=likelihood, alpha=0.5, lw=width, color=colors[ind])
 
-	plt.subplots_adjust(left=0.1, bottom=0.15, right=0.97, top=0.95, wspace=0.2, hspace=0.4)
+	plt.subplots_adjust(left=0.12, bottom=0.15, right=0.97, top=0.95, wspace=0.2, hspace=0.4)
 
 	x=1
 
@@ -995,16 +997,23 @@ def model_parameters_development(data_file_path, show_per_subject=False):
 	x = 1
 	
 	
-def model_values_development(data_file_path, rel_models=None):
-	plt.rcParams.update({'font.size': 14})
+def model_values_development(data_file_path, rel_models=None, initial_motivation='water'):
+	plt.rcParams.update({'font.size': 12})
 	df = pd.read_csv(data_file_path)
 
 	df = rename_models(df)
 	if rel_models:
 		df = df[df.model.isin(rel_models)]
 
-	df = df[['subject', 'model', 'stage', 'day in stage', 'trial', 'reward', 'model_reward', 'stimuli_value', 'action_bias']].copy()
-	model_df = df.groupby(['subject', 'model', 'stage', 'day in stage'], sort=False).mean().reset_index()
+	df = df[df.initial_motivation==initial_motivation]
+	df = df[['subject', 'model', 'stage', 'day in stage', 'trial', 'reward', 'model_reward', 'action', 'stimuli_value', 'action_bias']].copy()
+	
+	df['reward_value'] = df.apply(lambda row: row.reward * (row.action in [3, 4]) if row.stage != 3 else row.reward * (row.action in [1, 2]), axis=1)
+
+	df['delta'] = df.reward_value - (df.stimuli_value + df.action_bias)  # r-Q
+	
+	model_df = df.groupby(['subject', 'model', 'stage', 'day in stage'], sort='subject').mean().reset_index()
+
 
 	model_df = filter_days(model_df)
 	model_df, order, tr = index_days(model_df)
@@ -1015,48 +1024,76 @@ def model_values_development(data_file_path, rel_models=None):
 	models=models_order_df(model_df)
 	fig = plt.figure(figsize=(7, 5), dpi=120, facecolor='w')
 	for model_ind, model in enumerate(models):
-		axis = fig.add_subplot(len(models), 1, model_ind + 1)
+		axis = fig.add_subplot(len(models), 2, 2*model_ind + 1)
 		curr_model_df = model_df[model_df.model==model]
 		axis = sns.lineplot(x="ind", y="stimuli_value", #hue="model", hue_order=models_order_df(model_df),
-						data=curr_model_df, errorbar="se", err_style='band', color=colors[0], legend=True,)
-		ax2 = axis.twinx()
-		ax2 = sns.lineplot(x="ind", y="action_bias", #hue="model", hue_order=models_order_df(model_df),,
-						data=curr_model_df, errorbar="se", err_style='band', color=colors[1],)
+						data=curr_model_df, errorbar="se", err_style='band', color=colors[0], legend=True,label=r'$V(s,a)$')
+		axis = sns.lineplot(x="ind", y="delta",  # hue="model", hue_order=models_order_df(model_df),
+							data=curr_model_df, errorbar="se", err_style='band', color='grey', legend=True, label=r'$\delta$')
+		
+		# axis = sns.lineplot(x="ind", y="reward_value",  # hue="model", hue_order=models_order_df(model_df),
+		# 					data=curr_model_df, errorbar="se", err_style='band', color='red', legend=True, )
+		
 
-		# axis.set_ylim([0,1])
-		#ax2.set_ylim([0, 0.7])
+
+		ax2 = fig.add_subplot(len(models), 2, 2*model_ind + 2)
+		ax2 = sns.lineplot(x="ind", y="action_bias", #hue="model", hue_order=models_order_df(model_df),,
+						data=curr_model_df, errorbar="se", err_style='band', color=colors[1],label=r'$B(a)$')
+
 
 		for stage_day in tr:
 			axis.axvline(x=stage_day - 0.5, alpha=0.5, dashes=(5, 2, 1, 2), lw=2, color='gray')
+			ax2.axvline(x=stage_day - 0.5, alpha=0.5, dashes=(5, 2, 1, 2), lw=2, color='gray')
+
+		axis.axhline(y=0, alpha=0.5, lw=1, color='gray')
+		ax2.axhline(y=0, alpha=0.5, lw=1, color='gray')
 
 		axis.set(xticklabels=[]) if model_ind<len(models)-1 else 0
+		ax2.set(xticklabels=[]) if model_ind < len(models) - 1 else 0
 
 		axis.set_xlabel('')
 		ax2.set_xlabel('')
 		axis.set_ylabel('')
 		ax2.set_ylabel('')
+		axis.legend([], [], frameon=False)
+		ax2.legend([], [], frameon=False)
 
-		fig.text(0.01, 0.5, 'Stimuli Value', va='center', rotation='vertical', color=colors[0] )
-		fig.text(0.95, 0.5, 'Bias Value', va='center', rotation='vertical', color=colors[1])
+		# fig.text(0.01, 0.5, 'V(s,a)', va='center', rotation='vertical', color=colors[0] )
+		# fig.text(0.95, 0.5, 'B(a)', va='center', rotation='vertical', color=colors[1])
 
-		axis.spines['top'].set_visible(False)
-		ax2.spines['top'].set_visible(False)
+		# axis.spines['top'].set_visible(False)
+		# ax2.spines['top'].set_visible(False)
+		despine(axis)
+		despine(ax2)
 
-	axis.set_xlabel('Training Day in Stage')
+	axis.set_xlabel('Day in Stage')
+	ax2.set_xlabel('Day in Stage')
+
 	dilute_xticks(axis,3)
+	dilute_xticks(ax2, 3)
+	
+	handles1, labels1 = axis.get_legend_handles_labels()
+	#fig.legend(handles, labels, loc="upper left", prop={'size': 14}, labelspacing=0.2)
 
-	plt.subplots_adjust(left=0.15, bottom=0.12, right=0.85, top=0.95, wspace=0.3, hspace=0.3)
+	handles2, labels2 = ax2.get_legend_handles_labels()
+	fig.legend(handles1+handles2, labels1+labels2, loc="upper center", prop={'size': 10}, labelspacing=0.0)
+
+
+	plt.subplots_adjust(left=0.08, bottom=0.12, right=0.99, top=0.95, wspace=0.2, hspace=0.2)
+
 	x=1
 
 
-def bias_variables_in_stage(data_file_path, models):
+def bias_variables_in_stage(data_file_path, models=None, initial_motivation='water'):
 	"""Showing the action bias estimated by the models for each stage containing
 	only rats that particiapted in the entire reported days of the stage."""
 	plt.rcParams.update({'font.size': 14})
 	df_all = pd.read_csv(data_file_path)
 	df = df_all[
-		['subject', 'model', 'parameters', 'stage', 'day in stage', 'trial', 'model_variables', 'likelihood']].copy()
+		['subject', 'initial_motivation','model', 'parameters', 'stage', 'day in stage', 'trial', 'model_variables', 'likelihood']].copy()
 
+	df = df[df.initial_motivation==initial_motivation]
+	
 	df = df[df['model_variables'].notna()].reset_index()
 
 	df = rename_models(df)
@@ -1065,11 +1102,14 @@ def bias_variables_in_stage(data_file_path, models):
 
 	if models:
 		df = df[df.model.isin(models)]
+	else: 
+		models=np.unique(df.model)
 
 	days_per_rat = df[['subject', 'stage', 'day in stage']].drop_duplicates()
 	days_per_rat = days_per_rat.groupby(['subject', 'stage'], ).max().reset_index()
 
 	min_days_in_stage = [5, 2, 3, 2, 2]
+	#min_days_in_stage = [1, 1, 3, 1, 1]
 	sns.set_palette("colorblind", n_colors=2)
 	fig = plt.figure(figsize=(7, 5), dpi=120, facecolor='w')
 
@@ -1085,14 +1125,22 @@ def bias_variables_in_stage(data_file_path, models):
 			relevant_rats = relevant_rats.subject
 
 			#read data of relevant rats in the stage
-			df_relevant_rats = model_df[(model_df.subject.isin(relevant_rats)) & (model_df.stage == stg_ind + 1)]
+			df_relevant_rats = model_df[(model_df.subject.isin(relevant_rats)) & (model_df.stage == stg_ind + 1)
+										& (model_df['day in stage'] <= min_days_in_stage[stg_ind])]
+
 
 			df_relevant_rats, variable_names = unbox_model_variables(df_relevant_rats)
-			variable_names = ['water'] #[name for name in list(variable_names) if 'none' not in name]
+			variable_names = [name for name in list(variable_names) if 'none' not in name] #['water'] #
 
 			data_for_model = pd.concat([data_for_model,df_relevant_rats], axis=0)
-		axis = fig.add_subplot(len(models), 1, model_ind+1)
+		
+
+		# averages_per_day = data_for_model.groupby(['subject','ind','stage', 'day in stage'], sort=False).mean().reset_index()
+		# averages_per_day, order, st = index_days(averages_per_day)
+
 		data_for_model, order, st = index_days(data_for_model)
+
+		axis = fig.add_subplot(len(models), 1, model_ind + 1)
 		for variable_name in variable_names:
 			axis = sns.lineplot(x="ind", y=variable_name, data=data_for_model, errorbar="se",
 								err_style='band', ax=axis, label=variable_name.split('_')[0])
