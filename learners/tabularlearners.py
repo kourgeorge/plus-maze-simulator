@@ -34,11 +34,12 @@ class ABQLearner(QLearner):
 	def learn(self, state_batch, action_batch, reward_batch, action_values, nextstate_batch, motivation):
 		deltas = super().learn(state_batch, action_batch, reward_batch, action_values, nextstate_batch, motivation)
 		actions = np.argmax(action_batch, axis=1)
-		learning_rate = self.optimizer['learning_rate']
 
 		for action in np.unique(actions):
-			self.model.action_bias[motivation.value][action] += self.alpha_bias*np.mean(deltas[actions==action])
-
+			new_action_bias_value = self.model.get_bias_values(motivation)[action] + \
+									self.alpha_bias * np.mean(deltas[actions == action])
+			self.model.set_bias_value(motivation, action, new_action_bias_value)
+			
 		return deltas
 
 
