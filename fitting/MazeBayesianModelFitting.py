@@ -27,19 +27,18 @@ warnings.filterwarnings("ignore")
 class MazeBayesianModelFitting:
 	LvsNLL = []
 
-	def __init__(self, env, experiment_data, model, parameters_space, n_calls, initial_motivation=RewardType.WATER):
+	def __init__(self, env, experiment_data, model, parameters_space, n_calls):
 		self.env = env
 		self.experiment_data = experiment_data
 		self.model = model
 		self.parameters_space = parameters_space
 		self.n_calls = n_calls
-		self.initial_motivation=initial_motivation
 
 
 	def _calc_experiment_likelihood(self, parameters):
 
 		experiment_stats, rat_data_with_likelihood = fitting_utils.run_model_on_animal_data(self.env, self.experiment_data, self.model,
-																							parameters, initial_motivation=self.initial_motivation, silent=True)
+																							parameters, silent=True)
 		rat_data_with_likelihood['NLL'] = -np.log(rat_data_with_likelihood.likelihood)
 		likelihood_day = rat_data_with_likelihood.groupby(['stage', 'day in stage']).mean().reset_index()
 		likelihood_stage = likelihood_day.groupby('stage').mean()
@@ -93,7 +92,7 @@ class MazeBayesianModelFitting:
 				options={'maxiter':self.n_calls})
 		
 		experiment_stats, rat_data_with_likelihood = fitting_utils.run_model_on_animal_data(self.env, self.experiment_data, self.model,
-																							search_result.x, initial_motivation=self.initial_motivation)
+																							search_result.x)
 		n = len(rat_data_with_likelihood)
 		aic = - 2 * np.sum(np.log(rat_data_with_likelihood.likelihood))/n + 2 * len(search_result.x)/n
 		print("Best Parameters: {} - AIC:{:.3}\n".format(np.round(search_result.x, 4), aic))
@@ -127,22 +126,17 @@ class MazeBayesianModelFitting:
 		fitting_results = {}
 		results_df = pd.DataFrame()
 		for subject_id, (file_name,curr_rat) in enumerate(animal_data):
-			if 'expr7' in file_name: #TODO: fix it as it is already mentioned in the file.
-				rat_initial_motivation = RewardType.FOOD
-			else:
-				rat_initial_motivation = RewardType.WATER
-			print("\n#################### Subject: {} - {} #####################\n".format(subject_id, rat_initial_motivation.value))
+			print("\n#################### Subject: {} - {} #####################\n".format(subject_id, curr_rat.iloc[0].initial_motivation))
 			curr_rat = fitting_utils.maze_experimental_data_preprocessing(curr_rat)
 			fitting_results[subject_id] = {}
 			for curr_model in all_models:
 				model, parameters_space = curr_model
 				print("-----{}-----".format(utils.brain_name(model)))
 				search_result, experiment_stats, rat_data_with_likelihood = \
-					MazeBayesianModelFitting(env, curr_rat, model, parameters_space, n_calls, rat_initial_motivation).optimize()
+					MazeBayesianModelFitting(env, curr_rat, model, parameters_space, n_calls).optimize()
 
 				rat_data_with_likelihood['subject'] = subject_id
 				rat_data_with_likelihood["model"] = utils.brain_name(model)
-				rat_data_with_likelihood["initial_motivation"] = rat_initial_motivation.value
 				rat_data_with_likelihood["parameters"] = [np.round(search_result.x,4)] * len(rat_data_with_likelihood)
 				rat_data_with_likelihood["algorithm"] = \
 					"{}_{}".format('Bayesian' if fitting_config.BAYESIAN_OPTIMIZATION else 'BGFS', fitting_config.FITTING_ITERATIONS)
