@@ -74,14 +74,11 @@ def water_preference_index_model(data_file_path):
 
 	x=1
 
-
-
-
 if __name__ == '__main__':
 
-	#show_days_to_criterion('/Users/gkour/repositories/plusmaze/fitting/Results/simulations_results/simulation_20_2023_01_13_13_19.csv')
-	show_days_to_criterion('fitting/Results/simulations_results/simulation_ORL_0nmr.csv')
+	show_days_to_criterion('/Users/gkour/repositories/plusmaze/fitting/Results/Rats-Results/reported_results_dimensional_shifting/all_data.csv')
+	#show_days_to_criterion('fitting/Results/simulations_results/simulation_ORL_0nmr.csv')
 	#goal_choice_index_model('/fitting/Results/simulations_results/simulation_FRL_0nmr.csv')
-	water_preference_index_model('fitting/Results/simulations_results/simulation_ORL_0nmr.csv')
+	water_preference_index_model('fitting/Results/simulations_results/simulation_20_2023_01_27_01_52.csv')
 
 
