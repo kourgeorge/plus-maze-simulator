@@ -66,7 +66,7 @@ def PlusMazeExperiment(env: PlusMaze, agent: MotivatedAgent, dashboard=False):
         trial_dict['trial'] = trial % config.TRIALS_IN_DAY
         trial_dict['stage'] = env.get_stage() + 1
         trial_dict['action'] = action + 1
-        trial_dict['reward'] = reward
+        trial_dict['reward'] = 0 if outcome == RewardType.NONE else 1
         trial_dict['day in stage'] = day_in_stage
         trial_dict['model_variables'] = agent.get_brain().get_model().get_model_metrics()
         #experiment_data = experiment_data.append(trial_dict, ignore_index=True)

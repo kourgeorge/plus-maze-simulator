@@ -213,13 +213,14 @@ def show_days_to_criterion(data_file_path):
 def water_food_correct(data_file_path, initial_motivation='water'):
 	plt.rcParams.update({'font.size': 16})
 	df = pd.read_csv(data_file_path)
-	df = df[['subject', 'model', 'stage', 'day in stage', 'trial', 'reward', 'reward_type', 'model_reward', 'initial_motivation']].copy()
+	df = df[['subject', 'model', 'stage', 'day in stage', 'trial', 'reward', 'action', 'initial_motivation']].copy()
 
-	df = df[df.model == df.model[0]]
+	model = np.unique(df.model)[2]
+	df = df[df.model == model]
 
 	df = df[df.initial_motivation == initial_motivation]
 
-	df['reward_type'] = df['reward_type'].map(lambda x: 'Food' if x==1 else 'Water')
+	df['reward_type'] = df['action'].map(lambda x: 'Food' if x in [1,2] else 'Water')
 
 	days_info_df = df.groupby(['subject', 'model', 'stage', 'day in stage', 'reward_type'], sort=False). \
 		agg({'reward': 'mean', 'trial': 'count'}).reset_index()

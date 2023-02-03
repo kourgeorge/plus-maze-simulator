@@ -109,7 +109,7 @@ def sample_from_estimated_parameters(model_name):
 				 enumerate(sampled_simulation_params))
 
 
-def run_single_simulation(env, architecture, estimated_parameters):
+def run_single_simulation(env, architecture, estimated_parameters, initial_motivation=RewardType.WATER):
 	(brain, learner, model) = architecture
 	model_instance = model(env.stimuli_encoding_size(), 2, env.num_actions())
 
@@ -121,13 +121,13 @@ def run_single_simulation(env, architecture, estimated_parameters):
 		learner_instance = learner(model_instance, learning_rate=lr, alpha_bias=alpha_bias)
 
 	agent = MotivatedAgent(brain(learner_instance, beta=beta),
-						   motivation=RewardType.FOOD, motivated_reward_value=config.MOTIVATED_REWARD,
+						   motivation=initial_motivation, motivated_reward_value=config.MOTIVATED_REWARD,
 						   non_motivated_reward_value=0)
 	experiment_stats, experiment_data = PlusMazeExperiment(env, agent, dashboard=False)
 	return experiment_stats, experiment_data
 
 
-def run_simulation(env, brains, repetitions=10):
+def run_simulation(env, brains, repetitions=10, initial_motivation=RewardType.WATER):
 	all_experiment_data = pd.DataFrame()
 	brains_reports = []
 	for agent_spec in brains:
@@ -142,7 +142,8 @@ def run_simulation(env, brains, repetitions=10):
 
 			estimated_parameters = sample_from_estimated_parameters(utils.brain_name(architecture))
 			print(estimated_parameters)
-			experiment_stats, experiment_data = run_single_simulation(env, architecture, estimated_parameters)
+			experiment_stats, experiment_data = run_single_simulation(env, architecture, estimated_parameters, initial_motivation)
+			experiment_data['initial_motivation'] = initial_motivation.value
 			experiment_data['model'] = utils.brain_name(architecture)
 			experiment_data['subject'] = completed_experiments
 
