@@ -22,7 +22,7 @@ class ConsolidationBrain(AbstractBrain):
 		print("{}.{}: Num parameters: {}".format(str(self),str(learner.get_model()),self.num_trainable_parameters()))
 
 	def think(self, obs, agent):
-		action_value = self.get_model()(torch.FloatTensor(obs))
+		action_value = self.get_model()(torch.FloatTensor(obs), agent.get_motivation())
 		action_dist = torch.softmax(self.beta*action_value, dim=-1)
 		return action_dist
 

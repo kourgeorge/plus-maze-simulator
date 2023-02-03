@@ -21,7 +21,12 @@ class AbstractNetworkModel(nn.Module):
 
 	def get_model_diff(self, brain2):
 		raise NotImplementedError()
-
+	
+	def get_observations_values(self, state, motivation):
+		return self(torch.FloatTensor(state), motivation).detach().numpy()
+	
+	def get_bias_values(self, motivation):
+		return [np.nan]*self.num_actions
 
 class UANet(AbstractNetworkModel):
 	def __init__(self, encoding_size, num_channels, num_actions):
@@ -31,14 +36,19 @@ class UANet(AbstractNetworkModel):
 		self.spatial = nn.Parameter(nn.init.xavier_uniform_(torch.empty(size=(1, num_actions))), requires_grad=True)
 		self.phi = torch.ones([3, 1])/3
 
-	def forward(self, x):
-		x_odor = x[:, 0]
-		x_light = x[:, 1]
+	def forward(self, *args, **kwargs):
+		observations = args[0]
+		motivation = args[1]
+		
+		x_odor = observations[:, 0]
+		x_light = observations[:, 1]
 		odor_val = self.odors(x_odor)
 		light_val = self.colors(x_light)
-		door_val = torch.unsqueeze(self.spatial.repeat(x.shape[0], 1), dim=-1)
+		door_val = torch.unsqueeze(self.spatial.repeat(observations.shape[0], 1), dim=-1)
 		weighted_vals = torch.matmul(torch.cat([odor_val, light_val, door_val], dim=-1), torch.softmax(self.phi, axis=0))
-		weighted_vals[x[:, 1].sum(dim=-1)<1]=-torch.inf
+		#weighted_vals += self.action_bias
+
+		weighted_vals[observations[:, 1].sum(dim=-1)<1]=-torch.inf
 
 		return torch.squeeze(weighted_vals, dim=2)
 
@@ -83,9 +93,12 @@ class FCNet(AbstractNetworkModel):
 			self.affine,
 		)
 
-	def forward(self, x):
-		state_action_values = self.model(torch.flatten(x, start_dim=1))
-		state_action_values[x[:, 1].sum(dim=-1) < 1] = -torch.inf
+	def forward(self, *args, **kwargs):
+		observations = args[0]
+		motivation = args[1]
+		
+		state_action_values = self.model(torch.flatten(observations, start_dim=1))
+		state_action_values[observations[:, 1].sum(dim=-1) < 1] = -torch.inf
 		return state_action_values
 
 	def get_model_metrics(self):
@@ -104,7 +117,7 @@ class Random(AbstractNetworkModel):
 		super().__init__()
 		self.affine = nn.Linear(num_channels * num_actions * encoding_size, num_actions, bias=True)
 
-	def forward(self, x):
+	def forward(self, *args, **kwargs):
 		return 0
 
 	def get_stimuli_layer(self):
@@ -159,13 +172,18 @@ class EfficientNetwork(AbstractNetworkModel):
 
 	def __init__(self, encoding_size, num_channels, num_actions):
 		super().__init__()
+		self.num_actions = num_actions
 		self.channels_encoding = nn.ModuleList([ChannelProccessor(encoding_size, 1) for _ in range(num_channels)])
 		self.dim_attn = nn.Parameter(nn.init.xavier_uniform_(torch.empty(size=(1, num_channels))), requires_grad=True)
 		self.door_attn = nn.Parameter(nn.init.xavier_uniform_(torch.empty(size=(1, num_actions))), requires_grad=True)
 		self.door_attn_bias = nn.Parameter(nn.init.xavier_uniform_(torch.empty(size=(1, num_actions))), requires_grad=True)
 
-	def forward(self, x, door_attention=None):
-		channels = [torch.select(x, dim=1, index=t) for t in range(x.shape[1])]  # the +1 is for the batch dimension
+	def forward(self, *args, **kwargs):
+		observations = args[0]
+		motivation = args[1]
+		door_attention = args[2] if len(args)==3 else None
+		
+		channels = [torch.select(observations, dim=1, index=t) for t in range(observations.shape[1])]  # the +1 is for the batch dimension
 		processed_channels = torch.cat([self.channels_encoding[i](channel) for i, channel in enumerate(channels)], dim=-1)
 		processed_channels_t = torch.transpose(processed_channels, dim0=-1, dim1=-2)
 		dimension_attended = torch.matmul(torch.softmax(self.dim_attn, dim=-1), processed_channels_t.squeeze())
@@ -233,14 +251,18 @@ class SeparateMotivationAreasNetwork(AbstractNetworkModel):
 
 	def __init__(self, encoding_size, num_channels, num_actions):
 		super().__init__()
+		self.num_actions = num_actions
 		self.model_food = EfficientNetwork(encoding_size, num_channels, num_actions)
 		self.model_water = EfficientNetwork(encoding_size, num_channels, num_actions)
 
-	def forward(self, x, motivation):
+	def forward(self, *args, **kwargs):
+		observations = args[0]
+		motivation = args[1]
+		
 		if motivation == 'water':
-			return self.model_water(x)
+			return self.model_water(observations, motivation)
 		else:
-			return self.model_food(x)
+			return self.model_food(observations, motivation)
 
 	def get_stimuli_layer(self):
 		return torch.stack([channel_porc.model[0].weight.squeeze() for channel_porc in self.model_water.channels_encoding] + [
@@ -270,14 +292,18 @@ class SeparateMotivationAreasFCNetwork(AbstractNetworkModel):
 
 	def __init__(self, encoding_size, num_channels, num_actions):
 		super().__init__()
+		self.num_actions = num_actions
 		self.model_food = FCNet(encoding_size, num_channels, num_actions)
 		self.model_water = FCNet(encoding_size, num_channels, num_actions)
 
-	def forward(self, x, motivation):
+	def forward(self, *args, **kwargs):
+		observations = args[0]
+		motivation = args[1]
+		
 		if motivation == 'water':
-			return self.model_water(x)
+			return self.model_water(observations, motivation)
 		else:
-			return self.model_food(x)
+			return self.model_food(observations, motivation)
 
 	def get_stimuli_layer(self):
 		return self.model_food[0].weight

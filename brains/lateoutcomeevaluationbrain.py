@@ -25,6 +25,6 @@ class LateOutcomeEvaluationBrain(MotivationDependantBrain):
 
 			action_values = self.think(state_batch, agent)
 
-			losses += [self.learner.learn(state_batch, action_batch, reward_batch, action_values, nextstate_batch)]
+			losses += [self.learner.learn(state_batch, action_batch, reward_batch, action_values, nextstate_batch, motivation=agent.get_motivation())]
 
 		return np.mean(losses)

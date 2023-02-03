@@ -11,9 +11,9 @@ torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 
 class DQN(AbstractLearner):
-	def __init__(self, model: AbstractNetworkModel, optimizer=optim.SGD, learning_rate=0.01):
+	def __init__(self, model: AbstractNetworkModel, optimizer=optim.SGD, lr=0.01, *args, **kwargs):
 		super().__init__(model, optimizer)
-		self.optimizer = optimizer(self.model.parameters(), lr=learning_rate)
+		self.optimizer = optimizer(self.model.parameters(), lr=lr)
 
 	def learn(self, state_batch, action_batch, reward_batch, action_values, nextstate_batch, motivation):
 		actions = torch.unsqueeze(torch.argmax(action_batch,dim=-1), dim=1)
