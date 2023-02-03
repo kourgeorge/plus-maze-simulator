@@ -4,8 +4,8 @@ from fitting.MazeResultsBehaviouralLC import *
 
 if __name__ == '__main__':
 
-	#file_path = '/Users/gkour/repositories/plusmaze/fitting/Results/Rats-Results/fitting_results_2023_01_31_18_29_50_tmp.csv'
-	file_path = '/Users/gkour/repositories/plusmaze/fitting/Results/Rats-Results/fitting_results_motivation_reported_30_1_new.csv'
+	#file_path = '/Users/gkour/repositories/plusmaze/fitting/Results/Rats-Results/fitting_results_2023_02_03_11_56_25.csv'
+	file_path = '/Users/gkour/repositories/plusmaze/fitting/Results/Rats-Results/reported_results_motivation_shifting/motivation_reported_30_1.csv'
 
 	####################################################
 	####################################################
@@ -23,8 +23,8 @@ if __name__ == '__main__':
 	
 	#Fig 3: Action biases depend on the motivational context
 	# plot_models_fitting_result_per_stage_action_bias(file_path)
-	# models = utils.flatten_list([[m,'B-'+m, 'M(B)-'+m] for m in ['SARL','ORL','FRL']])
-	# compare_fitting_criteria(file_path, models=models)
+	models = utils.flatten_list([[m,'B-'+m, 'M(B)-'+m] for m in ['SARL','ORL','FRL']])
+	compare_fitting_criteria(file_path, models=models)
 	# average_likelihood_animal(file_path, models=models)
 
 

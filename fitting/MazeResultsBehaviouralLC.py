@@ -604,13 +604,13 @@ def compare_fitting_criteria(data_file_path, models=None, pallete=None):
 	#data['k'] = data.apply(lambda row: len(fitting_utils.string2list(row['parameters'])), axis=1)
 	data['k'] = data.apply(lambda row: 3 if row.model in ['SARL','ORL','FRL', 'M(V)-SARL','M(V)-ORL','M(V)-FRL'] else 4, axis=1)
 
-	data['AIC'] = (- 2 * data.LL + 2 * data.k).astype(int) #normalize each subject by the number of trials.
-	data['BIC'] = (- 2 * data.LL + np.log(data.n) * data.k).astype(int)
 	data['ALPT'] = data.likelihood
-	data['NLL'] = -data.LL/data.n
-	data.LL = -data.LL
+	data['AvgNLL'] = -data.LL/data.n
 
-	sum_df = data.groupby(['model']).sum().reset_index()
+	sum_df = data.groupby(['model']).agg({'LL':'sum', 'k':'mean','n':'sum'}).reset_index()
+	
+	sum_df['AIC']= -2 * sum_df.LL + 2 * sum_df.k.astype(int)
+	sum_df['BIC'] = -2 * sum_df.LL + np.log(sum_df.n) * sum_df.k.astype(int)
 	#sum_df = data
 	if pallete:
 		sns.set_palette(pallete)
