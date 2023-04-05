@@ -310,7 +310,7 @@ class PlusMazeOneHotCues(PlusMaze):
 
 class PlusMazeOneHotCues2ActiveDoors(PlusMazeOneHotCues):
 	#stage_names = ['ODOR1', 'ODOR2', 'ODOR3', 'EDShift(Light)']
-	stage_names = ['ODOR1', 'ODOR2', 'EDShift(Light)']
+	stage_names = ['ODOR1', 'ODOR2', 'LED']
 
 	def __init__(self, *args, **kwargs):
 		super().__init__(*args, **kwargs)
