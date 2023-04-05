@@ -17,7 +17,7 @@ from models.tabularmodels import *
 MOTIVATED_ANIMAL_DATA_PATH = './fitting/motivation_behavioral_data_all'
 #MOTIVATED_ANIMAL_DATA_PATH = './fitting/motivation_behavioral_data_food'
 MAZE_ANIMAL_DATA_PATH = './fitting/maze_behavioral_data'
-OPTIMIZATION_METHOD = 'Hybrid' # 'Newton', 'Bayesian'
+OPTIMIZATION_METHOD = 'Bayesian' #  'Hybrid','Newton', 'Bayesian'
 MOTIVATED_ANIMAL_BATCHES = {1: [1, 2], 2: [1], 4: [6, 7, 8], 5: [1, 2], 6: [10, 11]}
 MAZE_ANIMALS = [0, 1, 2, 3, 4, 5, 6, 7, 8]
 FITTING_ITERATIONS = 50
@@ -124,12 +124,18 @@ maze_EC=[
 maze_models = maze_models_action_bias + maze_MD[3:] + maze_SCFRL[1:] + maze_EC
 
 
-motivational_models = maze_models + [((ConsolidationBrain, DQN, EfficientNetwork), (beta, lr, batch_size)),
-					   ((FixedDoorAttentionBrain, DQN, EfficientNetwork), (nmr, lr, batch_size)),
-					   ((MotivationDependantBrain, DQN, SeparateMotivationAreasNetwork), (nmr, lr, batch_size)),
-					   ((MotivationDependantBrain, DQN, SeparateMotivationAreasFCNetwork), (nmr, lr, batch_size)),
-					   ((LateOutcomeEvaluationBrain, DQN, SeparateMotivationAreasNetwork), (nmr, lr, batch_size))
-									 ]
+motivational_models =  [#((ConsolidationBrain, DQN, EfficientNetwork), (nmr, beta, lr, batch_size)),
+					  #((ConsolidationBrain, DQN, EfficientNetworkPreattention), (nmr, beta, lr, batch_size)),
+					  ((ConsolidationBrain, DQN, SeparateMotivationAreasNetwork), (nmr, beta, lr, batch_size)),
+					  #((ConsolidationBrain, DQN, SeparateMotivationAreasFCNetwork), (nmr, beta, lr, batch_size)),
+					  #((LateOutcomeEvaluationBrain, DQN, SeparateMotivationAreasNetwork), (nmr,beta, lr, batch_size))
+	]
+
+non_motivational_models= [((ConsolidationBrain, DQN, FCNet), (nmr, beta, lr, batch_size)),
+			   ((ConsolidationBrain, DQN, UANet), (nmr, beta, lr, batch_size)),
+			   ((ConsolidationBrain, DQN, ACLNet), (nmr, beta, lr, batch_size)),
+			   # ((ConsolidationBrain, DQNAtt, ACLNet), (beta, lr, attention_lr)),
+			   ((ConsolidationBrain, DQN, FC2LayersNet), (nmr, beta, lr, batch_size)),]
 
 non_motivated_reward = [0, 0.3]
 learning_rates = [0.001, 0.01, 0.2]
