@@ -184,3 +184,27 @@ def cut_off_data_when_reaching_criterion(df, num_stages=3):
 			criteria_days += [criterion_day]
 		df_res = pd.concat([df_res,df_res_subject], axis=0)
 	return df_res
+
+
+def add_correct_door(df):
+	df['correct_door'] = None
+	df['model_reward_dist'] = None
+
+	# Iterate over each row in the DataFrame
+	for index, row in df.iterrows():
+		# Check the stage value and set the correct_door accordingly
+		if row['stage'] in [1, 2]:
+			for door in range(1, 5):
+				if row[f'A{door}o'] == 1:
+					df.at[index, 'correct_door'] = door
+		elif row['stage'] == 3:
+			for door in range(1, 5):
+				if row[f'A{door}c'] == 1:
+					df.at[index, 'correct_door'] = door
+
+		correct_door = df.at[index, 'correct_door']
+		model_action_dist = string2list(df.at[index, 'model_action_dist'])
+		df.at[index, 'model_reward_dist'] = model_action_dist[correct_door-1]
+
+	df['model_reward_dist'] = df['model_reward_dist'].astype(float)
+	return df
