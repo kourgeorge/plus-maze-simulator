@@ -202,17 +202,32 @@ class MALearner(IALearner):
 
 		phi_s = utils.softmax(self.model.phi)
 
+		optimization_data = {}
 		for choice_value, selected_odor, selected_color, selected_door, delta, reward in zip(selected_action_value, selected_odors, selected_colors, actions, deltas, reward_batch):
-			V = np.array([self.model.Q['odors'][selected_odor],
-						  self.model.Q['colors'][selected_color],
-						  self.model.Q['spatial'][selected_door]])
-			delta_phi = self.calc_delta_phi(choice_value, reward, V)
+			V = np.array([self.model.Q[motivation.value]['odors'][selected_odor],
+						  self.model.Q[motivation.value]['colors'][selected_color],
+						  self.model.Q[motivation.value]['spatial'][selected_door]])
+			attention_regret = self.calc_attention_regret(choice_value, reward, V)
 
-			self.model.phi += self.alpha_phi * delta * phi_s * delta_phi
+			self.model.phi += self.alpha_phi * delta * phi_s * attention_regret
+			delta_phi = delta * phi_s * attention_regret
 
-		return deltas
+			optimization_data['delta'] = delta
+			optimization_data['odor_regret'] = attention_regret[0]
+			optimization_data['color_regret'] = attention_regret[1]
+			optimization_data['spatial_regret'] = attention_regret[2]
+			optimization_data['Q'] = selected_action_value[0]
+			optimization_data['odor_V'] = V[0]
+			optimization_data['color_V'] = V[1]
+			optimization_data['spatial_V'] = V[2]
+			optimization_data['odor_delta_phi'] = delta_phi[0]
+			optimization_data['color_delta_phi'] = delta_phi[1]
+			optimization_data['spatial_delta_phi'] = delta_phi[2]
 
-	def calc_delta_phi(self, Q, reward, V):
+
+		return optimization_data
+
+	def calc_attention_regret(self, Q, reward, V):
 		return V-Q
 
 
@@ -250,7 +265,7 @@ class UABMALearner(MALearner):
 
 
 class MALearnerSimple(MALearner):
-	def calc_delta_phi(self, Q, reward, V):
+	def calc_attention_regret(self, Q, reward, V):
 		return V-reward
 
 

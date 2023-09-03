@@ -10,7 +10,7 @@ import fitting.fitting_utils as fitting_utils
 from Dashboard import Dashboard
 from fitting.FittingStats import FittingStats
 from rewardtype import RewardType
-
+import json
 
 def PlusMazeExperimentFitting(env: PlusMaze, agent: MotivatedAgent, experiment_data, dashboard=False):
 
@@ -25,6 +25,7 @@ def PlusMazeExperimentFitting(env: PlusMaze, agent: MotivatedAgent, experiment_d
     fitting_info['model_variables'] = np.nan
     fitting_info['stimuli_value'] = np.nan
     fitting_info['action_bias'] = np.nan
+    fitting_info['optimization_data'] = np.nan
     env.reset()
     stats = FittingStats(metadata={'brain': str(agent.get_brain()),
                                 'network': str(agent.get_brain().get_model()),
@@ -79,22 +80,24 @@ def PlusMazeExperimentFitting(env: PlusMaze, agent: MotivatedAgent, experiment_d
                                                                                                                       fitting_info.iloc[trial])
             model_action_dists = np.append(model_action_dists, np.expand_dims(model_action_dist, axis=0), axis=0)
 
-            fitting_info.at[trial,'likelihood'] = np.round(likelihood,4)
+            fitting_info.at[trial, 'likelihood'] = np.round(likelihood,4)
             fitting_info.at[trial, 'model_action_dist'] = np.round(model_action_dist,3)
             fitting_info.at[trial, 'model_action'] = model_action
             fitting_info.at[trial, 'model_reward'] = 0 if model_action_outcome == RewardType.NONE else 1
             fitting_info.at[trial, 'model_reward_value'] = agent.evaluate_outcome(model_action_outcome)
-            fitting_info.at[trial, 'model_variables'] = agent.get_brain().get_model().get_model_metrics()
+            fitting_info.at[trial, 'model_variables'] = json.dumps(agent.get_brain().get_model().get_model_metrics())
 
             curr_state = np.expand_dims(agent.get_memory().last(1)[0][0], axis=0)
             action = np.argmax(agent.get_memory().last(1)[0][1])
             fitting_info.at[trial, 'stimuli_value'] = agent.get_brain().get_model().get_observations_values(curr_state, agent.get_motivation())[0][action]
             fitting_info.at[trial, 'action_bias'] = agent.get_brain().get_model().get_bias_values(agent.get_motivation())[action]
 
+            optimization_data = agent.smarten()
 
-            loss = agent.smarten()
+            fitting_info.at[trial, 'optimization_data'] = json.dumps(optimization_data)
 
         trial += 1
+
     print("Likelihood - Average:{}, Median:{}".format(np.mean(fitting_info.likelihood), np.median(fitting_info.likelihood)))
     stats.metadata['experiment_status'] = ExperimentStatus.COMPLETED
     return stats, fitting_info

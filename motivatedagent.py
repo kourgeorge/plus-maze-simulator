@@ -5,11 +5,10 @@ from ReplayMemory import ReplayMemory
 from brains.abstractbrain import AbstractBrain
 from rewardtype import RewardType
 import numpy as np
-import torch
 
 
 class MotivatedAgent:
-    def __init__(self, brain: AbstractBrain, memory_size=10000, motivation=1,
+    def __init__(self, brain: AbstractBrain, memory_size=10000, motivation=RewardType.NONE,
                  motivated_reward_value=1, non_motivated_reward_value=0.3, exploration_param=0.2):
 
         self._brain = brain
@@ -37,6 +36,8 @@ class MotivatedAgent:
     def evaluate_outcome(self, outcome):
         if outcome == RewardType.NONE:
             return 0
+        if self._motivation == RewardType.NONE:  # If no specific motivation is set, any reward is evaluated as 1
+            return 1 if outcome != RewardType.NONE else 0
         return self._motivated_reward_value if outcome == self._motivation else self._non_motivated_reward_value
 
     def add_experience(self, *experience):

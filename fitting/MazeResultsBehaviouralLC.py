@@ -4,7 +4,7 @@ import json
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-import pingouin
+#import pingouin
 import scipy
 import seaborn as sns
 import statsmodels.api as sm
@@ -13,11 +13,10 @@ from statsmodels.formula.api import ols
 
 import utils
 from fitting import fitting_utils
-from fitting.fitting_utils import stable_unique, rename_models, models_order_df
+from fitting.fitting_utils import stable_unique, rename_models, models_order_df, despine, dilute_xticks, unbox_model_variables, index_days
 
 plt.rcParams.update({'font.size': 12})
 
-#stages = ['ODOR1', 'ODOR2', 'LED']
 stages = ['Initial', 'IDS', 'MS', 'MS+IDS', 'EDS (Spatial)']
 num_days_reported = [8, 2, 4, 2, 2]
 
@@ -51,43 +50,17 @@ def two_way_anova(df, target, c1, c2):
 	result = sm.stats.anova_lm(model, type=2)
 	print(result)
 
-def despine(axis):
-	axis.spines['top'].set_visible(False)
-	axis.spines['right'].set_visible(False)
-
-
-def dilute_xticks(axis, k=2):
-	ticks = ["{}".format(int(x._text[2:])) if (int(x._text[2:]) - 1) % k == 0 else "" for ind, x in enumerate(axis.get_xticklabels())]
-	axis.set_xticklabels(ticks)
 
 def filter_days(df):
 	for ind, stage in enumerate(stages):
 		df = df[~((df.stage == ind+1) & (df['day in stage'] > num_days_reported[ind]))]
 	return df
 
+
 def extract_model_name_type(df):
 	df['model_type'] = df.model.apply(lambda x: x.split('-')[-1])
 	df['model_struct'] = df.model.apply(lambda x: 'm' if len(x.split('-')) == 1 else '-'.join(x.split('-')[:-1])+'-m')
 	return df
-
-
-def index_days(df):
-	df['ind'] = df.apply(lambda x:str(x.stage)+'.'+str(x['day in stage']), axis='columns')
-
-	def compare(x, y):
-		if int(x[0]) < int(y[0]):
-			return -1
-		elif int(x[0]) > int(y[0]):
-			return 1
-		elif int(x[2:]) < int(y[2:]):
-			return -1
-		else:
-			return 1
-
-	order = sorted(np.unique(df['ind']), key=functools.cmp_to_key(compare))
-	transition = [i for i in range(1, len(order)) if order[i][0] != order[i - 1][0]]
-
-	return df, order, transition
 
 
 def calculate_goal_choice(df):
@@ -129,21 +102,7 @@ def unbox_parameters(df, params):
 	return df
 
 
-def unbox_model_variables(df_model):
-	# format the model_variables entry
-	df_model['model_variables'] = df_model['model_variables'].apply(lambda s: s.replace("\'", "\""))
-	df_model['model_variables'] = df_model['model_variables'].apply(json.loads)
 
-	variables_names = df_model['model_variables'].tolist()[0].keys()
-	df_variables = pd.DataFrame(df_model['model_variables'].tolist())
-
-	df_no = df_model.drop('model_variables', axis=1).reset_index()
-	df_model = pd.concat([df_no, df_variables], axis=1)
-
-	# df_model = df_model.groupby(['subject', 'model', 'parameters', 'stage', 'day in stage', 'ind'],
-	# 							sort=False).mean().reset_index()
-
-	return df_model, variables_names
 
 ####################################################################
 ###################### Behavioural Statistics ######################
@@ -170,7 +129,7 @@ def goal_choice_index(data_file_path, simulations=False):
 
 	axis.set_ylim([-1, 1])
 	despine(axis)
-	dilute_xticks(axis,2)
+	utils.dilute_xticks(axis,2)
 	axis.set_ylabel('Goal Choice Index')
 	axis.set_xlabel('Training Day in Stage')
 
@@ -252,7 +211,7 @@ def water_food_correct(data_file_path, initial_motivation='water'):
 	trials_in_day['total_trials'] = trials_in_day['trial']
 	trials_in_day.drop(['trial'], axis=1, inplace=True)
 
-	dilute_xticks(axis,2)
+	utils.dilute_xticks(axis,2)
 
 	for stage_day in tr:
 		axis.axvline(x=stage_day - 0.5, alpha=0.5, dashes=(5, 2, 1, 2), lw=2, color='gray')
@@ -905,7 +864,7 @@ def bias_effect_nmr(data_file_path):
 def model_parameters_development(data_file_path, show_per_subject=False):
 	plt.rcParams.update({'font.size': 14})
 	df_all = pd.read_csv(data_file_path)
-	df = df_all[['subject', 'model', 'parameters', 'stage', 'day in stage', 'trial', 'model_variables', 'likelihood']].copy()
+	df = df_all[['subject', 'model', 'parameters', 'stage', 'day in stage', 'trial', 'optimization_data','model_variables', 'likelihood']].copy()
 
 	df = df[df['model_variables'].notna()].reset_index()
 	df, order, st = index_days(df)
@@ -921,6 +880,7 @@ def model_parameters_development(data_file_path, show_per_subject=False):
 
 		df_model, variables_names= unbox_model_variables(df_model)
 
+		#df_model = df_model.groupby(['ind', 'subject', 'stage', 'day in stage']).mean(numeric_only=True).reset_index()
 
 		variables_names = [name for name in list(variables_names) if 'none' not in name]
 		#variables_names.remove('none')

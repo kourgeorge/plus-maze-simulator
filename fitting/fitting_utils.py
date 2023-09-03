@@ -1,5 +1,7 @@
 __author__ = 'gkour'
 
+import functools
+import json
 import os
 import sys
 import numpy as np
@@ -60,7 +62,7 @@ def episode_rollout_on_real_data(env: PlusMazeOneHotCues, agent: MotivatedAgent,
 	return steps, total_reward, act_dist, model_action_dist, info.model_action+1, likelihood, model_action_outcome
 
 
-def run_model_on_animal_data(env, rat_data, model_arch, parameters, initial_motivation=RewardType.WATER, silent=True):
+def run_model_on_animal_data(env, rat_data, model_arch, parameters, initial_motivation=RewardType.NONE, silent=True):
 	if initial_motivation is None:
 		initial_motivation = RewardType(rat_data.iloc[0].initial_motivation)
 	(brain, learner, model) = model_arch
@@ -70,11 +72,12 @@ def run_model_on_animal_data(env, rat_data, model_arch, parameters, initial_moti
 		(beta, lr, attention_lr) = parameters
 		learner_instance = learner(model_instance, learning_rate=lr, alpha_phi=attention_lr)
 	else:
-		(nmr, beta, lr, bias_lr) = parameters
+		(beta, lr, bias_lr) = parameters
 		learner_instance = learner(model_instance, learning_rate=lr, alpha_bias=bias_lr)
 
 	if silent: blockPrint()
 
+	nmr=0
 	env.init()
 	agent = MotivatedAgent(brain(learner_instance, beta=beta),
 						   motivation=initial_motivation, motivated_reward_value=config.MOTIVATED_REWARD,
@@ -208,3 +211,52 @@ def add_correct_door(df):
 
 	df['model_reward_dist'] = df['model_reward_dist'].astype(float)
 	return df
+
+
+def unbox_model_variables(df_model, columns=['model_variables']):
+	# format the model_variables entry
+
+	unboxed_variable_names = []
+	for column in columns:
+		df_model[column] = df_model[column].apply(lambda s: s.replace("\'", "\""))
+		df_model[column] = df_model[column].apply(json.loads)
+
+		variables_names = list(df_model[column].tolist()[0].keys())
+		unboxed_variable_names+=variables_names
+		df_variables = pd.DataFrame(df_model[column].tolist())
+
+		df_no = df_model.drop(column, axis=1).reset_index(drop=True)
+		df_model = pd.concat([df_no, df_variables], axis=1)
+
+	# df_model = df_model.groupby(['subject', 'model', 'parameters', 'stage', 'day in stage', 'ind'],
+	# 							sort=False).mean().reset_index()
+
+	return df_model, unboxed_variable_names
+
+
+def index_days(df):
+	df['ind'] = df.apply(lambda x:str(x.stage)+'.'+str(x['day in stage']), axis='columns')
+
+	def compare(x, y):
+		if int(x[0]) < int(y[0]):
+			return -1
+		elif int(x[0]) > int(y[0]):
+			return 1
+		elif int(x[2:]) < int(y[2:]):
+			return -1
+		else:
+			return 1
+
+	order = sorted(np.unique(df['ind']), key=functools.cmp_to_key(compare))
+	transition = [i for i in range(1, len(order)) if order[i][0] != order[i - 1][0]]
+
+	return df, order, transition
+
+def despine(axis):
+    axis.spines['top'].set_visible(False)
+    axis.spines['right'].set_visible(False)
+
+
+def dilute_xticks(axis, k=2):
+	ticks = ["{}".format(int(x._text[2:])) if (int(x._text[2:]) - 1) % k == 0 else "" for ind, x in enumerate(axis.get_xticklabels())]
+	axis.set_xticklabels(ticks)

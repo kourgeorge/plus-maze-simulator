@@ -7,7 +7,7 @@ import functools
 
 import utils
 from fitting import fitting_utils
-from fitting.fitting_utils import stable_unique, rename_models, models_order_df
+from fitting.fitting_utils import stable_unique, rename_models, models_order_df, despine, dilute_xticks
 from matplotlib.ticker import MaxNLocator
 import seaborn as sns
 import json
@@ -22,9 +22,11 @@ stages = ['ODOR1', 'ODOR2', 'LED']
 num_days_reported = [4, 2, 7]
 
 
-def despine(axis):
-    axis.spines['top'].set_visible(False)
-    axis.spines['right'].set_visible(False)
+def filter_days(df):
+	for ind, stage in enumerate(stages):
+		df = df[~((df.stage == ind+1) & (df['day in stage'] > num_days_reported[ind]))]
+	return df
+
 
 
 def models_fitting_quality_over_times_average(data_file_path):
@@ -519,8 +521,8 @@ def stage_transition_model_quality(data_file_path):
     axis1.set_xticklabels(stages[:2])
     axis2.set_xticklabels(stages[1:])
 
-    despine(axis1)
-    despine(axis2)
+    fitting_utils.despine(axis1)
+    fitting_utils.despine(axis2)
 
     plt.savefig('fitting/Results/figures/stage_transition_{}.svg'.format(utils.get_timestamp()))
 
@@ -703,6 +705,125 @@ def model_parameters_development(data_file_path):
 
     x = 1
 
+
+def model_parameters_development2(data_file_path, show_per_subject=False):
+    plt.rcParams.update({'font.size': 14})
+    df_all = pd.read_csv(data_file_path)
+    df = df_all[
+        ['subject', 'model', 'parameters', 'stage', 'day in stage', 'trial', 'optimization_data', 'model_variables',
+         'likelihood']].copy()
+
+    df = df[df['model_variables'].notna()].reset_index()
+    df, order, st = fitting_utils.index_days(df)
+    df = rename_models(df)
+    df = filter_days(df)
+
+    # this is needed because there is no good way to order the x-axis in lineplot.
+    df.sort_values('ind', axis=0, ascending=True, inplace=True)
+
+    for model in np.unique(df.model):  # ['AARL','ACLNet2']:
+        df_model = df[df.model == model]
+        df, order, st = fitting_utils.index_days(df)
+
+        df_model, variables_names = fitting_utils.unbox_model_variables(df_model, columns=['model_variables',
+                                                                                           'optimization_data'])
+        # df_model, variables_names = unbox_model_variables(df_model, column='optimization_data')
+
+        # df_model = df_model.groupby(['ind', 'subject', 'stage', 'day in stage']).mean(numeric_only=True).reset_index()
+
+        variables_names = [name for name in list(variables_names) if 'none' not in name]
+        #
+        # variables_names = variables_names[:3]
+        # variables_names.remove('none')
+        fig = plt.figure(figsize=(7, 3), dpi=120, facecolor='w')
+        sns.set_palette("colorblind", n_colors=5)
+        # axis = sns.lineplot(x="ind", y='delta', data=df_model, errorbar="se", err_style='band', marker='o')
+
+        # for var_names in [['delta'],['Q'],['odor_delta_phi', 'color_delta_phi', 'spatial_delta_phi'],
+        # 				  ['odor_V', 'color_V', 'spatial_V'],
+        # 				  ['odor_regret','color_regret', 'spatial_regret']]:
+        # for var_names in [['odor_weight','color_weight','spatial_weight'],
+        # 				  ['odor_importance','color_importance','spatial_importance']]:
+
+        df_odor_rpe = df_model[(df_model['stage'] == 3) & (df_model['day in stage'] > 3)]
+        df_odor_rpe['var'] = df_odor_rpe.apply(lambda row: row['day in stage'] * 100 + row['trial'] - 400, axis=1)
+        sns.scatterplot(data=df_odor_rpe, x='delta', y='odor_regret', hue='subject')
+
+        for var_names in [['odor_regret', 'color_regret'], ['odor_V', 'color_V', 'spatial_V', 'Q']]:
+            fig = plt.figure(figsize=(7, 3), dpi=120, facecolor='w')
+            sns.set_palette("colorblind", n_colors=5)
+            axis = fig.add_subplot(111)
+            for variable_name in var_names:
+                axis = sns.lineplot(x="ind", y=variable_name, data=df_model, errorbar="se", err_style='band', ax=axis,
+                                    label=variable_name.split('_')[0], marker='o')
+            # axis.legend([], [], frameon=False)
+
+            for stage_day in st:
+                axis.axvline(x=stage_day - 0.5, alpha=0.5, dashes=(5, 2, 1, 2), lw=2, color='gray')
+
+            axis.axhline(y=0, alpha=0.7, lw=1, color='grey', linestyle='-')
+
+            fitting_utils.despine(axis)
+            dilute_xticks(axis, 1)
+
+            plt.xlabel('Day in Stage. n={}'.format(len(np.unique(df_model.subject))))
+            # plt.ylabel('Action Bias Norm')
+
+            # axis.text(0.01, 0.5, 'Bias to Food Arms', va='center', rotation='vertical')
+
+            plt.title(model)
+
+            plt.savefig('/Users/georgekour/Desktop/paper_figures/{}_{}.pdf'.format(var_names[0], utils.get_timestamp()))
+
+        #
+        # handles, labels = axis.get_legend_handles_labels()
+        # plt.legend(handles, labels, loc="upper left", prop={'size': 16}, labelspacing=0.2)
+        # plt.subplots_adjust(left=0.12, bottom=0.15, right=0.97, top=0.9, wspace=0.2, hspace=0.4)
+
+        handles, labels = axis.get_legend_handles_labels()
+        # axis.legend(handles, ['Water', 'Food'], loc='upper left', prop={'size': 16}, labelspacing=0.4)
+        plt.subplots_adjust(left=0.14, bottom=0.2, right=0.99, top=0.9, wspace=0.2, hspace=0.8)
+
+        plt.savefig('fitting/Results/paper_figures/attention_{}.pdf'.format(utils.get_timestamp()))
+
+        # if show_per_subject:
+        # 	plt.rcParams.update({'font.size': 10})
+        # 	fig = plt.figure(figsize=(12, 5), dpi=120, facecolor='w')
+        # 	animals_ind = np.unique(df_model.subject)
+        # 	for i, subject in enumerate(animals_ind):
+        #
+        # 		df_sub = df_model[df_model.subject == subject]
+        # 		axis = fig.add_subplot(int(np.ceil(len(animals_ind)/5)), 5, i+1)
+        #
+        # 		_, order, st_s = index_days(df_sub)
+        #
+        # 		for variable_name in variables_names:
+        # 			axis = sns.lineplot(x="ind", y=variable_name, data=df_sub, errorbar="se", err_style='band', ax=axis, label=variable_name.split('_')[0])
+        #
+        # 		for stage_day in st_s:
+        # 			axis.axvline(x=stage_day - 0.5, alpha=0.5, dashes=(5, 2, 1, 2), lw=2, color='gray')
+        #
+        # 		axis.legend([], [], frameon=False)
+        # 		despine(axis)
+        # 		axis.axhline(y=0, alpha=0.7, lw=1, color='grey', linestyle='-')
+        #
+        # 		params_list = np.round(fitting_utils.string2list(df_sub.parameters.tolist()[0]),3)
+        # 		#axis.set_title('S{}: {}'.format(subject, params_list))
+        #
+        # 		axis.set_xlabel('Training Day in Stage') if i > len(animals_ind)-3 else axis.set_xlabel('')
+        # 		axis.set_ylabel('') #axis.set_ylabel("Attention") if i % 2 == 0 else axis.set_ylabel('')
+        # 		plt.tick_params(axis='both', which='major', labelsize=9)
+        #
+        # 		dilute_xticks(axis,2)
+        #
+        # 	plt.suptitle(model)
+        # 	fig.text(0.01, 0.5, 'Bias to Food Arms', va='center', rotation='vertical')
+        # 	plt.subplots_adjust(left=0.06, bottom=0.07, right=0.99, top=0.90, wspace=0.2, hspace=0.8)
+        #
+        # 	handles, labels = axis.get_legend_handles_labels()
+        # 	fig.legend(handles, ['Water Motivation', 'Food Motivation'], loc="upper left", prop={'size': 10}, labelspacing=0.2)
+
+        x = 1
 
 def average_likelihood(data_file_path):
     df = pd.read_csv(data_file_path)

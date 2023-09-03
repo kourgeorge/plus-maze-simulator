@@ -33,7 +33,6 @@ class TDBrain(AbstractBrain):
         if minibatch_size == 0:
             return
 
-        losses = []
         for _ in range(replays):
             minibatch = memory.last(minibatch_size)
             state_batch = np.stack([np.stack(data[0]) for data in minibatch])
@@ -44,9 +43,10 @@ class TDBrain(AbstractBrain):
 
             action_values = self.think(state_batch, agent)
 
-            losses += [self.learner.learn(state_batch, action_batch, reward_batch, action_values, nextstate_batch, agent.get_motivation())]
+            optimization_data = self.learner.learn(state_batch, action_batch, reward_batch, action_values, nextstate_batch,
+                               agent.get_motivation())
 
-        return np.mean(losses)
+        return optimization_data
 
     def num_trainable_parameters(self):
         return 0

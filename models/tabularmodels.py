@@ -348,9 +348,12 @@ class ACFTable(FTable):
 	def get_model_metrics(self):
 		# print("odor:{}\ncolor:{},\nspatial:{}".format(self.V['odors'], self.V['colors'], self.V['spatial']))
 		phi = utils.softmax(self.phi)
-		return {'odor_attn': phi[0],
-				'color_attn': phi[1],
-				'spatial_attn': phi[2],
+		return {'odor_importance': self.phi[0],
+				'color_importance': self.phi[1],
+				'spatial_importance': self.phi[2],
+				'odor_weight': phi[0],
+				'color_weight': phi[1],
+				'spatial_weight': phi[2],
 				}
 
 	def get_model_diff(self, brain2):
