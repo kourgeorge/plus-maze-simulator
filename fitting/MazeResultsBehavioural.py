@@ -19,7 +19,7 @@ mpl.rcParams['pdf.fonttype'] = 42
 plt.rcParams.update({'font.size': 16})
 
 stages = ['ODOR1', 'ODOR2', 'LED']
-num_days_reported = [4, 2, 7]
+num_days_reported = [4, 2, 9]
 
 
 def filter_days(df):
@@ -704,6 +704,68 @@ def model_parameters_development(data_file_path):
     fig.legend(handles, labels, loc=(0.1, 0.9), prop={'size': 11}, labelspacing=0.2)
 
     x = 1
+
+
+def investigate_regret_delta_relationship(data_file_path):
+    plt.rcParams.update({'font.size': 14})
+    df_all = pd.read_csv(data_file_path)
+    df = df_all[
+        ['subject', 'model', 'parameters', 'stage', 'day in stage', 'trial', 'optimization_data', 'model_variables',
+         'likelihood']].copy()
+
+    df = df[df['model_variables'].notna()].reset_index()
+    df, order, st = fitting_utils.index_days(df)
+    df = rename_models(df)
+    df = filter_days(df)
+
+    # this is needed because there is no good way to order the x-axis in lineplot.
+    df.sort_values('ind', axis=0, ascending=True, inplace=True)
+
+    df_model = df[df.model == 'AARL']
+    df, order, st = fitting_utils.index_days(df)
+
+    df_model, variables_names = fitting_utils.unbox_model_variables(df_model, columns=['model_variables',
+                                                                                       'optimization_data'])
+
+    fig = plt.figure(figsize=(7, 3), dpi=120, facecolor='w')
+    sns.set_palette("colorblind", n_colors=5)
+
+    df_model['subject'] = df_model['subject'].astype(str)
+
+    # fig = plt.figure(figsize=(7, 3), dpi=120, facecolor='w')
+    fig, axes = plt.subplots(3, 3, figsize=(20, 9))
+
+    palette = sns.color_palette("husl", 9)
+
+    for i,stage in enumerate([1,2,3]):
+        for j, dimension in enumerate(["odor_regret", "color_regret", "spatial_regret"]):
+            relevant_stage_days = df_model[(df_model['stage'] == stage) & (df_model['day in stage'] < 10)]
+            relevant_stage_days['var'] = relevant_stage_days.apply(lambda row: row['day in stage'] * 100 + row['trial'] - 400, axis=1)
+            sns.scatterplot(data=relevant_stage_days, x='delta', y=dimension, hue='ind', palette=palette, ax=axes[j][i], alpha=0.3)
+            #sns.scatterplot(data=relevant_stage_days, x='delta', y='odor_regret', hue='subject', hue_order=[str(i) for i in range(0,8)])
+            axes[j][i].legend([], [], frameon=False)
+
+            axes[j][i].set_xlim([-0.6,1.1])
+            axes[j][i].set_ylim([-1.2, 0.7])
+
+            axes[j][i].set_yticklabels(['']) if i % 3 != 0 else 0
+            axes[j][i].set_xticklabels(['']) if j <2 != 0 else 0
+            axes[j][i].set_xlabel('delta') if j > 1 else axes[j][i].set_xlabel('')
+            axes[j][i].set_ylabel('') if i > 0 else 0
+
+            fitting_utils.despine(axes[j][i])
+            axes[j][i].axhline(y=0, alpha=0.7, lw=0.7, color='grey', linestyle='--')
+            axes[j][i].axvline(x=0, alpha=0.7, lw=0.7, color='grey', linestyle='--')
+
+
+    handles, labels = axes[2][2].get_legend_handles_labels()
+    fig.legend(handles, list(range(1,10)), loc="upper right", prop={'size': 16}, labelspacing=0.2)
+    plt.subplots_adjust(left=0.05, bottom=0.1, right=0.99, top=0.8, wspace=0.1, hspace=0.4)
+    plt.tight_layout()
+
+    plt.show()
+
+    # plt.savefig('fitting/Results/paper_figures/attention_{}.pdf'.format(utils.get_timestamp()))
 
 
 def model_parameters_development2(data_file_path, show_per_subject=False):
