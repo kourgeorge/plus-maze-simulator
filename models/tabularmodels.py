@@ -68,7 +68,7 @@ class QTable(AbstractTabularModel):
 		super().__init__()
 		self._num_actions = num_actions
 		self.Q = defaultdict(lambda: initial_value * np.ones(self._num_actions))
-		self.action_bias = {'water': np.zeros(self._num_actions), 'food': np.zeros(self._num_actions)}
+		self.action_bias = {'water': np.zeros(self._num_actions), 'food': np.zeros(self._num_actions), 'none':np.zeros(self._num_actions)}
 		self.encoding_size = encoding_size
 
 	def __call__(self, *args, **kwargs):
@@ -129,7 +129,7 @@ class OptionsTable(AbstractTabularModel):
 		self._num_actions = num_actions
 		self.C = defaultdict(lambda: float(
 			initial_value))  # familiar options are stored as tupples (color, odor and possibly, location).
-		self.action_bias = {'water': np.zeros(self._num_actions), 'food': np.zeros(self._num_actions)}
+		self.action_bias = {'water': np.zeros(self._num_actions), 'food': np.zeros(self._num_actions), 'none': np.zeros(self._num_actions)}
 		self.encoding_size = encoding_size
 		self.use_location_cue = use_location_cue
 
@@ -249,12 +249,12 @@ class FTable(AbstractTabularModel):
 		return self.Q[RewardType.NONE.value][dimension][feature]
 
 	def set_stimulus_value(self, dimension, feature, motivation, new_value):
-		self.Q[RewardType.NONE.value][dimension][feature] = new_value
+		self.Q[motivation][dimension][feature] = new_value
 
 	def update_stimulus_value(self, dimension, feature, motivation, delta):
 		#if dimension=='odors':
 			#print('{}:{:.2},{:.2}'.format(feature, self.Q[RewardType.NONE.value][dimension][feature], self.Q[RewardType.NONE.value][dimension][feature] + delta))
-		self.Q[RewardType.NONE.value][dimension][feature] += delta
+		self.Q[motivation.value][dimension][feature] += delta
 
 	def get_model_metrics(self):
 		flattened_biases_values = utils.flatten_dict(self.action_bias)
@@ -361,10 +361,10 @@ class ACFTable(FTable):
 				'color_attn_diff': self.phi[1] - brain2.phi[1],
 				'spatial_attn_diff': self.phi[2] - brain2.phi[2], }
 
-	def new_stimuli_context(self):
-		self.Q['odors'] = self.initial_value * np.ones([self.encoding_size + 1])
-		self.Q['colors'] = self.initial_value * np.ones([self.encoding_size + 1])
-		self.Q['spatial'] = self.initial_value * np.ones([4])
+	def new_stimuli_context(self, motivation):
+		self.Q[motivation]['odors'] = self.initial_value * np.ones([self.encoding_size + 1])
+		self.Q[motivation]['colors'] = self.initial_value * np.ones([self.encoding_size + 1])
+		self.Q[motivation]['spatial'] = self.initial_value * np.ones([4])
 
 
 class PCFTable(ACFTable):

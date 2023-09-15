@@ -94,10 +94,10 @@ def episode_rollout(env, agent):
 	action = agent.decide(state)
 	dec_1hot = np.zeros(env.num_actions())
 	dec_1hot[action] = 1
-	new_state, outcome, terminated, info = env.step(action)
+	new_state, outcome, terminated, correct_door,info = env.step(action)
 	reward = agent.evaluate_outcome(outcome)
 	agent.add_experience(state, dec_1hot, reward, outcome, new_state, terminated, info)
-	return state, action_dist, action, outcome, reward
+	return state, action_dist, action, outcome, reward, correct_door
 
 
 def negentropy(dist, temperature = 1):

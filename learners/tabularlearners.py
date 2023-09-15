@@ -23,7 +23,7 @@ class QLearner(AbstractLearner):
 
 		self.model.set_actual_state_value(state_batch, actions, updated_q_values, motivation)
 
-		return deltas
+		return {'deltas':deltas[0]}
 
 
 class ABQLearner(QLearner):
@@ -60,8 +60,10 @@ class UABQLearner(QLearner):
 
 
 class IALearner(AbstractLearner):
+	"""Immutable Attention Learner"""
 	def __init__(self, model: FTable, learning_rate=0.01, *args, **kwargs):
 		super().__init__(model=model, optimizer={'learning_rate': learning_rate})
+		self.learning_rate = learning_rate
 
 	def learn(self, state_batch, action_batch, reward_batch, action_values, nextstate_batch, motivation):
 
@@ -80,16 +82,21 @@ class IALearner(AbstractLearner):
 		delta = (reward_batch - selected_action_value)
 		selected_odors, selected_colors = self.model.get_selected_door_stimuli(state_batch, actions)
 
-		#phi = utils.softmax(self.model.phi) if isinstance(self.model, ACFTable) else [1/3, 1/3, 1/3]
-		phi = self.model.phi if isinstance(self.model, ACFTable) else [1, 1, 1]
+		phi = utils.softmax(self.model.phi) if isinstance(self.model, ACFTable) else [1/3, 1/3, 1/3]
+		#phi = self.model.phi if isinstance(self.model, ACFTable) else [1, 1, 1]
 		for odor in set(np.unique(selected_odors)).difference([self.model.encoding_size]):
 			self.model.update_stimulus_value('odors', odor, motivation, learning_rate * phi[0] * np.nanmean(delta[selected_odors == odor]))
 		for color in set(np.unique(selected_colors)).difference([self.model.encoding_size]):
-			self.model.update_stimulus_value('colors',color,motivation, learning_rate * phi[1] * np.nanmean(delta[selected_colors == color]))
+			self.model.update_stimulus_value('colors', color, motivation, learning_rate * phi[1] * np.nanmean(delta[selected_colors == color]))
 		for door in np.unique(actions):
-			self.model.update_stimulus_value('spatial',door,motivation, learning_rate * phi[2] * np.nanmean(delta[actions == door]))
+			self.model.update_stimulus_value('spatial', door, motivation, learning_rate * phi[2] * np.nanmean(delta[actions == door]))
 
-		return delta
+		return {"deltas": delta[0]}
+
+	def get_parameters(self):
+		return {
+			'learning_rate': self.learning_rate
+		}
 
 
 class ABIALearner(IALearner):
@@ -184,6 +191,7 @@ class IAAluisiLearner(AbstractLearner):
 
 
 class MALearner(IALearner):
+	"""Mutable Attention Learner"""
 	def __init__(self, model:ACFTable, alpha_phi=0.005, *args, **kwargs):
 		super().__init__(model, *args, **kwargs)
 		self.alpha_phi = alpha_phi
@@ -210,6 +218,7 @@ class MALearner(IALearner):
 			attention_regret = self.calc_attention_regret(choice_value, reward, V)
 
 			self.model.phi += self.alpha_phi * delta * phi_s * attention_regret
+			#print(f"delta_phi_total:{np.sum(delta * phi_s * attention_regret)}")
 			delta_phi = delta * phi_s * attention_regret
 
 			optimization_data['delta'] = delta
