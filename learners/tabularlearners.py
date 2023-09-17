@@ -23,7 +23,7 @@ class QLearner(AbstractLearner):
 
 		self.model.set_actual_state_value(state_batch, actions, updated_q_values, motivation)
 
-		return {'deltas':deltas[0]}
+		return {'delta':deltas[0]}
 
 
 class ABQLearner(QLearner):
@@ -91,7 +91,7 @@ class IALearner(AbstractLearner):
 		for door in np.unique(actions):
 			self.model.update_stimulus_value('spatial', door, motivation, learning_rate * phi[2] * np.nanmean(delta[actions == door]))
 
-		return {"deltas": delta[0]}
+		return {"delta": delta[0]}
 
 	def get_parameters(self):
 		return {
@@ -198,8 +198,6 @@ class MALearner(IALearner):
 
 	def learn(self, state_batch, action_batch, reward_batch, action_values, nextstate_batch, motivation):
 
-		super().learn(state_batch, action_batch, reward_batch, action_values, nextstate_batch, motivation)
-
 		actions = np.argmax(action_batch, axis=1)
 
 		all_action_values = self.model(state_batch, motivation)
@@ -211,28 +209,37 @@ class MALearner(IALearner):
 		phi_s = utils.softmax(self.model.phi)
 
 		optimization_data = {}
-		for choice_value, selected_odor, selected_color, selected_door, delta, reward in zip(selected_action_value, selected_odors, selected_colors, actions, deltas, reward_batch):
-			V = np.array([self.model.Q[motivation.value]['odors'][selected_odor],
-						  self.model.Q[motivation.value]['colors'][selected_color],
-						  self.model.Q[motivation.value]['spatial'][selected_door]])
+		delta_phi = np.empty((0, 3))
+		V = np.empty((0, 3))
+		regrets = np.empty((0, 3))
+
+		# Calculate the attention updates
+		for choice_value, selected_odor, selected_color, selected_door, delta, reward in \
+				zip(selected_action_value, selected_odors, selected_colors, actions, deltas, reward_batch):
+			V = np.vstack([V, [self.model.Q[motivation.value]['odors'][selected_odor],
+							   self.model.Q[motivation.value]['colors'][selected_color],
+							   self.model.Q[motivation.value]['spatial'][selected_door]]])
 			attention_regret = self.calc_attention_regret(choice_value, reward, V)
+			delta_phi = np.vstack([delta_phi, delta  * phi_s * attention_regret])
+			regrets = np.vstack([regrets, attention_regret])
 
-			self.model.phi += self.alpha_phi * delta * phi_s * attention_regret
-			#print(f"delta_phi_total:{np.sum(delta * phi_s * attention_regret)}")
-			delta_phi = delta * phi_s * attention_regret
+		# update values using old attentions
+		super().learn(state_batch, action_batch, reward_batch, action_values, nextstate_batch, motivation)
 
-			optimization_data['delta'] = delta
-			optimization_data['odor_regret'] = attention_regret[0]
-			optimization_data['color_regret'] = attention_regret[1]
-			optimization_data['spatial_regret'] = attention_regret[2]
-			optimization_data['Q'] = selected_action_value[0]
-			optimization_data['odor_V'] = V[0]
-			optimization_data['color_V'] = V[1]
-			optimization_data['spatial_V'] = V[2]
-			optimization_data['odor_delta_phi'] = delta_phi[0]
-			optimization_data['color_delta_phi'] = delta_phi[1]
-			optimization_data['spatial_delta_phi'] = delta_phi[2]
+		# update attention
+		self.model.phi += self.alpha_phi * np.mean(delta_phi, axis=0)
 
+		optimization_data['delta'] = np.mean(deltas)
+		optimization_data['odor_regret'] = np.mean(regrets[:,0])
+		optimization_data['color_regret'] = np.mean(regrets[:,1])
+		optimization_data['spatial_regret'] = np.mean(regrets[:,2])
+		optimization_data['Q'] = np.mean(selected_action_value)
+		optimization_data['odor_V'] = np.mean(V[:, 0])
+		optimization_data['color_V'] = np.mean(V[:, 1])
+		optimization_data['spatial_V'] = np.mean(V[:, 2])
+		optimization_data['odor_delta_phi'] = np.mean(delta_phi[:,0])
+		optimization_data['color_delta_phi'] = np.mean(delta_phi[:,1])
+		optimization_data['spatial_delta_phi'] = np.mean(delta_phi[:,2])
 
 		return optimization_data
 
