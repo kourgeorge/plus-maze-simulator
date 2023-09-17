@@ -56,9 +56,6 @@ def PlusMazeExperimentFitting(env: PlusMaze, agent: MotivatedAgent, experiment_d
     loss = 0
     while trial < len(fitting_info):
 
-        if should_pass_to_next_stage(fitting_info, trial):
-            env.set_next_stage(agent)
-
         if new_day(trial, fitting_info):
             stats.update_stats_from_agent(agent, trial, trial-last_day_reported_trial)
             pre_stage_transition_update()
@@ -67,7 +64,7 @@ def PlusMazeExperimentFitting(env: PlusMaze, agent: MotivatedAgent, experiment_d
 
             print(
                 'Trial: {}, Action Dist:{}, Corr.:{}, Rew.:{}, loss={};'.format(stats.epoch_stats_df['Trial'].to_numpy()[-1],
-                                                                                stats.epoch_stats_df['ActionDist'].to_numpy()[-1],
+                                                                                np.round(stats.epoch_stats_df['ActionDist'].to_numpy()[-1],2),
                                                                                 stats.epoch_stats_df['Correct'].to_numpy()[-1],
                                                                                 stats.epoch_stats_df['Reward'].to_numpy()[-1],
                                                                                 round(loss, 2)))
@@ -76,8 +73,13 @@ def PlusMazeExperimentFitting(env: PlusMaze, agent: MotivatedAgent, experiment_d
                 'WPI:{}, WC: {}, FC:{}'.format(stats.epoch_stats_df['WaterPreference'].to_numpy()[-1], stats.epoch_stats_df['WaterCorrect'].to_numpy()[-1],
                                                stats.epoch_stats_df['FoodCorrect'].to_numpy()[-1]))
 
+            if should_pass_to_next_stage(fitting_info, trial):
+                if hasattr(agent.get_brain().get_model(), 'phi'):
+                    print(agent.get_brain().get_model().phi)
+                env.set_next_stage(agent)
+
         if completed_trial(fitting_info, trial):
-            _, _, _, model_action_dist, model_action, likelihood, model_action_outcome = fitting_utils.episode_rollout_on_real_data(env, agent,
+            _, _, _, model_action_dist, model_action, correct_door, likelihood, model_action_outcome = fitting_utils.episode_rollout_on_real_data(env, agent,
                                                                                                                       fitting_info.iloc[trial])
             model_action_dists = np.append(model_action_dists, np.expand_dims(model_action_dist, axis=0), axis=0)
 
@@ -87,6 +89,7 @@ def PlusMazeExperimentFitting(env: PlusMaze, agent: MotivatedAgent, experiment_d
             fitting_info.at[trial, 'model_reward'] = 0 if model_action_outcome == RewardType.NONE else 1
             fitting_info.at[trial, 'model_reward_value'] = agent.evaluate_outcome(model_action_outcome)
             fitting_info.at[trial, 'model_variables'] = json.dumps(agent.get_brain().get_model().get_model_metrics())
+            fitting_info.at[trial, 'correct_door'] = correct_door
 
             curr_state = np.expand_dims(agent.get_memory().last(1)[0][0], axis=0)
             action = np.argmax(agent.get_memory().last(1)[0][1])
@@ -99,6 +102,8 @@ def PlusMazeExperimentFitting(env: PlusMaze, agent: MotivatedAgent, experiment_d
 
         trial += 1
 
+    if hasattr(agent.get_brain().get_model(), 'phi'):
+        print(agent.get_brain().get_model().phi)
     print("Likelihood - Average:{}, Median:{}".format(np.mean(fitting_info.likelihood), np.median(fitting_info.likelihood)))
     stats.metadata['experiment_status'] = ExperimentStatus.COMPLETED
     return stats, fitting_info

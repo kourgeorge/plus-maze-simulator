@@ -139,6 +139,7 @@ class PlusMaze:
 		self._light_cues = options
 
 	def set_relevant_cue(self, relevant_cue: CueType):
+		print(f'Set relevant Cues to {relevant_cue}')
 		self._relevant_cue = relevant_cue
 
 	def get_correct_cue_value(self):
@@ -308,12 +309,36 @@ class PlusMazeOneHotCues(PlusMaze):
 		return dict
 
 
-class PlusMazeOneHotCues2ActiveDoors(PlusMazeOneHotCues):
-	#stage_names = ['ODOR1', 'ODOR2', 'ODOR3', 'EDShift(Light)']
-	stage_names = ['ODOR1', 'ODOR2', 'LED']
 
-	def __init__(self, *args, **kwargs):
+class StagesTransition():
+	@staticmethod
+	def set_odor_stage(env:PlusMaze):
+		env.set_relevant_cue(CueType.ODOR)
+		env.set_random_odor_set()
+
+	@staticmethod
+	def set_color_stage(env:PlusMaze):
+		env.set_relevant_cue(CueType.LIGHT)
+		env.set_random_odor_set()
+		#env.set_random_light_set()
+
+
+class PlusMazeOneHotCues2ActiveDoors(PlusMazeOneHotCues):
+
+	default_stages = [{'name': 'Odor1', 'transition_logic': StagesTransition.set_odor_stage},
+		  {'name': 'Odor2', 'transition_logic': StagesTransition.set_odor_stage},
+		  {'name': 'LED', 'transition_logic': StagesTransition.set_color_stage}]
+
+	stage_names = [stage['name'] for stage in default_stages]
+
+	def __init__(self, stages=default_stages, *args, **kwargs):
 		super().__init__(*args, **kwargs)
+		self.stages = stages
+		PlusMazeOneHotCues2ActiveDoors.stage_names=[stage['name'] for stage in self.stages]
+
+	def init(self):
+		super(PlusMazeOneHotCues2ActiveDoors, self).init()
+		self.stages[0]['transition_logic'](self)
 
 	def set_state(self, state_info):
 		num_arms = 4
@@ -327,7 +352,6 @@ class PlusMazeOneHotCues2ActiveDoors(PlusMazeOneHotCues):
 
 		self._state = state
 		return state
-
 
 	def random_state(self):
 		active_doors = random.sample(range(0, 4), 2)
@@ -350,41 +374,29 @@ class PlusMazeOneHotCues2ActiveDoors(PlusMazeOneHotCues):
 
 	def step(self, action):
 		selected_cues = self._state[:, action, :]
+		comparison = np.all(self._state[self._relevant_cue.value,:,:] == self.get_correct_cue_value(), axis=1)
+		correct_door = np.where(comparison)[0][0]
 		self._state = np.ones(self.state_shape())
 		if (self._relevant_cue == CueType.SPATIAL and action in self._correct_spatial_cues) or \
 				(self._relevant_cue != CueType.SPATIAL and
 				 np.array_equal(selected_cues[self._relevant_cue.value, :], self.get_correct_cue_value())):
 			outcome = RewardType.WATER
-			return self._state, outcome, 1, self._get_step_info(outcome)
-		return self._state, RewardType.NONE, 1, self._get_step_info(RewardType.NONE)
+			return self._state, outcome, 1, correct_door, self._get_step_info(outcome)
+		return self._state, RewardType.NONE, 1, correct_door, self._get_step_info(RewardType.NONE)
 
 	def set_next_stage(self, agent: MotivatedAgent):
 		if isinstance(agent.get_brain().get_model(), FTable) or isinstance(agent.get_brain().get_model(), UANet):
-			agent.get_brain().get_model().new_stimuli_context()
+			agent.get_brain().get_model().new_stimuli_context(agent.get_motivation().value)
 
 		self.set_stage(self.get_stage() + 1)
-		print('---------------------------------------------------------------------')
-		if self.get_stage() == 1:
-			self.set_random_odor_set()
-			print(
-				"Stage {}: {} (Odors: {}, Correct:{})".format(self.get_stage(), self.stage_names[self.get_stage()],
-															  [np.argmax(encoding) for encoding in
-															   self.get_odor_cues()],
-															  np.argmax(self.get_correct_cue_value())))
-		# elif self.get_stage() == 2:
-		# 	self.set_random_odor_set()
-		# 	# env.set_relevant_cue(CueType.LIGHT)
-		# 	print(
-		# 		"Stage {}: {} (Odors: {}, Correct:{})".format(self.get_stage(), self.stage_names[self.get_stage()],
-		# 													  [np.argmax(encoding) for encoding in
-		# 													   self.get_odor_cues()],
-		# 													  np.argmax(self.get_correct_cue_value())))
 
-		elif self.get_stage() == 2:
-			self.set_relevant_cue(CueType.LIGHT)
-			self.set_random_odor_set()
-			print("Stage {}: {} (Lights: {}. Correct {})".format(self.get_stage(),
-																 self.stage_names[self.get_stage()],
-																 [np.argmax(encoding) for encoding in
-																  self.get_light_cues()],
-																 np.argmax(self.get_correct_cue_value())))
+		if self.get_stage()>=len(self.stage_names):
+			return
+		print('---------------------------------------------------------------------')
+
+		self.stages[self.get_stage()]["transition_logic"](self)
+		correct_cues = self.get_odor_cues() if 'Odor' in self.stages[self.get_stage()]['name'] else self.get_light_cues()
+
+		print("Stage {}: {} (Options: {}, Correct:{})".format(self.get_stage(), self.stages[self.get_stage()]['name'],
+														  [np.argmax(encoding) for encoding in correct_cues ],
+														  np.argmax(self.get_correct_cue_value())))

@@ -1,5 +1,7 @@
 __author__ = 'gkour'
 
+import json
+
 import pandas as pd
 
 from brains.consolidationbrain import ConsolidationBrain
@@ -60,7 +62,7 @@ def PlusMazeExperiment(env: PlusMaze, agent: MotivatedAgent, dashboard=False):
             return stats, experiment_data
 
         trial += 1
-        state, action_dist, action, outcome, reward = utils.episode_rollout(env, agent)
+        state, action_dist, action, outcome, reward, correct_door = utils.episode_rollout(env, agent)
         trial_dict = env.format_state(state)
 
         trial_dict['trial'] = trial % config.TRIALS_IN_DAY
@@ -70,9 +72,13 @@ def PlusMazeExperiment(env: PlusMaze, agent: MotivatedAgent, dashboard=False):
         trial_dict['day in stage'] = day_in_stage
         trial_dict['model_variables'] = agent.get_brain().get_model().get_model_metrics()
         #experiment_data = experiment_data.append(trial_dict, ignore_index=True)
+        optimization_data = agent.smarten()
+        trial_dict['optimization_data'] = json.dumps(optimization_data)
+        trial_dict['model'] = json.dumps(optimization_data)
+        trial_dict['model_action_dist'] = agent.get_brain().think(np.expand_dims(state, 0), agent).squeeze().detach().numpy()
+        trial_dict['correct_door'] = correct_door
         experiment_data = pd.concat([experiment_data, pd.DataFrame.from_records([trial_dict])])
 
-        loss = agent.smarten()
         if trial % config.TRIALS_IN_DAY == 0:
             day_in_stage += 1
             stats.update_stats_from_agent(agent, trial, config.TRIALS_IN_DAY)
@@ -83,7 +89,7 @@ def PlusMazeExperiment(env: PlusMaze, agent: MotivatedAgent, dashboard=False):
                                                                                 stats.epoch_stats_df['ActionDist'].to_numpy()[-1],
                                                                                 stats.epoch_stats_df['Correct'].to_numpy()[-1],
                                                                                 stats.epoch_stats_df['Reward'].to_numpy()[-1],
-                                                                                round(loss, 2)))
+                                                                                round(optimization_data['delta'], 2)))
 
             print(
                 'WPI:{}, WC: {}, FC:{}'.format(stats.epoch_stats_df['WaterPreference'].to_numpy()[-1], stats.epoch_stats_df['WaterCorrect'].to_numpy()[-1],
@@ -93,8 +99,8 @@ def PlusMazeExperiment(env: PlusMaze, agent: MotivatedAgent, dashboard=False):
             reward = np.mean(stats.reports[-1].reward)
             if current_criterion > config.SUCCESS_CRITERION_THRESHOLD:# and reward > 0.6:
                 day_in_stage = 0
-                # if hasattr(agent.get_brain().get_model(), 'phi'):
-                #     print(utils.softmax(agent.get_brain().get_model().phi))
+                if hasattr(agent.get_brain().get_model(), 'phi'):
+                    print(agent.get_brain().get_model().phi)
 
                 #print(torch.softmax(agent.get_brain().get_model().phi, axis=0))
                 env.set_next_stage(agent)
