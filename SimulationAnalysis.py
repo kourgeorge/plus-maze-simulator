@@ -1,15 +1,17 @@
 import pandas as pd
 import matplotlib.pyplot as plt
 
+import utils
 from fitting.MazeResultsBehaviouralLC import index_days, calculate_goal_choice, dilute_xticks, despine
 from fitting.fitting_utils import stable_unique, rename_models, models_order_df
 import seaborn as sns
 from environment import PlusMazeOneHotCues, PlusMazeOneHotCues2ActiveDoors
-
+import matplotlib as mpl
+mpl.rcParams['pdf.fonttype'] = 42
 
 
 stages = PlusMazeOneHotCues2ActiveDoors.stage_names
-stages = PlusMazeOneHotCues.stage_names
+#stages = PlusMazeOneHotCues.stage_names
 
 plt.rcParams.update({'font.size': 10})
 
@@ -18,18 +20,22 @@ def show_days_to_criterion(simulation_df):
 	df = df[['subject', 'model', 'stage', 'day in stage', 'trial', 'reward']].copy()
 
 	df = rename_models(df)
-
+	relevant_models = models_order_df(df)
+	df = df[df.model.isin(relevant_models)]
+	df['day in stage']=df['day in stage']+1
 	sns.set_palette('OrRd', n_colors=len(stages))
 	df = df.groupby(['subject', 'model', 'stage'], sort=False).agg({'day in stage': 'max'}).reset_index()
 	fig = plt.figure(figsize=(6.5, 3.5))
 	g1 = sns.barplot(x='model', y='day in stage', hue='stage', hue_order=list(range(1, len(stages)+1)),
-					 data=df, errorbar='se', errwidth=1, capsize=.05)
+					 data=df, errorbar='se', errwidth=1, capsize=.05, order=relevant_models)
 
 	g1.set(xlabel='', ylabel='Days Until Criterion')
 	handles, labels = g1.get_legend_handles_labels()
 	g1.legend(handles, stages, loc='upper left', prop={'size': 12}, labelspacing=0.2)
 
 	despine(g1)
+
+	plt.savefig('fitting/Results/figures/simulation_criterion_days_{}.pdf'.format(utils.get_timestamp()))
 
 
 def water_preference_index_model(data_file_path):
@@ -77,9 +83,10 @@ def water_preference_index_model(data_file_path):
 
 if __name__ == '__main__':
 
-	#show_days_to_criterion('/Users/gkour/repositories/plusmaze/fitting/Results/Rats-Results/reported_results_dimensional_shifting/all_data.csv')
+	# show_days_to_criterion('fitting/Results/Rats-Results/reported_results_dimensional_shifting/simulation_20_12_1.csv')
+	show_days_to_criterion('/Users/georgekour/repositories/plus-maze-simulator/fitting/Results/simulations_results/simulation_10_2023_09_17_12_40.csv')
 	#show_days_to_criterion('fitting/Results/simulations_results/simulation_ORL_0nmr.csv')
 	#goal_choice_index_model('/fitting/Results/simulations_results/simulation_FRL_0nmr.csv')
-	water_preference_index_model('/Users/gkour/repositories/plusmaze/fitting/Results/Rats-Results/reported_results_motivation_shifting/simulation_FRL_0nmr.csv')
+	#water_preference_index_model('fitting/Results/Rats-Results/reported_results_motivation_shifting/simulation_FRL_0nmr.csv')
 
 

@@ -260,3 +260,8 @@ def despine(axis):
 def dilute_xticks(axis, k=2):
 	ticks = ["{}".format(int(x._text[2:])) if (int(x._text[2:]) - 1) % k == 0 else "" for ind, x in enumerate(axis.get_xticklabels())]
 	axis.set_xticklabels(ticks)
+
+
+def extract_names_from_architecture(architecture_name):
+	learner, model = architecture_name.split('.')
+	return learner, model

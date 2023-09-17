@@ -6,7 +6,8 @@ from PlusMazeExperiment import PlusMazeExperiment, ExperimentStatus
 from behavioral_analysis import plot_days_per_stage, plot_behavior_results
 from brains.consolidationbrain import ConsolidationBrain
 from brains.tdbrain import TDBrain
-from environment import CueType, PlusMazeOneHotCues
+from environment import CueType, PlusMazeOneHotCues, PlusMazeOneHotCues2ActiveDoors
+from fitting.fitting_utils import extract_names_from_architecture, string2list
 from learners.networklearners import *
 from learners.tabularlearners import *
 from models.networkmodels import *
@@ -109,6 +110,7 @@ def sample_from_estimated_parameters(model_name):
 				 enumerate(sampled_simulation_params))
 
 
+
 def run_single_simulation(env, architecture, estimated_parameters, initial_motivation=RewardType.WATER):
 	(brain, learner, model) = architecture
 	model_instance = model(env.stimuli_encoding_size(), 2, env.num_actions())
@@ -117,8 +119,8 @@ def run_single_simulation(env, architecture, estimated_parameters, initial_motiv
 		(beta, lr, attention_lr) = estimated_parameters
 		learner_instance = learner(model_instance, learning_rate=lr, alpha_phi=attention_lr)
 	else:
-		(nmr, beta, lr, alpha_bias) = estimated_parameters
-		learner_instance = learner(model_instance, learning_rate=lr, alpha_bias=alpha_bias)
+		(beta, lr) = estimated_parameters
+		learner_instance = learner(model_instance, learning_rate=lr)
 
 	agent = MotivatedAgent(brain(learner_instance, beta=beta),
 						   motivation=initial_motivation, motivated_reward_value=config.MOTIVATED_REWARD,
@@ -136,11 +138,16 @@ def run_simulation(env, brains, repetitions=10, initial_motivation=RewardType.WA
 		brain_repetition_reports = [None] * repetitions
 		while completed_experiments < repetitions:
 			env.init()
-
-			architecture, parameters = agent_spec
+			architecture, parameters_mean, parameters_std, ranges = agent_spec
 			#estimated_parameters = parameters
 
-			estimated_parameters = sample_from_estimated_parameters(utils.brain_name(architecture))
+			sampled_simulation_params = [np.random.normal(loc=mean, scale=std) for mean, std in zip(parameters_mean, parameters_std)]
+
+			estimated_parameters = tuple(np.clip(sampled_simulation_params[i], * ranges[i]) for i, parameter_value in
+			 			 enumerate(sampled_simulation_params))
+
+
+			#estimated_parameters = sample_from_estimated_parameters(utils.brain_name(architecture))
 			print(estimated_parameters)
 			experiment_stats, experiment_data = run_single_simulation(env, architecture, estimated_parameters, initial_motivation)
 			experiment_data['initial_motivation'] = initial_motivation.value
@@ -158,8 +165,8 @@ def run_simulation(env, brains, repetitions=10, initial_motivation=RewardType.WA
 															 aborted_experiments + completed_experiments))
 
 	all_experiment_data.to_csv(
-		'/Users/gkour/repositories/plusmaze/fitting/Results/simulations_results/simulation_{}_{}.csv'.format(
-			repetitions, utils.get_timestamp()))
+		'/Users/georgekour/repositories/plus-maze-simulator/fitting/Results/simulations_results/simulation_{}_{}.csv'.format(
+			repetitions, utils.get_timestamp()), index=False)
 
 	plot_days_per_stage(brains_reports)
 
@@ -193,10 +200,40 @@ def WPI_simulations():
 
 
 
+
+def run_motivation_simulations_from_fitting_data(fitting_data_df_file, num_repetitions):
+	""" Goven fitting data, extract all models and there parameters, then run simulations while
+	tyaking into consideration the mean and std of the estimated parameters."""
+	fitting_data_df = pd.read_csv(fitting_data_df_file)
+
+	fitting_data_df['architecture'] = fitting_data_df['model']
+
+	fitting_data_df = fitting_data_df.groupby(['architecture','subject'])['parameters'].first().reset_index()
+	# Apply the function to create new columns for learner and model names
+	fitting_data_df[['learner', 'model']] = fitting_data_df['architecture'].apply(extract_names_from_architecture).apply(pd.Series)
+
+	models = []
+	for archs in fitting_data_df['architecture'].unique():
+		df = fitting_data_df[fitting_data_df['architecture']==archs]
+		df['parameters'] = df['parameters'].apply(string2list)
+
+		# Calculate the average of each parameter across all subjects
+		average_parameters = df['parameters'].apply(pd.Series).mean().tolist()
+		std_parameters = df['parameters'].apply(pd.Series).std().tolist()
+
+		learner_class = globals()[df['learner'].iloc[0]]
+		model_class = globals()[df['model'].iloc[0]]
+
+		models+=[((TDBrain, learner_class, model_class), tuple(average_parameters), tuple(std_parameters), ([0.1,10], [0.001,0.4], [0.001,0.4]))]
+
+	env = PlusMazeOneHotCues2ActiveDoors(relevant_cue=CueType.ODOR, stimuli_encoding=8)
+	run_simulation(env, models, repetitions=num_repetitions, initial_motivation=RewardType.NONE)
+
 if __name__ == '__main__':
 	#env = PlusMazeOneHotCues2ActiveDoors(relevant_cue=CueType.ODOR, stimuli_encoding=8)
 	# env = PlusMazeOneHotCues(relevant_cue=CueType.ODOR, stimuli_encoding=10)
 	# run_simulation(env)
 	# x = 1
-
-	WPI_simulations()
+	#WPI_simulations()
+	fitting_file_name = '/Users/georgekour/repositories/plus-maze-simulator/fitting/Results/Rats-Results/fitting_results_AARL_best.csv'
+	run_motivation_simulations_from_fitting_data(fitting_file_name, num_repetitions=10)
