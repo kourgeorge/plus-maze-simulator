@@ -67,9 +67,9 @@ class Stats:
 
         report_dict = utils.Object()
         report_dict.action_1hot = np.mean(actions, axis=0)
-        report_dict.reward = round(np.mean(rewards), 2)
+        report_dict.reward = np.round(np.mean(rewards), 2)
         report_dict.water_preference = round(np.sum(arm_type_water) / len(arm_type_water), 2)
-        report_dict.correct = np.mean(correct)
+        report_dict.correct = np.round(np.mean(correct),2)
         report_dict.water_correct_percent = round(np.sum(np.logical_and(arm_type_water, correct))/np.sum(arm_type_water), 2)
         report_dict.food_correct_percent = round(
             np.sum(np.logical_and(np.logical_not(arm_type_water), correct)) / np.sum(np.logical_not(arm_type_water)), 2)
