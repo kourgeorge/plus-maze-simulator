@@ -4,6 +4,8 @@ import numpy as np
 import config
 from brains.abstractbrain import AbstractBrain
 import torch
+
+from learners.abstractlearner import AbstractLearner
 from motivatedagent import MotivatedAgent
 
 
@@ -51,5 +53,6 @@ class TDBrain(AbstractBrain):
     def num_trainable_parameters(self):
         return 0
 
-
+    def get_parameters(self):
+        return self.get_learner().get_parameters()
 

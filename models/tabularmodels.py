@@ -364,7 +364,7 @@ class ACFTable(FTable):
 	def new_stimuli_context(self, motivation):
 		self.Q[motivation]['odors'] = self.initial_value * np.ones([self.encoding_size + 1])
 		self.Q[motivation]['colors'] = self.initial_value * np.ones([self.encoding_size + 1])
-		self.Q[motivation]['spatial'] = self.initial_value * np.ones([4])
+		self.Q[motivation]['spatial'] = self.initial_value * np.ones([self.encoding_size + 1])
 
 
 class PCFTable(ACFTable):
