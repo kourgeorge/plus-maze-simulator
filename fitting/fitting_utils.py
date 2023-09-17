@@ -9,7 +9,7 @@ import pandas as pd
 
 import config
 from fitting.PlusMazeExperimentFitting import PlusMazeExperimentFitting
-from fitting.fitting_config_motivation import friendly_models_name_map
+from fitting.fitting_config_attention import friendly_models_name_map
 from learners.networklearners import DQNAtt
 from learners.tabularlearners import MALearner
 from motivatedagent import MotivatedAgent
@@ -36,7 +36,7 @@ def episode_rollout_on_real_data(env: PlusMazeOneHotCues, agent: MotivatedAgent,
 		dec_1hot = np.zeros(num_actions)
 		dec_1hot[action] = 1
 		act_dist += dec_1hot
-		new_state, outcome, terminated, info = env.step(action)
+		new_state, outcome, terminated, correct_door, info = env.step(action)
 		reward = agent.evaluate_outcome(outcome)
 
 		# This validates that if the reward in the data is 0 the reward by the simulation should be RewardType.NONE.
@@ -55,11 +55,11 @@ def episode_rollout_on_real_data(env: PlusMazeOneHotCues, agent: MotivatedAgent,
 		env.set_state(current_trial)
 		info.likelihood = likelihood
 		info.model_action = agent.decide_greedy(state)
-		_, model_action_outcome, _, _ = env.step(info.model_action)
+		_, model_action_outcome, _, _, _ = env.step(info.model_action)
 		info.network_outcome = model_action_outcome
 
 		state = new_state
-	return steps, total_reward, act_dist, model_action_dist, info.model_action+1, likelihood, model_action_outcome
+	return steps, total_reward, act_dist, model_action_dist, info.model_action+1, correct_door, likelihood, model_action_outcome
 
 
 def run_model_on_animal_data(env, rat_data, model_arch, parameters, initial_motivation=RewardType.NONE, silent=True):
@@ -72,8 +72,8 @@ def run_model_on_animal_data(env, rat_data, model_arch, parameters, initial_moti
 		(beta, lr, attention_lr) = parameters
 		learner_instance = learner(model_instance, learning_rate=lr, alpha_phi=attention_lr)
 	else:
-		(beta, lr, bias_lr) = parameters
-		learner_instance = learner(model_instance, learning_rate=lr, alpha_bias=bias_lr)
+		(beta, lr) = parameters
+		learner_instance = learner(model_instance, learning_rate=lr)
 
 	if silent: blockPrint()
 
@@ -190,6 +190,10 @@ def cut_off_data_when_reaching_criterion(df, num_stages=3):
 
 
 def add_correct_door(df):
+	if 'correct_door' in df.columns:
+		df['correct_door'] = df['correct_door'].astype(int)
+		df['model_reward_dist'] =df.apply(lambda row: string2list(row['model_action_dist'])[row['correct_door']], axis='columns').astype(float)
+		return df
 	df['correct_door'] = None
 	df['model_reward_dist'] = None
 
