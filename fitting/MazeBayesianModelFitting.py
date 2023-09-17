@@ -7,18 +7,14 @@ import numpy as np
 import pandas as pd
 from skopt import gp_minimize
 import scipy
-import fitting.fitting_config_motivation as fitting_config
+import fitting.fitting_config_attention as fitting_config
 
 import config
 import utils
 from environment import PlusMazeOneHotCues2ActiveDoors, CueType, PlusMazeOneHotCues
 from fitting import fitting_utils
-from fitting.PlusMazeExperimentFitting import PlusMazeExperimentFitting
-from fitting.fitting_utils import blockPrint, enablePrint
 from learners.networklearners import DQNAtt
 from learners.tabularlearners import MALearner
-from motivatedagent import MotivatedAgent
-from rewardtype import RewardType
 
 warnings.filterwarnings("ignore")
 
@@ -81,7 +77,7 @@ class MazeBayesianModelFitting:
 
 		if fitting_config.OPTIMIZATION_METHOD in ['Newton', 'Hybrid']:
 			bounds = [bound.bounds for bound in self.parameters_space]
-			x0 = np.array([0, 5, 0.01, 0.01]) if fitting_config.OPTIMIZATION_METHOD == 'Newton' else x0
+			x0 = np.array([5, 0.01, 0.01]) if fitting_config.OPTIMIZATION_METHOD == 'Newton' else x0
 			print("\t\t-----Finished Bayesian parameter estimation: {} -----".format(np.round(x0,4)))
 			search_result = scipy.optimize.minimize(
 					self._calc_experiment_likelihood, x0=x0,
@@ -106,13 +102,13 @@ class MazeBayesianModelFitting:
 		print("Warning!! You are running Fake Optimization. This should be used for development purposes only!!")
 		(brain, learner, model) = self.model
 		if issubclass(learner, MALearner) or issubclass(learner, DQNAtt):
-			x = (1.5, 0.05, 15)
+			x = (1, 1.5, 0.05, 15)
 		else:
 			x= (config.NON_MOTIVATED_REWARD,config.BETA,config.LEARNING_RATE, config.LEARNING_RATE)
 
 		obj = Object()
 		obj.x = x
-		experiment_stats, rat_data_with_likelihood = self._run_model(x)
+		experiment_stats, rat_data_with_likelihood = fitting_utils.run_model_on_animal_data(self.env, self.experiment_data, self.model, parameters=x)
 		return obj, experiment_stats, rat_data_with_likelihood
 
 	@staticmethod
@@ -135,11 +131,11 @@ class MazeBayesianModelFitting:
 				search_result, experiment_stats, rat_data_with_likelihood = \
 					MazeBayesianModelFitting(env, curr_rat, model, parameters_space, n_calls).optimize()
 
-				rat_data_with_likelihood['subject'] = subject_id
+				rat_data_with_likelihood["subject"] = subject_id
 				rat_data_with_likelihood["model"] = utils.brain_name(model)
 				rat_data_with_likelihood["parameters"] = [np.round(search_result.x,4)] * len(rat_data_with_likelihood)
 				rat_data_with_likelihood["algorithm"] = \
-					"{}_{}".format(fitting_config.OPTIMIZATION_METHOD, fitting_config.FITTING_ITERATIONS)
+					"{}_{}".format(fitting_config.OPTIMIZATION_METHOD, n_calls)
 
 				results_df = results_df.append(rat_data_with_likelihood, ignore_index=True)
 			results_df.to_csv('fitting/Results/Rats-Results/fitting_results_{}_{}_tmp.csv'.format(timestamp, n_calls))
@@ -148,11 +144,11 @@ class MazeBayesianModelFitting:
 
 
 if __name__ == '__main__':
-	# MazeBayesianModelFitting.all_subjects_all_models_optimization(
-	# 	PlusMazeOneHotCues2ActiveDoors(relevant_cue=CueType.ODOR, stimuli_encoding=10),
-	# 	fitting_config.MAZE_ANIMAL_DATA_PATH, fitting_config.maze_models, n_calls=30)
-
 	MazeBayesianModelFitting.all_subjects_all_models_optimization(
-		PlusMazeOneHotCues(relevant_cue=CueType.ODOR, stimuli_encoding=10), fitting_config.MOTIVATED_ANIMAL_DATA_PATH,
-		fitting_config.maze_models, n_calls=fitting_config.FITTING_ITERATIONS)
+        PlusMazeOneHotCues2ActiveDoors(relevant_cue=CueType.ODOR, stimuli_encoding=10),
+		fitting_config.MAZE_ANIMAL_DATA_PATH, fitting_config.maze_models, n_calls=fitting_config.FITTING_ITERATIONS)
+
+	# MazeBayesianModelFitting.all_subjects_all_models_optimization(
+	# 	PlusMazeOneHotCues(relevant_cue=CueType.ODOR, stimuli_encoding=10), fitting_config.MOTIVATED_ANIMAL_DATA_PATH,
+	# 	fitting_config.maze_models, n_calls=fitting_config.FITTING_ITERATIONS)
 
