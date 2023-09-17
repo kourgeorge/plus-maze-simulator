@@ -26,7 +26,7 @@ class ExperimentStatus(Enum):
 
 def PlusMazeExperiment(env: PlusMaze, agent: MotivatedAgent, dashboard=False):
     max_experiment_length = len(env.stage_names) * 10  # days
-    env.reset()
+    env.init()
     experiment_data = pd.DataFrame()
     stats = Stats(metadata={'brain': str(agent.get_brain()),
                                 'learner': str(agent.get_brain().get_learner()),

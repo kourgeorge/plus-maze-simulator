@@ -88,7 +88,7 @@ def get_timestamp():
 
 
 def episode_rollout(env, agent):
-	state = env.reset()
+	state = env.reset_trial()
 	# state = np.concatenate((env_state,agent.get_internal_state()))
 	action_dist = agent.get_brain().think(np.expand_dims(state, 0), agent)
 	action = agent.decide(state)

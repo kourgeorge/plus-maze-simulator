@@ -46,7 +46,7 @@ class PlusMaze:
 		self.set_random_odor_set()
 		self.set_random_light_set()
 
-	def reset(self):
+	def reset_trial(self):
 		self._state = self.random_state()
 		return self._state
 
@@ -307,7 +307,6 @@ class PlusMazeOneHotCues(PlusMaze):
 			dict['A{}o'.format(arm+1)] = -1 if not np.any(arm_odor) else 0 if np.array_equal(arm_odor, self.get_odor_cues()[0]) else 1
 			dict['A{}c'.format(arm+1)] = -1 if not np.any(arm_color) else 0 if np.array_equal(arm_color, self.get_light_cues()[0]) else 1
 		return dict
-
 
 
 class StagesTransition():

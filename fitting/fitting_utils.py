@@ -23,7 +23,7 @@ def episode_rollout_on_real_data(env: PlusMazeOneHotCues, agent: MotivatedAgent,
 	num_actions = env.num_actions()
 	act_dist = np.zeros(num_actions)
 
-	env_state = env.reset()
+	env_state = env.reset_trial()
 	terminated = False
 	steps = 0
 	likelihood = 0
