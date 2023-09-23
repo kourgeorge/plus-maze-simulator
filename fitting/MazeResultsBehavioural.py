@@ -1,3 +1,5 @@
+import os
+
 import numpy as np
 
 import pandas as pd
@@ -15,11 +17,12 @@ import json
 import matplotlib as mpl
 
 mpl.rcParams['pdf.fonttype'] = 42
-
 plt.rcParams.update({'font.size': 16})
 
 stages = ['ODOR1', 'ODOR2', 'LED']
 num_days_reported = [4, 2, 9]
+
+figures_folder = '/Users/georgekour/repositories/plus-maze-simulator/fitting/Results/figures'
 
 
 def filter_days(df):
@@ -61,7 +64,7 @@ def models_fitting_quality_over_times_average(data_file_path):
     axis.spines['right'].set_visible(False)
     plt.subplots_adjust(left=0.12, bottom=0.15, right=0.98, top=0.98, wspace=0.2, hspace=0.1)
 
-    plt.savefig('fitting/Results/figures/daily_likl_{}.svg'.format(utils.get_timestamp()))
+    plt.savefig(os.path.join('daily_likl_{}.svg'.format(utils.get_timestamp())))
 
 
 def models_fitting_quality_over_times(data_file_path):
@@ -166,6 +169,7 @@ def compare_neural_tabular_models(data_file_path):
 def compare_model_subject_learning_curve_average(data_file_path):
     df = pd.read_csv(data_file_path)
     df = fitting_utils.add_correct_door(df)
+    #df = df[~df['subject'].isin([4, 6])]
 
     df = df[['subject', 'model', 'stage', 'day in stage', 'trial', 'reward', 'model_reward_dist']].copy()
 
@@ -202,19 +206,21 @@ def compare_model_subject_learning_curve_average(data_file_path):
 
     # plt.legend(handles=plt.legend().legendHandles, labels=['a','b','c','d','e'])
     # axis = sns.barplot(x="ind", y="reward", data=subject_reward_df, errorbar="se")
-    for stage_day in [3, 5]:
-        axis.axvline(x=stage_day + 0.5, alpha=0.5, dashes=(5, 2, 1, 2), lw=2, color='grey')
+    model_df, order, st = fitting_utils.index_days(model_df)
+    for stage_day in st:
+        axis.axvline(x=stage_day - 0.5, alpha=0.5, dashes=(5, 2, 1, 2), lw=2, color='gray')
 
     axis.set_xlabel('Stage.Day')
     axis.set_ylabel('Success Rate')
 
+    dilute_xticks(axis)
     handles, labels = axis.get_legend_handles_labels()
     plt.legend(handles, labels, loc="upper left", prop={'size': 14}, labelspacing=0.2)
     axis.spines['top'].set_visible(False)
     axis.spines['right'].set_visible(False)
     plt.subplots_adjust(left=0.12, bottom=0.15, right=0.98, top=0.98, wspace=0.2, hspace=0.1)
 
-    plt.savefig('fitting/Results/figures/success_rate_{}.pdf'.format(utils.get_timestamp()))
+    plt.savefig(os.path.join(figures_folder,'success_rate_{}.pdf'.format(utils.get_timestamp())))
 
 
 def learning_curve_behavioral_boxplot(data_file_path):
@@ -264,7 +270,7 @@ def learning_curve_behavioral_boxplot(data_file_path):
 
     plt.subplots_adjust(left=0.08, bottom=0.15, right=0.99, top=0.99, wspace=0.1, hspace=0.4)
 
-    plt.savefig('fitting/Results/figures/correct_choice_{}.pdf'.format(utils.get_timestamp()))
+    plt.savefig(os.path.join(figures_folder,'correct_choice_{}.pdf'.format(utils.get_timestamp())))
 
 
 def show_days_to_criterion(data_file_path):
@@ -293,7 +299,7 @@ def show_days_to_criterion(data_file_path):
     despine(g1)
     plt.subplots_adjust(left=0.2, bottom=0.1, right=0.99, top=0.95, wspace=0.1, hspace=0.4)
 
-    plt.savefig('fitting/Results/figures/days_till_criterion_{}.pdf'.format(utils.get_timestamp()))
+    plt.savefig(os.path.join(figures_folder,'days_till_criterion_{}.pdf'.format(utils.get_timestamp())))
 
     x = 1
 
@@ -338,7 +344,7 @@ def compare_model_subject_learning_curve(data_file_path):
     axis.spines['top'].set_visible(False)
     axis.spines['right'].set_visible(False)
 
-    plt.savefig('fitting/Results/figures/learning_curve_{}'.format(fitting_utils.get_timestamp()))
+    plt.savefig(os.path.join(figures_folder, 'learning_curve_{}'.format(fitting_utils.get_timestamp())))
 
 
 # plt.show()
@@ -405,16 +411,11 @@ def plot_models_fitting_result_per_stage(data_file_path):
     df['NLL'] = -np.log(df.likelihood)
 
     df_stage = df.groupby(['subject', 'model', 'stage'], sort=False).mean().reset_index()
-    # sns.set_theme(style="whitegrid")
 
-    df['ML'] = np.exp(-df.NLL)
     df_stage['ML'] = np.exp(-df_stage.NLL)
 
     fig = plt.figure(figsize=(10, 5), layout="constrained")
-    # spec = fig.add_gridspec(1, 3)
     ax0 = fig.add_subplot(111)
-
-    # ax1 = fig.add_subplot(spec[0, 2])
 
     y = 'likelihood'
     g1 = sns.barplot(x='stage', y=y, hue='model', hue_order=models_order_df(df),
@@ -424,20 +425,26 @@ def plot_models_fitting_result_per_stage(data_file_path):
     g1.set(xlabel='', ylabel='Average Likelihood')
     g1.legend([], [], frameon=False)
 
+    # Anova Analysis:
+    for stage in [1,2,3]:
+        fitting_utils.one_way_anova(df[df['stage']==stage],'likelihood', 'model')
+
     args = dict(x="stage", y=y, hue="model", hue_order=models_order_df(df))
     pairs = [((1, 'AARL'), (1, 'FRL')), ((1, 'SARL'), (1, 'AARL')), ((1, 'AARL'), (1, 'ORL')),
              ((1, 'SARL'), (1, 'FRL')), ((1, 'SARL'), (1, 'ORL')), ((1, 'FRL'), (1, 'ORL')),
              ((2, 'AARL'), (2, 'FRL')), ((2, 'SARL'), (2, 'AARL')), ((2, 'AARL'), (2, 'ORL')),
-             ((2, 'SARL'), (2, 'FRL')), ((2, 'SARL'), (2, 'ORL')), ((2, 'FRL'), (2, 'ORL'))]
+             ((2, 'SARL'), (2, 'FRL')), ((2, 'SARL'), (2, 'ORL')), ((2, 'FRL'), (2, 'ORL')),
+             ((3, 'AARL'), (3, 'FRL')), ((3, 'SARL'), (3, 'AARL')), ((3, 'AARL'), (3, 'ORL')),
+             ((3, 'SARL'), (3, 'FRL')), ((3, 'SARL'), (3, 'ORL')), ((3, 'FRL'), (3, 'ORL'))
+             ]
 
     annot = Annotator(g1, pairs, **args, data=df)
     annot.configure(test='t-test_paired', text_format='star', loc='inside', verbose=2, comparisons_correction="Bonferroni")
     # annot.apply_test().annotate()
 
-    plt.savefig('fitting/Results/figures/average_likelihood_stages{}'.format(utils.get_timestamp()), format='pdf')
+    plt.savefig(os.path.join(figures_folder,'average_likelihood_stages{}.pdf'.format(utils.get_timestamp())), format='pdf')
 
     despine(g1)
-    df['dummy'] = 1
 
     fig = plt.figure(figsize=(5, 4), layout="constrained")
     ax1 = fig.add_subplot(111)
@@ -452,20 +459,19 @@ def plot_models_fitting_result_per_stage(data_file_path):
 
     g2.set_ylim([0.5, 0.6])
 
-    args = dict(x="dummy", y=y, hue="model", hue_order=models_order_df(df))
-    # pairs = [((1.0, 'AARL'), (1.0, 'FRL')), ((1.0, 'SARL'), (1.0, 'FRL')), ((1.0, 'AARL'), (1.0, 'ORL')),
-    #          ((1.0, 'SARL'), (1.0, 'AARL')), ((1.0, 'ORL'), (1.0, 'FRL')), ((1.0, 'ORL'), (1.0, 'SARL'))]
-	#
+    # pairs = [('AARL',  'FRL'), ('SARL','FRL'), ('AARL', 'ORL'),
+    #          ('SARL', 'AARL'), ('ORL','FRL'), ('ORL', 'SARL')]
+    #
     # annot = Annotator(g2, pairs, **args, data=df)
     # annot.configure(test='t-test_paired', text_format='star', loc='inside', comparisons_correction="Bonferroni", verbose=2)
-	#
+    #
     # annot.apply_test().annotate()
 
     g2.set_ylim([0.55, 0.625])
 
     despine(g2)
 
-    plt.savefig('fitting/Results/figures/average_likelihood{}.pdf'.format(utils.get_timestamp()), format='pdf')
+    plt.savefig(os.path.join(figures_folder,'average_likelihood{}.pdf'.format(utils.get_timestamp())), format='pdf')
 
 
 def stage_transition_model_quality(data_file_path):
@@ -524,7 +530,7 @@ def stage_transition_model_quality(data_file_path):
     fitting_utils.despine(axis1)
     fitting_utils.despine(axis2)
 
-    plt.savefig('fitting/Results/figures/stage_transition_{}.svg'.format(utils.get_timestamp()))
+    plt.savefig(os.path.join(figures_folder,'stage_transition_{}.svg'.format(utils.get_timestamp())))
 
 
 # # plots.plot_histogram(result=brain_results, dimension_identifier='lr', bins=20)
@@ -584,7 +590,7 @@ def compare_fitting_criteria(data_file_path):
 
         axis.set_xlabel('')
 
-        plt.savefig('fitting/Results/figures/{}_{}.pdf'.format(criterion, utils.get_timestamp()))
+        plt.savefig(os.path.join(figures_folder,'{}_{}.pdf'.format(criterion, utils.get_timestamp())))
 
 
 def show_fitting_parameters(data_file_path):
@@ -710,13 +716,12 @@ def investigate_regret_delta_relationship(data_file_path):
     plt.rcParams.update({'font.size': 14})
     df_all = pd.read_csv(data_file_path)
     df = df_all[
-        ['subject', 'model', 'parameters', 'stage', 'day in stage', 'trial', 'optimization_data', 'model_variables',
-         'likelihood']].copy()
+        ['subject', 'model', 'stage', 'day in stage', 'trial', 'optimization_data', 'model_variables']].copy()
 
     df = df[df['model_variables'].notna()].reset_index()
     df, order, st = fitting_utils.index_days(df)
     df = rename_models(df)
-    df = filter_days(df)
+    #df = filter_days(df)
 
     # this is needed because there is no good way to order the x-axis in lineplot.
     df.sort_values('ind', axis=0, ascending=True, inplace=True)
@@ -727,29 +732,33 @@ def investigate_regret_delta_relationship(data_file_path):
     df_model, variables_names = fitting_utils.unbox_model_variables(df_model, columns=['model_variables',
                                                                                        'optimization_data'])
 
-    fig = plt.figure(figsize=(7, 3), dpi=120, facecolor='w')
     sns.set_palette("colorblind", n_colors=5)
-
     df_model['subject'] = df_model['subject'].astype(str)
 
-    # fig = plt.figure(figsize=(7, 3), dpi=120, facecolor='w')
-    fig, axes = plt.subplots(3, 3, figsize=(20, 9))
+    all_animals = df_model.copy()
+    palette = sns.color_palette("Set1", df_model['day in stage'].nunique())
 
-    palette = sns.color_palette("husl", 9)
+    # for s in np.unique(all_animals['subject']):
 
-    for i,stage in enumerate([1,2,3]):
+    fig, axes = plt.subplots(3, df_model['stage'].nunique(), figsize=(20, 9))
+
+    # df_model = all_animals[(all_animals['subject'] == str(s))]
+
+    for i, stage in enumerate(np.unique(df_model['stage'])):
         for j, dimension in enumerate(["odor_regret", "color_regret", "spatial_regret"]):
             relevant_stage_days = df_model[(df_model['stage'] == stage) & (df_model['day in stage'] < 10)]
-            relevant_stage_days['var'] = relevant_stage_days.apply(lambda row: row['day in stage'] * 100 + row['trial'] - 400, axis=1)
-            sns.scatterplot(data=relevant_stage_days, x='delta', y=dimension, hue='ind', palette=palette, ax=axes[j][i], alpha=0.3)
-            #sns.scatterplot(data=relevant_stage_days, x='delta', y='odor_regret', hue='subject', hue_order=[str(i) for i in range(0,8)])
+            relevant_stage_days['var'] = relevant_stage_days.apply(
+                lambda row: row['day in stage'] * 100 + row['trial'] - 400, axis=1)
+            sns.scatterplot(data=relevant_stage_days, x='delta', y=dimension, hue='ind', palette=palette, ax=axes[j][i],
+                            alpha=0.6)
+            # sns.scatterplot(data=relevant_stage_days, x='delta', y=dimension, hue='subject', ax=axes[j][i], alpha=0.6)
             axes[j][i].legend([], [], frameon=False)
 
-            axes[j][i].set_xlim([-0.6,1.1])
+            axes[j][i].set_xlim([-0.6, 1.1])
             axes[j][i].set_ylim([-1.2, 0.7])
 
             axes[j][i].set_yticklabels(['']) if i % 3 != 0 else 0
-            axes[j][i].set_xticklabels(['']) if j <2 != 0 else 0
+            axes[j][i].set_xticklabels(['']) if j < 2 != 0 else 0
             axes[j][i].set_xlabel('delta') if j > 1 else axes[j][i].set_xlabel('')
             axes[j][i].set_ylabel('') if i > 0 else 0
 
@@ -757,23 +766,21 @@ def investigate_regret_delta_relationship(data_file_path):
             axes[j][i].axhline(y=0, alpha=0.7, lw=0.7, color='grey', linestyle='--')
             axes[j][i].axvline(x=0, alpha=0.7, lw=0.7, color='grey', linestyle='--')
 
-
     handles, labels = axes[2][2].get_legend_handles_labels()
-    fig.legend(handles, list(range(1,10)), loc="upper right", prop={'size': 16}, labelspacing=0.2)
+    fig.legend(handles, list(range(1, 10)), loc="upper right", prop={'size': 16}, labelspacing=0.2)
     plt.subplots_adjust(left=0.05, bottom=0.1, right=0.99, top=0.8, wspace=0.1, hspace=0.4)
     plt.tight_layout()
 
     plt.show()
 
-    # plt.savefig('fitting/Results/paper_figures/attention_{}.pdf'.format(utils.get_timestamp()))
+    plt.savefig(os.path.join(figures_folder,'attention_{}.pdf'.format(utils.get_timestamp())))
 
 
 def model_parameters_development(data_file_path, reward_dependant_trials=None):
     plt.rcParams.update({'font.size': 14})
     df_all = pd.read_csv(data_file_path)
     df = df_all[
-        ['subject', 'model', 'parameters', 'stage', 'day in stage', 'trial', 'optimization_data', 'model_variables',
-         'likelihood', 'reward']].copy()
+        ['subject', 'model', 'stage', 'day in stage', 'trial', 'optimization_data', 'model_variables', 'reward']].copy()
 
     df = df[df['model_variables'].notna()].reset_index()
     df, order, st = fitting_utils.index_days(df)
@@ -783,30 +790,33 @@ def model_parameters_development(data_file_path, reward_dependant_trials=None):
     # this is needed because there is no good way to order the x-axis in lineplot.
     df.sort_values('ind', axis=0, ascending=True, inplace=True)
 
-    for model in np.unique(df.model):  # ['AARL','ACLNet2']:
+    for model in ['AARL']:  # ['AARL','ACLNet2']:
         df_model = df[df.model == model]
         df, order, st = fitting_utils.index_days(df)
 
         df_model, variables_names = fitting_utils.unbox_model_variables(df_model, columns=['model_variables',
                                                                                            'optimization_data'])
-
-        df_model = df_model.groupby(['ind', 'subject', 'stage', 'day in stage', 'reward']).mean(numeric_only=True).reset_index()
-
-        fig = plt.figure(figsize=(7, 3), dpi=120, facecolor='w')
-        sns.set_palette("colorblind", n_colors=5)
         if reward_dependant_trials is not None:
             df_model = df_model[df_model.reward == reward_dependant_trials]
 
-        for var_names in [['odor_regret', 'color_regret', 'spatial_regret'], ['odor_V', 'color_V', 'spatial_V', 'Q'],
-                          ['delta'], ['odor_importance','color_importance','spatial_importance'], ['odor_weight','color_weight','spatial_weight']]:
+        df_model = df_model.groupby(['ind', 'subject', 'stage', 'day in stage']).mean(numeric_only=True).reset_index()
+
+        sns.set_palette("colorblind", n_colors=5)
+
+        for var_names in [['odor_importance','color_importance','spatial_importance'], ['odor_delta_phi','color_delta_phi','spatial_delta_phi'],
+                          ['odor_weight','color_weight','spatial_weight'], ['odor_regret', 'color_regret', 'spatial_regret'],
+                          ['delta'], ['odor_V', 'color_V', 'spatial_V', 'Q']]:
             fig = plt.figure(figsize=(7, 3), dpi=120, facecolor='w')
             sns.set_palette("colorblind", n_colors=5)
             axis = fig.add_subplot(111)
+            # Convert 'ind' to categorical with specific order
+            df_model['ind'] = pd.Categorical(df_model['ind'], categories=order, ordered=True)
+
             for variable_name in var_names:
                 axis = sns.lineplot(x="ind", y=variable_name, data=df_model, errorbar="se", err_style='band', ax=axis,
                                     label=variable_name.split('_')[0], marker='o')
             #axis.legend([], [], frameon=False)
-
+            #axis.set_ylabel(var_names[0].split('_')[1:])
             for stage_day in st:
                 axis.axvline(x=stage_day - 0.5, alpha=0.5, dashes=(5, 2, 1, 2), lw=2, color='gray')
 
@@ -818,7 +828,7 @@ def model_parameters_development(data_file_path, reward_dependant_trials=None):
             plt.xlabel('Day in Stage')
             plt.title(model)
 
-            plt.savefig('/Users/georgekour/Desktop/paper_figures/{}_{}.pdf'.format(var_names[0], utils.get_timestamp()))
+            plt.savefig(os.path.join(figures_folder,'{}_{}.pdf'.format(var_names[0], utils.get_timestamp())))
 
 
 def average_likelihood(data_file_path):
@@ -858,23 +868,28 @@ def average_likelihood(data_file_path):
         likelihood = averages[averages.model == model].likelihood.values[0]
         axis.axhline(y=likelihood, alpha=1, lw=1, color=colors[ind])
 
-    plt.savefig('fitting/Results/figures/average_animal_likelihood_{}.pdf'.format(utils.get_timestamp()))
+    plt.savefig(os.path.join(figures_folder,'average_animal_likelihood_{}.pdf'.format(utils.get_timestamp())))
 
 
 if __name__ == '__main__':
-    file_path = '/Users/georgekour/repositories/plus-maze-simulator/fitting/Results/Rats-Results/reported_results_dimensional_shifting/main_results_reported_10_1.csv'  # reported
+    #file_path = '/Users/georgekour/repositories/plus-maze-simulator/fitting/Results/Rats-Results/reported_results_dimensional_shifting/main_results_reported_10_1.csv'  # reported
+
+    #file_path = '/Users/georgekour/repositories/plus-maze-simulator/fitting/Results/Rats-Results/fitting_results_AARL_best.csv'
+    file_path = '/Users/georgekour/repositories/plus-maze-simulator/fitting/Results/Rats-Results/reported_results_dimensional_shifting/main_results_reported_10_1_recalculated.csv'
     # learning_curve_behavioral_boxplot('fitting/Results/Rats-Results/reported_results_dimensional_shifting/all_data.csv')
     # show_days_to_criterion('fitting/Results/Rats-Results/reported_results_dimensional_shifting/all_data.csv')
-    # models_fitting_quality_over_times_average(file_path)
+    models_fitting_quality_over_times_average(file_path)
     # models_fitting_quality_over_times(file_path)
-    #compare_model_subject_learning_curve_average(file_path)
+    compare_model_subject_learning_curve_average(file_path)
     #compare_model_subject_learning_curve(file_path)
-    #plot_models_fitting_result_per_stage(file_path)
+    plot_models_fitting_result_per_stage(file_path)
     # show_likelihood_trials_scatter(file_path)
     # stage_transition_model_quality(file_path)
-    # show_fitting_parameters(file_path)
-    # compare_fitting_criteria(file_path)
-    # average_likelihood(file_path)
+    #show_fitting_parameters(file_path)
+    compare_fitting_criteria(file_path)
+    average_likelihood(file_path)
     # compare_neural_tabular_models(file_path)
-    attention_development(file_path)
+    #attention_development(file_path)
+    #model_parameters_development(file_path, reward_dependant_trials=None)
+    #investigate_regret_delta_relationship(file_path)
     x = 2
