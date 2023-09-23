@@ -1,7 +1,11 @@
+import os.path
+
 import pandas as pd
 import matplotlib.pyplot as plt
+from statannotations.Annotator import Annotator
 
 import utils
+from fitting import fitting_utils
 from fitting.MazeResultsBehaviouralLC import index_days, calculate_goal_choice, dilute_xticks, despine
 from fitting.fitting_utils import stable_unique, rename_models, models_order_df
 import seaborn as sns
@@ -11,7 +15,9 @@ mpl.rcParams['pdf.fonttype'] = 42
 
 
 stages = PlusMazeOneHotCues2ActiveDoors.stage_names
-#stages = PlusMazeOneHotCues.stage_names
+
+figures_folder = '/Users/georgekour/repositories/plus-maze-simulator/fitting/Results/figures'
+
 
 plt.rcParams.update({'font.size': 10})
 
@@ -22,20 +28,20 @@ def show_days_to_criterion(simulation_df):
 	df = rename_models(df)
 	relevant_models = models_order_df(df)
 	df = df[df.model.isin(relevant_models)]
-	df['day in stage']=df['day in stage']+1
+	df['day in stage']=100*(df['day in stage']+1)
 	sns.set_palette('OrRd', n_colors=len(stages))
 	df = df.groupby(['subject', 'model', 'stage'], sort=False).agg({'day in stage': 'max'}).reset_index()
 	fig = plt.figure(figsize=(6.5, 3.5))
 	g1 = sns.barplot(x='model', y='day in stage', hue='stage', hue_order=list(range(1, len(stages)+1)),
 					 data=df, errorbar='se', errwidth=1, capsize=.05, order=relevant_models)
 
-	g1.set(xlabel='', ylabel='Days Until Criterion')
+	g1.set(xlabel='', ylabel='Trials Until Criterion')
 	handles, labels = g1.get_legend_handles_labels()
-	g1.legend(handles, stages, loc='upper left', prop={'size': 12}, labelspacing=0.2)
+	g1.legend(handles, stages, loc='upper center', prop={'size': 12}, labelspacing=0.2)
 
 	despine(g1)
 
-	plt.savefig('fitting/Results/figures/simulation_criterion_days_{}.pdf'.format(utils.get_timestamp()))
+	plt.savefig(os.path.join(figures_folder,'/simulation_criterion_days_{}.pdf'.format(utils.get_timestamp())))
 
 
 def water_preference_index_model(data_file_path):
@@ -81,12 +87,60 @@ def water_preference_index_model(data_file_path):
 
 	x=1
 
+
+def num_days_till_criterion_increasing_ID(file_path):
+	all_simulation_df = pd.read_csv(file_path)
+	all_simulation_df['num_odor_stages'] = all_simulation_df['env_setup'].apply(lambda x: x.count('Odor'))
+
+	max_days = all_simulation_df.groupby(['subject', 'num_odor_stages'])['day in stage'].max().reset_index()
+
+	# Create the plot
+	plt.figure(figsize=(10, 6))
+	sns.lineplot(data=max_days, x='num_odor_stages', y='day in stage', marker='o', errorbar='se')
+	plt.xlabel('Number of Odor Stages')
+	plt.ylabel('Average Days to Complete LED Stage')
+	plt.title('Average Days vs. Number of Odor Stages')
+
+	plt.show()
+	plt.savefig(os.path.join(figures_folder,'/num_days_till_criterion_increasing_ID_{}.pdf'.format(utils.get_timestamp())))
+
+
+def num_days_till_criterion_odor_stages(file_path):
+	all_simulation_df = pd.read_csv(file_path)
+
+	many_odor_df = all_simulation_df[
+		(all_simulation_df["env_setup"] == "Odor5,Odor4,Odor3,Odor2,Odor1,LED") & (all_simulation_df["stage"]!=all_simulation_df["stage"].max())]
+	max_days = many_odor_df.groupby(['subject', 'stage'])['day in stage'].max().reset_index()
+
+	# Create the plot
+	plt.figure(figsize=(10, 6))
+	g1 = sns.barplot(data=max_days, x='stage', y='day in stage', errorbar='se')
+	plt.xlabel('Odor Stage')
+	plt.ylabel('Days to Criterion')
+	plt.title('Days to Criterion vs. Odor Stage')
+
+	args = dict(x="stage", y='day in stage')
+	pairs = [(4, 5), (3, 4), (3, 5), (2, 4), (2, 5), (2, 3), (1, 2), (1, 3), (1, 4), (1, 5)]
+
+	annot = Annotator(g1, pairs, **args, data=max_days)
+	annot.configure(test='t-test_paired', text_format='star', loc='inside', verbose=2,
+					comparisons_correction="Bonferroni")
+
+	annot.apply_test().annotate()
+
+	max_days = max_days.rename(columns={'day in stage': 'dayinstage'})
+	fitting_utils.one_way_anova(max_days,target='dayinstage',c="stage")
+
+	plt.savefig(os.path.join(figures_folder,'/num_days_till_criterion_odor_stages{}.pdf'.format(utils.get_timestamp())))
+
+	plt.show()
+
 if __name__ == '__main__':
 
 	# show_days_to_criterion('fitting/Results/Rats-Results/reported_results_dimensional_shifting/simulation_20_12_1.csv')
-	show_days_to_criterion('/Users/georgekour/repositories/plus-maze-simulator/fitting/Results/simulations_results/simulation_10_2023_09_17_12_40.csv')
+	show_days_to_criterion('/Users/georgekour/repositories/plus-maze-simulator/fitting/Results/simulations_results/simulation_10_2023_09_OOC.csv')
 	#show_days_to_criterion('fitting/Results/simulations_results/simulation_ORL_0nmr.csv')
 	#goal_choice_index_model('/fitting/Results/simulations_results/simulation_FRL_0nmr.csv')
 	#water_preference_index_model('fitting/Results/Rats-Results/reported_results_motivation_shifting/simulation_FRL_0nmr.csv')
-
-
+	num_days_till_criterion_increasing_ID("/Users/georgekour/repositories/plus-maze-simulator/fitting/Results/simulations_results/increasing_ID_20.csv")
+	num_days_till_criterion_odor_stages("/Users/georgekour/repositories/plus-maze-simulator/fitting/Results/simulations_results/increasing_ID_20.csv")
