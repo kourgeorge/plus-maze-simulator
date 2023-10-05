@@ -773,7 +773,7 @@ def investigate_regret_delta_relationship(data_file_path):
 
     plt.show()
 
-    plt.savefig(os.path.join(figures_folder,'attention_{}.pdf'.format(utils.get_timestamp())))
+    plt.savefig(os.path.join(figures_folder,'regret_vs_delta_{}.pdf'.format(utils.get_timestamp())))
 
 
 def model_parameters_development(data_file_path, reward_dependant_trials=None):
