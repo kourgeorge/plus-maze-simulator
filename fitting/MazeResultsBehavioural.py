@@ -736,7 +736,7 @@ def investigate_regret_delta_relationship(data_file_path):
     df_model['subject'] = df_model['subject'].astype(str)
 
     all_animals = df_model.copy()
-    palette = sns.color_palette("Set1", df_model['day in stage'].nunique())
+    palette = sns.color_palette("flare", df_model['day in stage'].nunique())
 
     # for s in np.unique(all_animals['subject']):
 
@@ -814,7 +814,7 @@ def model_parameters_development(data_file_path, reward_dependant_trials=None):
 
             for variable_name in var_names:
                 axis = sns.lineplot(x="ind", y=variable_name, data=df_model, errorbar="se", err_style='band', ax=axis,
-                                    label=variable_name.split('_')[0], marker='o')
+                                    label=variable_name.split('_')[0], marker='o', color='black' if len(var_names)==1 else None)
             #axis.legend([], [], frameon=False)
             #axis.set_ylabel(var_names[0].split('_')[1:])
             for stage_day in st:
