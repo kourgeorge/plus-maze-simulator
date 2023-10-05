@@ -6,6 +6,7 @@ from PlusMazeExperiment import PlusMazeExperiment, ExperimentStatus
 from behavioral_analysis import plot_days_per_stage, plot_behavior_results
 from brains.consolidationbrain import ConsolidationBrain
 from brains.tdbrain import TDBrain
+from config import TRIALS_IN_DAY
 from environment import CueType, PlusMazeOneHotCues, PlusMazeOneHotCues2ActiveDoors, StagesTransition, PlusMaze
 from fitting.fitting_utils import extract_names_from_architecture, string2list
 from fitting.simulation_utils import sample_brain_parameters, extract_model_average_fitting_parameters
@@ -157,10 +158,42 @@ def run_increasing_IDShift(fitting_data_df_file, repetitions=50):
 	return all_simulation_data
 
 
+def ED_shift_analysis(fitting_file_name):
+	stages = [{'name': 'Odor', 'transition_logic': StagesTransition.set_odor_stage},
+			  {'name': 'LED1', 'transition_logic': StagesTransition.set_color_stage},
+			  {'name': 'LED2', 'transition_logic': StagesTransition.set_color_stage},
+			  {'name': 'LED3', 'transition_logic': StagesTransition.set_color_stage}]
+	env = PlusMazeOneHotCues2ActiveDoors(stages=stages, relevant_cue=CueType.ODOR, stimuli_encoding=14)
+
+	average_parameters, std_parameters = extract_model_average_fitting_parameters(fitting_file_name,
+																				  'MALearner.ACFTable')
+
+	model = ACFTable(env.stimuli_encoding_size(), 2, env.num_actions())
+	learner = MALearner(model,  learning_rate=average_parameters[1], alpha_phi=average_parameters[2],)
+	brain = TDBrain(learner=learner, beta=average_parameters[0])
+
+	agent = MotivatedAgent(brain, motivation=RewardType.NONE,
+						   motivated_reward_value=1, non_motivated_reward_value=0, exploration_param=0.1)
+
+	stats, experiment_data = PlusMazeExperiment(env, agent, dashboard=False)
+	experiment_data['model'] = 'AARL'
+	experiment_data['subject'] = -1
+	experiment_data['parameters'] = [average_parameters]*len(experiment_data)
+	experiment_data["env_setup"] = ",".join([stage['name'] for stage in stages])
+
+	return experiment_data
+
 
 
 if __name__ == '__main__':
+	reps = 50
 	fitting_file_name = '/Users/georgekour/repositories/plus-maze-simulator/fitting/Results/Rats-Results/reported_results_dimensional_shifting/main_results_reported_10_1_recalculated.csv'
-	all_simulation_data = run_increasing_IDShift(fitting_file_name)
-	all_simulation_data.to_csv(path_or_buf="/Users/georgekour/repositories/plus-maze-simulator/fitting/Results/simulations_results/increasing_ID_50.csv", index=False)
+	all_simulation_data = run_increasing_IDShift(fitting_file_name, repetitions=reps)
+	all_simulation_data.to_csv(path_or_buf=f"/Users/georgekour/repositories/plus-maze-simulator/fitting/Results/simulations_results/increasing_ID_{reps}_{TRIALS_IN_DAY}TPD.csv", index=False)
+
 	#run_motivation_simulations_from_fitting_data(fitting_file_name, num_repetitions=10)
+
+	EDS_simulation_data = ED_shift_analysis(fitting_file_name)
+	EDS_simulation_data.to_csv(
+		path_or_buf="/Users/georgekour/repositories/plus-maze-simulator/fitting/Results/Rats-Results/reported_results_dimensional_shifting/ED_shift_analysis.csv",
+		index=False)
