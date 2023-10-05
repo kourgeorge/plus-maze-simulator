@@ -17,6 +17,9 @@ from environment import PlusMazeOneHotCues
 from rewardtype import RewardType
 import re
 
+import pingouin
+from statsmodels.formula.api import ols
+import statsmodels.api as sm
 
 def episode_rollout_on_real_data(env: PlusMazeOneHotCues, agent: MotivatedAgent, current_trial):
 	total_reward = 0
@@ -93,6 +96,7 @@ def run_model_on_animal_data(env, rat_data, model_arch, parameters, initial_moti
 def blockPrint():
 	sys.stdout = open(os.devnull, 'w')
 
+
 # Restore
 def enablePrint():
 	sys.stdout = sys.__stdout__
@@ -108,7 +112,6 @@ def string2list(string):
 	except Exception:
 		params= [float(x.strip()) for x in re.split(",",string.strip(']['))]
 	return params
-
 
 
 def stable_unique(array):
@@ -190,7 +193,7 @@ def cut_off_data_when_reaching_criterion(df, num_stages=3):
 
 
 def add_correct_door(df):
-	if 'correct_door' in df.columns:
+	if all(np.isnan(value) for value in df['correct_door']):
 		df['correct_door'] = df['correct_door'].astype(int)
 		df['model_reward_dist'] =df.apply(lambda row: string2list(row['model_action_dist'])[row['correct_door']], axis='columns').astype(float)
 		return df
@@ -269,3 +272,32 @@ def dilute_xticks(axis, k=2):
 def extract_names_from_architecture(architecture_name):
 	learner, model = architecture_name.split('.')
 	return learner, model
+
+
+def RM_anova(df, depvar, subjects, within):
+	"""Repeated measures ANOVA.
+	depvar: the dependant variable.
+	subjects: the grouping variable.
+	within: the repetitions variable for each subject. """
+
+	#results = AnovaRM(data=df, depvar=depvar, subject=subjects, within=[within]).fit() #, aggregate_func='mean'
+	aov = pingouin.rm_anova(data=df, dv=depvar, subject=subjects, within=within,  detailed=True)
+	aov.round(3)
+	print(aov)
+
+
+def one_way_anova(df, target, c):
+	"""target: the dependant variable
+		c: the groups variable
+	"""
+	model = ols('{} ~ C({})'.format(target, c), data=df).fit()
+	result = sm.stats.anova_lm(model, type=2)
+	print(result)
+
+
+def two_way_anova(df, target, c1, c2):
+	model = ols('{} ~ C({}) + C({}) +\
+	C({}):C({})'.format(target,c1,c2,c1,c2),
+				data=df).fit()
+	result = sm.stats.anova_lm(model, type=2)
+	print(result)
