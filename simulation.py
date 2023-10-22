@@ -49,7 +49,6 @@ def run_simulation_sampled_brain(env: PlusMaze, brains_parameters_ranges, repeti
 		while completed_experiments < repetitions:
 			env.init()
 			architecture, parameters_mean, parameters_std, ranges = agent_spec
-			#estimated_parameters = parameters
 
 			estimated_parameters = sample_brain_parameters(parameters_mean, parameters_std, ranges)
 
@@ -73,14 +72,7 @@ def run_simulation_sampled_brain(env: PlusMaze, brains_parameters_ranges, repeti
 
 
 	return all_simulation_data
-	# all_experiment_data.to_csv(
-	# 	'/Users/georgekour/repositories/plus-maze-simulator/fitting/Results/simulations_results/simulation_{}_{}.csv'.format(
-	# 		repetitions, utils.get_timestamp()), index=False)
 
-	# plot_days_per_stage(brains_reports)
-	#
-	# for brain_report in brains_reports:
-	# 	plot_behavior_results(brain_report)
 
 
 
@@ -158,7 +150,7 @@ def run_increasing_IDShift(fitting_data_df_file, repetitions=50):
 	return all_simulation_data
 
 
-def ED_shift_analysis(fitting_file_name):
+def ED_shift_analysis(fitting_file_name, repetitions=50):
 	stages = [{'name': 'Odor', 'transition_logic': StagesTransition.set_odor_stage},
 			  {'name': 'LED1', 'transition_logic': StagesTransition.set_color_stage},
 			  {'name': 'LED2', 'transition_logic': StagesTransition.set_color_stage},
@@ -168,32 +160,24 @@ def ED_shift_analysis(fitting_file_name):
 	average_parameters, std_parameters = extract_model_average_fitting_parameters(fitting_file_name,
 																				  'MALearner.ACFTable')
 
-	model = ACFTable(env.stimuli_encoding_size(), 2, env.num_actions())
-	learner = MALearner(model,  learning_rate=average_parameters[1], alpha_phi=average_parameters[2],)
-	brain = TDBrain(learner=learner, beta=average_parameters[0])
+	env_df = run_simulation_sampled_brain(env=env, brains_parameters_ranges=[((TDBrain, MALearner, ACFTable),
+																			  average_parameters, std_parameters,
+																			  ([0.1, 10], [0.001, 0.4], [0.001, 0.4]))],
+										  repetitions=repetitions, initial_motivation=RewardType.NONE)
 
-	agent = MotivatedAgent(brain, motivation=RewardType.NONE,
-						   motivated_reward_value=1, non_motivated_reward_value=0, exploration_param=0.1)
-
-	stats, experiment_data = PlusMazeExperiment(env, agent, dashboard=False)
-	experiment_data['model'] = 'AARL'
-	experiment_data['subject'] = -1
-	experiment_data['parameters'] = [average_parameters]*len(experiment_data)
-	experiment_data["env_setup"] = ",".join([stage['name'] for stage in stages])
-
-	return experiment_data
+	return env_df
 
 
 
 if __name__ == '__main__':
 	reps = 50
 	fitting_file_name = '/Users/georgekour/repositories/plus-maze-simulator/fitting/Results/Rats-Results/reported_results_dimensional_shifting/main_results_reported_10_1_recalculated.csv'
-	all_simulation_data = run_increasing_IDShift(fitting_file_name, repetitions=reps)
-	all_simulation_data.to_csv(path_or_buf=f"/Users/georgekour/repositories/plus-maze-simulator/fitting/Results/simulations_results/increasing_ID_{reps}_{TRIALS_IN_DAY}TPD.csv", index=False)
+	# all_simulation_data = run_increasing_IDShift(fitting_file_name, repetitions=reps)
+	# all_simulation_data.to_csv(path_or_buf=f"/Users/georgekour/repositories/plus-maze-simulator/fitting/Results/simulations_results/increasing_ID_{reps}_{TRIALS_IN_DAY}TPD.csv", index=False)
 
 	#run_motivation_simulations_from_fitting_data(fitting_file_name, num_repetitions=10)
 
-	EDS_simulation_data = ED_shift_analysis(fitting_file_name)
+	EDS_simulation_data = ED_shift_analysis(fitting_file_name, reps)
 	EDS_simulation_data.to_csv(
-		path_or_buf="/Users/georgekour/repositories/plus-maze-simulator/fitting/Results/Rats-Results/reported_results_dimensional_shifting/ED_shift_analysis.csv",
+		path_or_buf=f"/Users/georgekour/repositories/plus-maze-simulator/fitting/Results/Rats-Results/reported_results_dimensional_shifting/ED_shift_{reps}_{TRIALS_IN_DAY}TPD.csv",
 		index=False)
