@@ -1,4 +1,5 @@
 import os
+from copy import copy
 
 import numpy as np
 
@@ -21,6 +22,9 @@ plt.rcParams.update({'font.size': 16})
 
 stages = ['ODOR1', 'ODOR2', 'LED']
 num_days_reported = [4, 2, 9]
+
+stages = ['ODOR', 'LED1', 'LED2', 'LED3']
+num_days_reported = [4, 8, 5, 3]
 
 figures_folder = '/Users/georgekour/repositories/plus-maze-simulator/fitting/Results/figures'
 
@@ -831,6 +835,71 @@ def model_parameters_development(data_file_path, reward_dependant_trials=None):
             plt.savefig(os.path.join(figures_folder,'{}_{}.pdf'.format(var_names[0], utils.get_timestamp())))
 
 
+def model_parameters_development_correct_vs_incorrect(data_file_path):
+    plt.rcParams.update({'font.size': 14})
+    df_all = pd.read_csv(data_file_path)
+    df = df_all[
+        ['subject', 'model', 'stage', 'day in stage', 'trial', 'optimization_data', 'model_variables', 'reward']].copy()
+
+    df = df[df['model_variables'].notna()].reset_index()
+    df, order, st = fitting_utils.index_days(df)
+    df = rename_models(df)
+    df = filter_days(df)
+
+    # this is needed because there is no good way to order the x-axis in lineplot.
+    df.sort_values('ind', axis=0, ascending=True, inplace=True)
+
+    for model in ['AARL']:  # ['AARL','ACLNet2']:
+        df_model = df[df.model == model]
+        df, order, st = fitting_utils.index_days(df)
+
+        df_model, variables_names = fitting_utils.unbox_model_variables(df_model, columns=['model_variables',
+                                                                                           'optimization_data'])
+
+        correct_df_model = df_model[df_model.reward == 1]
+        incorrect_df_model = df_model[df_model.reward == 0]
+
+        correct_df_model = correct_df_model.groupby(['ind', 'subject', 'stage', 'day in stage']).mean(numeric_only=True).reset_index()
+        incorrect_df_model = incorrect_df_model.groupby(['ind', 'subject', 'stage', 'day in stage']).mean(
+            numeric_only=True).reset_index()
+
+        df_model = copy(correct_df_model)
+        columns = ['odor_V', 'color_V', 'spatial_V']
+        df_model[columns] = correct_df_model[columns].sub(incorrect_df_model[columns])
+        df_model['Q_correct'] = correct_df_model['Q']
+        df_model['Q_incorrect'] = incorrect_df_model['Q']
+
+        sns.set_palette("colorblind", n_colors=5)
+
+        for var_names in [['odor_V', 'color_V', 'spatial_V'], ['Q_correct','Q_incorrect']]:
+            fig = plt.figure(figsize=(7, 3), dpi=120, facecolor='w')
+            sns.set_palette("hls", n_colors=8) if 'Q_correct' in var_names  else  sns.set_palette("colorblind", n_colors=5)
+
+            axis = fig.add_subplot(111)
+            # Convert 'ind' to categorical with specific order
+            df_model['ind'] = pd.Categorical(df_model['ind'], categories=order, ordered=True)
+
+            for variable_name in var_names:
+                axis = sns.lineplot(x="ind", y=variable_name, data=df_model, errorbar="se", err_style='band', ax=axis,
+                                    label=variable_name.split('_')[0], marker='o', color='black' if len(var_names)==1 else None)
+            #axis.legend([], [], frameon=False)
+            #axis.set_ylabel(var_names[0].split('_')[1:])
+            for stage_day in st:
+                axis.axvline(x=stage_day - 0.5, alpha=0.5, dashes=(5, 2, 1, 2), lw=2, color='gray')
+
+            axis.axhline(y=0, alpha=0.7, lw=1, color='grey', linestyle='-')
+
+            fitting_utils.despine(axis)
+            dilute_xticks(axis, 1)
+
+            plt.xlabel('Day in Stage')
+            plt.title(model)
+
+            #plt.legend(loc='upper right', bbox_to_anchor=(1.25, 1))
+
+            plt.savefig(os.path.join(figures_folder,'{}_{}.pdf'.format(var_names[0], utils.get_timestamp())))
+
+
 def average_likelihood(data_file_path):
     df = pd.read_csv(data_file_path)
     data = df[['subject', 'model', 'likelihood', 'day in stage', 'trial', 'stage', 'reward']].copy()
@@ -878,18 +947,18 @@ if __name__ == '__main__':
     file_path = '/Users/georgekour/repositories/plus-maze-simulator/fitting/Results/Rats-Results/reported_results_dimensional_shifting/main_results_reported_10_1_recalculated.csv'
     # learning_curve_behavioral_boxplot('fitting/Results/Rats-Results/reported_results_dimensional_shifting/all_data.csv')
     # show_days_to_criterion('fitting/Results/Rats-Results/reported_results_dimensional_shifting/all_data.csv')
-    models_fitting_quality_over_times_average(file_path)
+    # models_fitting_quality_over_times_average(file_path)
     # models_fitting_quality_over_times(file_path)
-    compare_model_subject_learning_curve_average(file_path)
+    # compare_model_subject_learning_curve_average(file_path)
     #compare_model_subject_learning_curve(file_path)
-    plot_models_fitting_result_per_stage(file_path)
+    # plot_models_fitting_result_per_stage(file_path)
     # show_likelihood_trials_scatter(file_path)
     # stage_transition_model_quality(file_path)
     #show_fitting_parameters(file_path)
-    compare_fitting_criteria(file_path)
-    average_likelihood(file_path)
+    # compare_fitting_criteria(file_path)
+    # average_likelihood(file_path)
     # compare_neural_tabular_models(file_path)
     #attention_development(file_path)
-    #model_parameters_development(file_path, reward_dependant_trials=None)
+    model_parameters_development(file_path, reward_dependant_trials=None)
     #investigate_regret_delta_relationship(file_path)
     x = 2
