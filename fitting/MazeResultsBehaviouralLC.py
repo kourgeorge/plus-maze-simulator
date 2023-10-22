@@ -1,15 +1,11 @@
-import functools
-import json
 
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-#import pingouin
 import scipy
 import seaborn as sns
-import statsmodels.api as sm
+
 from statannotations.Annotator import Annotator
-from statsmodels.formula.api import ols
 
 import utils
 from fitting import fitting_utils
@@ -29,26 +25,6 @@ def triplet_colors(n):
 	colors = utils.flatten_list(list(zip(pastel, deep, dark)))
 	return colors
 
-def one_way_anova(df, target, c):
-	model = ols('{} ~ C({})'.format(target,c), data=df).fit()
-	result = sm.stats.anova_lm(model, type=2)
-	print(result)
-
-
-def RM_anova(df, depvar, subjects, within):
-	#results = AnovaRM(data=df, depvar=depvar, subject=subjects, within=[within]).fit() #, aggregate_func='mean'
-	aov = pingouin.rm_anova(data=df, dv=depvar, subject=subjects, within=within,  detailed=True)
-	aov.round(3)
-
-	print(aov)
-
-
-def two_way_anova(df, target, c1, c2):
-	model = ols('{} ~ C({}) + C({}) +\
-	C({}):C({})'.format(target,c1,c2,c1,c2),
-				data=df).fit()
-	result = sm.stats.anova_lm(model, type=2)
-	print(result)
 
 
 def filter_days(df):
