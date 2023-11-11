@@ -237,6 +237,16 @@ class MALearner(IALearner):
 		optimization_data['odor_V'] = np.mean(V[:, 0])
 		optimization_data['color_V'] = np.mean(V[:, 1])
 		optimization_data['spatial_V'] = np.mean(V[:, 2])
+
+		optimization_data['odor_importance'] = self.model.phi[0]
+		optimization_data['color_importance'] = self.model.phi[1]
+		optimization_data['spatial_importance'] = self.model.phi[2]
+
+		phi = utils.softmax(self.model.phi)
+		optimization_data['odor_phi'] = phi[0]
+		optimization_data['color_phi'] = phi[1]
+		optimization_data['spatial_phi'] = phi[2]
+
 		optimization_data['odor_delta_phi'] = np.mean(delta_phi[:,0])
 		optimization_data['color_delta_phi'] = np.mean(delta_phi[:,1])
 		optimization_data['spatial_delta_phi'] = np.mean(delta_phi[:,2])
