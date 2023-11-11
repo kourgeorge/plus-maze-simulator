@@ -48,7 +48,7 @@ def PlusMazeExperiment(env: PlusMaze, agent: MotivatedAgent, dashboard=False):
     dashboard_screenshots_path = os.path.join('/Users/gkour/repositories/plusmaze/Results', '{}-{}'.format(agent.get_brain(),time.strftime("%Y%m%d-%H%M")))
 
     trial = 0
-    day_in_stage = 0
+    day_in_stage = 1
     print('============================ Brain:{}, Learner:{}, Model:{}, ======================='.format(str(agent.get_brain()), str(agent.get_brain().get_learner()), str(agent.get_brain().get_model())))
     print("Stage {}: {} - Water Motivated, odor relevant. (Odors: {}, Correct: {})".format(env.get_stage(),
                                                                                            env.stage_names[env.get_stage()],
@@ -95,10 +95,13 @@ def PlusMazeExperiment(env: PlusMaze, agent: MotivatedAgent, dashboard=False):
                 'WPI:{}, WC: {}, FC:{}'.format(stats.epoch_stats_df['WaterPreference'].to_numpy()[-1], stats.epoch_stats_df['WaterCorrect'].to_numpy()[-1],
                                                stats.epoch_stats_df['FoodCorrect'].to_numpy()[-1]))
 
-            current_criterion = np.mean(stats.reports[-1].reward)
-            reward = np.mean(stats.reports[-1].reward)
+            current_criterion = stats.reports[-1].reward
+            reward = stats.reports[-1].reward
+
+            if reward != experiment_data.tail(config.TRIALS_IN_DAY)['reward'].mean():
+                raise Exception()
             if current_criterion > config.SUCCESS_CRITERION_THRESHOLD:# and reward > 0.6:
-                day_in_stage = 0
+                day_in_stage = 1
                 if hasattr(agent.get_brain().get_model(), 'phi'):
                     print(agent.get_brain().get_model().phi)
 
