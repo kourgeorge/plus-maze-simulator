@@ -20,6 +20,8 @@ import re
 import pingouin
 from statsmodels.formula.api import ols
 import statsmodels.api as sm
+from statsmodels.regression.mixed_linear_model import MixedLM
+
 
 def episode_rollout_on_real_data(env: PlusMazeOneHotCues, agent: MotivatedAgent, current_trial):
 	total_reward = 0
@@ -108,9 +110,9 @@ def get_stage_transition_days(experimental_data):
 
 def string2list(string):
 	try:
-		params= [float(x.strip()) for x in re.split(" +",string.strip(' ]['))]
+		params= [float(x.strip()) for x in re.split(" +",string.strip(' ][()'))]
 	except Exception:
-		params= [float(x.strip()) for x in re.split(",",string.strip(']['))]
+		params= [float(x.strip()) for x in re.split(",",string.strip('][()'))]
 	return params
 
 
@@ -301,3 +303,32 @@ def two_way_anova(df, target, c1, c2):
 				data=df).fit()
 	result = sm.stats.anova_lm(model, type=2)
 	print(result)
+
+
+def mixed_design_anova(data, dependent_var, fixed_factor, random_factor):
+	"""
+    Perform mixed-design ANOVA with fixed effects and mixed random_factor.
+
+    Args:
+        data (pd.DataFrame): The dataset containing the relevant columns.
+        dependent_var (str): The name of the dependent variable column.
+        fixed_factor (str): The name of the fixed effects factor column.
+        random_factor (str): The name of the random effects factor column.
+
+    Returns:
+        result (statsmodels.regression.mixed_linear_model.MixedLMResults): The ANOVA results.
+
+    Example usage:
+        result = mixed_design_anova(df, 'likelihood', 'stage', 'model')
+    """
+
+	# Define the model
+	formula = f"{dependent_var} ~ {fixed_factor} * {random_factor}"
+	groups = data[random_factor]
+
+	# Fit the mixed-effects model
+	model = MixedLM.from_formula(formula, groups=groups, data=data)
+	result = model.fit()
+	print(result.summary())
+
+	return result
