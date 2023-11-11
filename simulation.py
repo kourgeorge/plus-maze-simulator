@@ -42,6 +42,7 @@ def run_simulation_sampled_brain(env: PlusMaze, brains_parameters_ranges, repeti
 
 	all_simulation_data = pd.DataFrame()
 	brains_reports = []
+	agent_id = 0
 	for agent_spec in brains_parameters_ranges:
 		completed_experiments = 0
 		aborted_experiments = 0
@@ -57,12 +58,13 @@ def run_simulation_sampled_brain(env: PlusMaze, brains_parameters_ranges, repeti
 			experiment_stats, experiment_data = run_single_simulation(env, architecture, estimated_parameters, initial_motivation)
 			experiment_data['initial_motivation'] = initial_motivation.value
 			experiment_data['model'] = utils.brain_name(architecture)
-			experiment_data['subject'] = -1*completed_experiments
+			experiment_data['subject'] = agent_id
 			experiment_data['parameters'] = [estimated_parameters]*len(experiment_data)
 
 			if experiment_stats.metadata['experiment_status'] == ExperimentStatus.COMPLETED:
 				brain_repetition_reports[completed_experiments] = experiment_stats
 				completed_experiments += 1
+				agent_id -= 1
 				all_simulation_data = pd.concat([all_simulation_data,experiment_data])
 			else:
 				aborted_experiments += 1
@@ -72,8 +74,6 @@ def run_simulation_sampled_brain(env: PlusMaze, brains_parameters_ranges, repeti
 
 
 	return all_simulation_data
-
-
 
 
 def WPI_simulations():
@@ -100,15 +100,13 @@ def WPI_simulations():
 	""""To capture the goal-choice element, we quantified for each animal in each training session its bias towards one arm pair according to the goal choice index (GC , Fig. 1e), describing the excess of visits to the arms that contained the deprived reward (regardless of whether they made a correct or erroneous choice): GC=\frac{m-um}{m+um} , where m denotes the number of trials that the animal chose an arms in which correct performance would be rewarded deprived reward (i.e., water for water restriction and food for food restriction condition), and um denotes the number of trials where the animal chose one of the two arms which contained the reward that was not restricted (Fig. 1e).  """
 
 
-
-def run_motivation_simulations_from_fitting_data(fitting_data_df_file, num_repetitions, stages=PlusMazeOneHotCues2ActiveDoors.default_stages):
+def run_dimensional_shifting_simulations_from_fitting_data(fitting_data_df_file, num_repetitions, stages=PlusMazeOneHotCues2ActiveDoors.default_stages):
 	""" Given fitting data, extract all models and there parameters, then run simulations while
 	taking into consideration the mean and std of the estimated parameters."""
 	fitting_data_df = pd.read_csv(fitting_data_df_file)
 
-	fitting_data_df['architecture'] = fitting_data_df['model']
 
-	fitting_data_df = fitting_data_df.groupby(['architecture','subject'])['parameters'].first().reset_index()
+	fitting_data_df = fitting_data_df.groupby(['model','subject'])['parameters'].first().reset_index()
 	# Apply the function to create new columns for learner and model names
 
 	models = []
@@ -127,7 +125,9 @@ def run_motivation_simulations_from_fitting_data(fitting_data_df_file, num_repet
 		models+=[((TDBrain, learner_class, model_class), tuple(average_parameters), tuple(std_parameters), ([0.1,10], [0.001,0.4], [0.001,0.4]))]
 
 	env = PlusMazeOneHotCues2ActiveDoors(stages=stages, relevant_cue=CueType.ODOR, stimuli_encoding=8)
-	run_simulation_sampled_brain(env, models, repetitions=num_repetitions, initial_motivation=RewardType.NONE)
+	all_simulation_data = run_simulation_sampled_brain(env, models, repetitions=num_repetitions, initial_motivation=RewardType.NONE)
+
+	return all_simulation_data
 
 
 def run_increasing_IDShift(fitting_data_df_file, repetitions=50):
@@ -170,12 +170,16 @@ def ED_shift_analysis(fitting_file_name, repetitions=50):
 
 
 if __name__ == '__main__':
-	reps = 50
+	reps = 20
 	fitting_file_name = '/Users/georgekour/repositories/plus-maze-simulator/fitting/Results/Rats-Results/reported_results_dimensional_shifting/main_results_reported_10_1_recalculated.csv'
 	# all_simulation_data = run_increasing_IDShift(fitting_file_name, repetitions=reps)
 	# all_simulation_data.to_csv(path_or_buf=f"/Users/georgekour/repositories/plus-maze-simulator/fitting/Results/simulations_results/increasing_ID_{reps}_{TRIALS_IN_DAY}TPD.csv", index=False)
 
-	#run_motivation_simulations_from_fitting_data(fitting_file_name, num_repetitions=10)
+
+	# all_models_simulation = run_dimensional_shifting_simulations_from_fitting_data(fitting_file_name, num_repetitions=50)
+	# all_models_simulation.to_csv(
+	# 	path_or_buf=f"/Users/georgekour/repositories/plus-maze-simulator/fitting/Results/Rats-Results/reported_results_dimensional_shifting/simulation_days_{reps}_{TRIALS_IN_DAY}TPD.csv",
+	# 	index=False)
 
 	EDS_simulation_data = ED_shift_analysis(fitting_file_name, reps)
 	EDS_simulation_data.to_csv(
