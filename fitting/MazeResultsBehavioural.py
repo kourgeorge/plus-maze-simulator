@@ -22,9 +22,9 @@ plt.rcParams.update({'font.size': 16})
 
 stages = ['ODOR1', 'ODOR2', 'LED']
 num_days_reported = [4, 2, 9]
-
-stages = ['ODOR', 'LED1', 'LED2', 'LED3']
-num_days_reported = [4, 8, 5, 3]
+#
+# stages = ['ODOR', 'LED1', 'LED2', 'LED3']
+# num_days_reported = [4, 8, 5, 3]
 
 figures_folder = '/Users/georgekour/repositories/plus-maze-simulator/fitting/Results/figures'
 
@@ -431,24 +431,26 @@ def plot_models_fitting_result_per_stage(data_file_path):
 
     # Anova Analysis:
     for stage in [1,2,3]:
-        fitting_utils.one_way_anova(df[df['stage']==stage],'likelihood', 'model')
+        # fitting_utils.one_way_anova(df[df['stage']==stage],'likelihood', 'model')
+        fitting_utils.RM_anova(df[df['stage'] == stage], 'likelihood', 'subject', 'model')
+
+    fitting_utils.two_way_anova(df, 'likelihood', 'model', 'stage')
+
+    fitting_utils.mixed_design_anova(df, 'likelihood', 'stage', 'model')
 
     args = dict(x="stage", y=y, hue="model", hue_order=models_order_df(df))
     pairs = [((1, 'AARL'), (1, 'FRL')), ((1, 'SARL'), (1, 'AARL')), ((1, 'AARL'), (1, 'ORL')),
-             ((1, 'SARL'), (1, 'FRL')), ((1, 'SARL'), (1, 'ORL')), ((1, 'FRL'), (1, 'ORL')),
              ((2, 'AARL'), (2, 'FRL')), ((2, 'SARL'), (2, 'AARL')), ((2, 'AARL'), (2, 'ORL')),
-             ((2, 'SARL'), (2, 'FRL')), ((2, 'SARL'), (2, 'ORL')), ((2, 'FRL'), (2, 'ORL')),
              ((3, 'AARL'), (3, 'FRL')), ((3, 'SARL'), (3, 'AARL')), ((3, 'AARL'), (3, 'ORL')),
-             ((3, 'SARL'), (3, 'FRL')), ((3, 'SARL'), (3, 'ORL')), ((3, 'FRL'), (3, 'ORL'))
              ]
 
     annot = Annotator(g1, pairs, **args, data=df)
     annot.configure(test='t-test_paired', text_format='star', loc='inside', verbose=2, comparisons_correction="Bonferroni")
-    # annot.apply_test().annotate()
-
+    annot.apply_test().annotate()
+    despine(g1)
     plt.savefig(os.path.join(figures_folder,'average_likelihood_stages{}.pdf'.format(utils.get_timestamp())), format='pdf')
 
-    despine(g1)
+
 
     fig = plt.figure(figsize=(5, 4), layout="constrained")
     ax1 = fig.add_subplot(111)
@@ -461,8 +463,6 @@ def plot_models_fitting_result_per_stage(data_file_path):
     g2.set(xlabel='', ylabel='Average Likelihood')
     plt.subplots_adjust(left=0.1, bottom=0.1, right=0.99, top=0.9, wspace=0.3, hspace=0.3)
 
-    g2.set_ylim([0.5, 0.6])
-
     # pairs = [('AARL',  'FRL'), ('SARL','FRL'), ('AARL', 'ORL'),
     #          ('SARL', 'AARL'), ('ORL','FRL'), ('ORL', 'SARL')]
     #
@@ -472,6 +472,8 @@ def plot_models_fitting_result_per_stage(data_file_path):
     # annot.apply_test().annotate()
 
     g2.set_ylim([0.55, 0.625])
+
+    fitting_utils.RM_anova(df,'likelihood','subject', 'model')
 
     despine(g2)
 
@@ -807,8 +809,10 @@ def model_parameters_development(data_file_path, reward_dependant_trials=None):
 
         sns.set_palette("colorblind", n_colors=5)
 
-        for var_names in [['odor_importance','color_importance','spatial_importance'], ['odor_delta_phi','color_delta_phi','spatial_delta_phi'],
-                          ['odor_weight','color_weight','spatial_weight'], ['odor_regret', 'color_regret', 'spatial_regret'],
+        for var_names in [['odor_importance','color_importance','spatial_importance'], ['odor_importance_l','color_importance_l','spatial_importance_l'],
+                          ['odor_delta_phi','color_delta_phi','spatial_delta_phi'],
+                          ['odor_weight','color_weight','spatial_weight'], ['odor_phi_l','color_phi_l','spatial_phi_l'],
+                          ['odor_regret', 'color_regret', 'spatial_regret'],
                           ['delta'], ['odor_V', 'color_V', 'spatial_V', 'Q']]:
             fig = plt.figure(figsize=(7, 3), dpi=120, facecolor='w')
             sns.set_palette("colorblind", n_colors=5)
@@ -951,14 +955,14 @@ if __name__ == '__main__':
     # models_fitting_quality_over_times(file_path)
     # compare_model_subject_learning_curve_average(file_path)
     #compare_model_subject_learning_curve(file_path)
-    # plot_models_fitting_result_per_stage(file_path)
-    # show_likelihood_trials_scatter(file_path)
+    plot_models_fitting_result_per_stage(file_path)
+    #show_likelihood_trials_scatter(file_path)
     # stage_transition_model_quality(file_path)
     #show_fitting_parameters(file_path)
-    # compare_fitting_criteria(file_path)
-    # average_likelihood(file_path)
+    #compare_fitting_criteria(file_path)
+    #average_likelihood(file_path)
     # compare_neural_tabular_models(file_path)
     #attention_development(file_path)
-    model_parameters_development(file_path, reward_dependant_trials=None)
+    #model_parameters_development(file_path, reward_dependant_trials=None)
     #investigate_regret_delta_relationship(file_path)
     x = 2
