@@ -11,10 +11,11 @@ import fitting.fitting_config_attention as fitting_config
 
 import config
 import utils
-from environment import PlusMazeOneHotCues2ActiveDoors, CueType, PlusMazeOneHotCues
+from environment import PlusMazeOneHotCues2ActiveDoors, CueType, PlusMazeOneHotCues, StagesTransition
 from fitting import fitting_utils
 from learners.networklearners import DQNAtt
 from learners.tabularlearners import MALearner
+from models.tabularmodels import FixedACFTable
 
 warnings.filterwarnings("ignore")
 
@@ -29,8 +30,12 @@ class MazeBayesianModelFitting:
 		self.parameters_space = parameters_space
 		self.n_calls = n_calls
 
-
 	def _calc_experiment_likelihood(self, parameters):
+		(brain, learner, model) = self.model
+		if model == FixedACFTable:
+			att_o, att_c = parameters[2:]
+			if att_o + att_c > 1:
+				return 50
 
 		experiment_stats, rat_data_with_likelihood = fitting_utils.run_model_on_animal_data(self.env, self.experiment_data, self.model,
 																							parameters, silent=True)
@@ -79,11 +84,26 @@ class MazeBayesianModelFitting:
 			bounds = [bound.bounds for bound in self.parameters_space]
 			x0 = np.array([5, 0.01, 0.01]) if fitting_config.OPTIMIZATION_METHOD == 'Newton' else x0
 			print("\t\t-----Finished Bayesian parameter estimation: {} -----".format(np.round(x0,4)))
-			search_result = scipy.optimize.minimize(
+			if isinstance(self.model, FixedACFTable):
+
+				def constraint(params):
+					x, y = params[2:]
+					return 1 - (x + y)  # This should be >= 0 when x + y <= 1
+
+				constraints = {'type': 'ineq', 'fun': constraint}  # Inequality constraint: x + y <= 1
+
+				search_result = scipy.optimize.minimize(
 					self._calc_experiment_likelihood, x0=x0,
 					bounds=bounds,
-			#		tol=0.002,
-					options={'maxiter':self.n_calls})
+					#		tol=0.002,
+					options={'maxiter': self.n_calls},
+					constraints=constraints)
+			else:
+				search_result = scipy.optimize.minimize(
+						self._calc_experiment_likelihood, x0=x0,
+						bounds=bounds,
+				#		tol=0.002,
+						options={'maxiter':self.n_calls})
 		
 		experiment_stats, rat_data_with_likelihood = fitting_utils.run_model_on_animal_data(self.env, self.experiment_data, self.model,
 																							search_result.x)
@@ -138,15 +158,26 @@ class MazeBayesianModelFitting:
 					"{}_{}".format(fitting_config.OPTIMIZATION_METHOD, n_calls)
 
 				results_df = results_df.append(rat_data_with_likelihood, ignore_index=True)
-			results_df.to_csv('fitting/Results/Rats-Results/fitting_results_{}_{}_tmp.csv'.format(timestamp, n_calls))
-		results_df.to_csv('fitting/Results/Rats-Results/fitting_results_{}_{}.csv'.format(timestamp, n_calls))
+			results_df.to_csv('fitting/Results/Rats-Results/fitting_results_dimensional_led_first_{}_{}_tmp.csv'.format(timestamp, n_calls))
+		results_df.to_csv('fitting/Results/Rats-Results/fitting_results_dimensional_led_first_{}_{}.csv'.format(timestamp, n_calls))
 		return fitting_results
 
 
 if __name__ == '__main__':
+
+	# fit odor first animals
+	# MazeBayesianModelFitting.all_subjects_all_models_optimization(
+	#     PlusMazeOneHotCues2ActiveDoors(stages=led_first_stages, stimuli_encoding=10),
+	# 	fitting_config.MAZE_ANIMAL_DATA_PATH, fitting_config.maze_models, n_calls=fitting_config.FITTING_ITERATIONS)
+
+
+	#fit led first animals
+	led_first_stages = [{'name': 'LED', 'transition_logic': StagesTransition.set_color_stage},
+						{'name': 'Odor1', 'transition_logic': StagesTransition.set_odor_stage}]
+
 	MazeBayesianModelFitting.all_subjects_all_models_optimization(
-        PlusMazeOneHotCues2ActiveDoors(relevant_cue=CueType.ODOR, stimuli_encoding=10),
-		fitting_config.MAZE_ANIMAL_DATA_PATH, fitting_config.maze_models, n_calls=fitting_config.FITTING_ITERATIONS)
+		PlusMazeOneHotCues2ActiveDoors(stages=led_first_stages, stimuli_encoding=10),
+		fitting_config.MAZE_ANIMAL_LED_FIRST_DATA_PATH, fitting_config.maze_models, n_calls=fitting_config.FITTING_ITERATIONS)
 
 	# MazeBayesianModelFitting.all_subjects_all_models_optimization(
 	# 	PlusMazeOneHotCues(relevant_cue=CueType.ODOR, stimuli_encoding=10), fitting_config.MOTIVATED_ANIMAL_DATA_PATH,

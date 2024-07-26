@@ -102,10 +102,10 @@ def PlusMazeExperiment(env: PlusMaze, agent: MotivatedAgent, dashboard=False):
                 raise Exception()
             if current_criterion > config.SUCCESS_CRITERION_THRESHOLD:# and reward > 0.6:
                 day_in_stage = 1
-                if hasattr(agent.get_brain().get_model(), 'phi'):
-                    print(agent.get_brain().get_model().phi)
+                if hasattr(agent.get_brain().get_model(), 'attn_importance'):
+                    print(agent.get_brain().get_model().attn_importance)
 
-                #print(torch.softmax(agent.get_brain().get_model().phi, axis=0))
+                #print(torch.softmax(agent.get_brain().get_model().attn_importance, axis=0))
                 env.set_next_stage(agent)
 
     stats.metadata['experiment_status'] = ExperimentStatus.COMPLETED

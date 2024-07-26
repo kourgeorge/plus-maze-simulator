@@ -198,7 +198,7 @@ class MOptionsTable(OptionsTable):
 
 
 class FTable(AbstractTabularModel):
-	def __init__(self, encoding_size, num_channels, num_actions, initial_value=config.INITIAL_FEATURE_VALUE):
+	def __init__(self, encoding_size, num_actions, initial_value=config.INITIAL_FEATURE_VALUE, num_channels=2):
 		super().__init__()
 		self.encoding_size = encoding_size
 		self._num_actions = num_actions
@@ -224,8 +224,8 @@ class FTable(AbstractTabularModel):
 		action_values[inactive_doors] = -np.inf  # avoid selecting inactive doors.
 		return action_values
 
-	def get_observations_values(self, observtions, motivation):
-		cues = utils.stimuli_1hot_to_cues(observtions, self.encoding_size)
+	def get_observations_values(self, observations, motivation):
+		cues = utils.stimuli_1hot_to_cues(observations, self.encoding_size)
 		odor = cues[:, 0]  # odor for each door
 		color = cues[:, 1]  # color for each door
 		door = np.array(range(4))
@@ -324,42 +324,52 @@ class ACFTable(FTable):
 
 	def __init__(self, *args, **kwargs):
 		super().__init__(*args, **kwargs)
-		self.phi = np.ones([3]) / 3
+		self.attn_importance = np.ones([3]) / 3
 
 	def __call__(self, *args, **kwargs):
 		states = args[0]
-		batch = states.shape[0]
 		motivation = args[1]
 		cues = utils.stimuli_1hot_to_cues(states, self.encoding_size)
 		odor = cues[:, 0]
-		color = cues[:, 1]
+		doors_value = self.get_observations_values(states, motivation) + self.action_bias[motivation.value]
+		doors_value[odor == self.encoding_size] = -np.inf
+		return doors_value
+
+	def phi(self):
+		return utils.softmax(self.attn_importance)
+
+	def get_observations_values(self, observations, motivation):
+		cues = utils.stimuli_1hot_to_cues(observations, self.encoding_size)
+		batch = observations.shape[0]
+
+		odor = cues[:, 0]  # odor for each door
+		color = cues[:, 1]  # color for each door
 
 		data = np.stack([self.get_stimulus_value('odors', odor, motivation),
 						 self.get_stimulus_value('colors', color, motivation),
-						 np.repeat(np.expand_dims(self.get_stimulus_value('spatial', np.array(range(4)), motivation), axis=0),
-								   repeats=batch, axis=0)])
-		attention = np.expand_dims(utils.softmax(self.phi), axis=0)
-		doors_value = np.matmul(attention, np.transpose(data, axes=(1, 0, 2))) + self.action_bias[motivation.value]
-		doors_value = np.squeeze(doors_value, axis=1)
-		doors_value[odor == self.encoding_size] = -np.inf  # avoid selecting inactive doors.
-
-		return doors_value
+						 np.repeat(
+							 np.expand_dims(self.get_stimulus_value('spatial', np.array(range(4)), motivation), axis=0),
+							 repeats=batch, axis=0)])
+		attention = np.expand_dims(self.phi(), axis=0)
+		action_values = np.matmul(attention, np.transpose(data, axes=(1, 0, 2)))
+		action_values = np.squeeze(action_values, axis=1)
+		return action_values
 
 	def get_model_metrics(self):
 		# print("odor:{}\ncolor:{},\nspatial:{}".format(self.V['odors'], self.V['colors'], self.V['spatial']))
-		phi = utils.softmax(self.phi)
-		return {'odor_importance': self.phi[0],
-				'color_importance': self.phi[1],
-				'spatial_importance': self.phi[2],
+		phi = self.phi()
+		return {'odor_importance': self.attn_importance[0],
+				'color_importance': self.attn_importance[1],
+				'spatial_importance': self.attn_importance[2],
 				'odor_weight': phi[0],
 				'color_weight': phi[1],
 				'spatial_weight': phi[2],
 				}
 
 	def get_model_diff(self, brain2):
-		return {'odor_attn_diff': self.phi[0] - brain2.phi[0],
-				'color_attn_diff': self.phi[1] - brain2.phi[1],
-				'spatial_attn_diff': self.phi[2] - brain2.phi[2], }
+		return {'odor_attn_diff': self.attn_importance[0] - brain2.attn_importance[0],
+				'color_attn_diff': self.attn_importance[1] - brain2.attn_importance[1],
+				'spatial_attn_diff': self.attn_importance[2] - brain2.attn_importance[2]}
 
 	def new_stimuli_context(self, motivation):
 		self.Q[motivation]['odors'] = self.initial_value * np.ones([self.encoding_size + 1])
@@ -379,7 +389,7 @@ class PCFTable(ACFTable):
 		odor = cues[:, 0]
 		color = cues[:, 1]
 
-		selected_dim = utils.epsilon_greedy(0.1, self.phi)
+		selected_dim = utils.epsilon_greedy(0.1, self.attn_importance)
 		doors_value = self.get_stimulus_value('odors', odor) if selected_dim == 0 else \
 			self.get_stimulus_value('colors', color) if selected_dim == 1 \
 				else self.get_stimulus_value('spatial', [np.array(range(4))])
@@ -387,3 +397,18 @@ class PCFTable(ACFTable):
 		doors_value[odor == self.encoding_size] = -np.inf  # avoid selecting inactive doors.
 
 		return doors_value
+
+
+class FixedACFTable(ACFTable):
+	"""This model implements attention in addition to stimuli reset on SC.
+	However, whether attention is updated is up to the learner."""
+
+	def __init__(self, attn_importance=np.ones([3]) / 3, *args, **kwargs):
+		if any(item < 0 for item in attn_importance) or np.abs(np.sum(attn_importance) - 1) > 1e-9:
+			raise Exception("Illigal attention arguments, should be positive and sum to 1!")
+		super().__init__(*args, **kwargs)
+
+		self.attn_importance = np.abs(attn_importance) / np.sum(np.abs(attn_importance)) #notmalize attention parameters
+
+	def phi(self):
+		return self.attn_importance

@@ -82,7 +82,7 @@ class IALearner(AbstractLearner):
 		delta = (reward_batch - selected_action_value)
 		selected_odors, selected_colors = self.model.get_selected_door_stimuli(state_batch, actions)
 
-		phi = utils.softmax(self.model.phi) if isinstance(self.model, ACFTable) else [1/3, 1/3, 1/3]
+		phi = self.model.phi()
 		#phi = self.model.phi if isinstance(self.model, ACFTable) else [1, 1, 1]
 		for odor in set(np.unique(selected_odors)).difference([self.model.encoding_size]):
 			self.model.update_stimulus_value('odors', odor, motivation, learning_rate * phi[0] * np.nanmean(delta[selected_odors == odor]))
@@ -206,7 +206,7 @@ class MALearner(IALearner):
 		deltas = (reward_batch - selected_action_value)
 		selected_odors, selected_colors = self.model.get_selected_door_stimuli(state_batch, actions)
 
-		phi_s = utils.softmax(self.model.phi)
+		phi = self.model.phi()
 
 		optimization_data = {}
 		delta_phi = np.empty((0, 3))
@@ -220,14 +220,14 @@ class MALearner(IALearner):
 							   self.model.Q[motivation.value]['colors'][selected_color],
 							   self.model.Q[motivation.value]['spatial'][selected_door]]])
 			attention_regret = self.calc_attention_regret(choice_value, reward, V)
-			delta_phi = np.vstack([delta_phi, delta  * phi_s * attention_regret])
+			delta_phi = np.vstack([delta_phi, delta * phi * attention_regret])
 			regrets = np.vstack([regrets, attention_regret])
 
 		# update values using old attentions
 		super().learn(state_batch, action_batch, reward_batch, action_values, nextstate_batch, motivation)
 
-		# update attention
-		self.model.phi += self.alpha_phi * np.mean(delta_phi, axis=0)
+		# update attention importance
+		self.model.attn_importance += self.alpha_phi * np.mean(delta_phi, axis=0)
 
 		optimization_data['delta'] = np.mean(deltas)
 		optimization_data['odor_regret'] = np.mean(regrets[:,0])
@@ -238,11 +238,11 @@ class MALearner(IALearner):
 		optimization_data['color_V'] = np.mean(V[:, 1])
 		optimization_data['spatial_V'] = np.mean(V[:, 2])
 
-		optimization_data['odor_importance'] = self.model.phi[0]
-		optimization_data['color_importance'] = self.model.phi[1]
-		optimization_data['spatial_importance'] = self.model.phi[2]
+		optimization_data['odor_importance'] = self.model.attn_importance[0]
+		optimization_data['color_importance'] = self.model.attn_importance[1]
+		optimization_data['spatial_importance'] = self.model.attn_importance[2]
 
-		phi = utils.softmax(self.model.phi)
+		phi = self.model.phi()
 		optimization_data['odor_phi'] = phi[0]
 		optimization_data['color_phi'] = phi[1]
 		optimization_data['spatial_phi'] = phi[2]

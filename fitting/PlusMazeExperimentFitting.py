@@ -60,7 +60,7 @@ def PlusMazeExperimentFitting(env: PlusMaze, agent: MotivatedAgent, experiment_d
             stats.update_stats_from_agent(agent, trial, trial-last_day_reported_trial)
             pre_stage_transition_update()
             last_day_reported_trial = trial
-            #print(utils.softmax(agent.get_brain().get_model().phi)) if hasattr(agent.get_brain().get_model(), 'phi') else 0
+            #print(utils.softmax(agent.get_brain().get_model().attn_importance)) if hasattr(agent.get_brain().get_model(), 'attn_importance') else 0
 
             print(
                 'Trial: {}, Action Dist:{}, Corr.:{}, Rew.:{}, loss={};'.format(stats.epoch_stats_df['Trial'].to_numpy()[-1],
@@ -74,8 +74,8 @@ def PlusMazeExperimentFitting(env: PlusMaze, agent: MotivatedAgent, experiment_d
                                                stats.epoch_stats_df['FoodCorrect'].to_numpy()[-1]))
 
             if should_pass_to_next_stage(fitting_info, trial):
-                if hasattr(agent.get_brain().get_model(), 'phi'):
-                    print(agent.get_brain().get_model().phi)
+                if hasattr(agent.get_brain().get_model(), 'attn_importance'):
+                    print(agent.get_brain().get_model().attn_importance)
                 env.set_next_stage(agent)
 
         if completed_trial(fitting_info, trial):
@@ -102,8 +102,8 @@ def PlusMazeExperimentFitting(env: PlusMaze, agent: MotivatedAgent, experiment_d
 
         trial += 1
 
-    if hasattr(agent.get_brain().get_model(), 'phi'):
-        print(agent.get_brain().get_model().phi)
+    if hasattr(agent.get_brain().get_model(), 'attn_importance'):
+        print(agent.get_brain().get_model().attn_importance)
     print("Likelihood - Average:{}, Median:{}".format(np.mean(fitting_info.likelihood), np.median(fitting_info.likelihood)))
     stats.metadata['experiment_status'] = ExperimentStatus.COMPLETED
     return stats, fitting_info

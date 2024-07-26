@@ -12,6 +12,7 @@ from fitting.PlusMazeExperimentFitting import PlusMazeExperimentFitting
 from fitting.fitting_config_attention import friendly_models_name_map
 from learners.networklearners import DQNAtt
 from learners.tabularlearners import MALearner
+from models.tabularmodels import FixedACFTable
 from motivatedagent import MotivatedAgent
 from environment import PlusMazeOneHotCues
 from rewardtype import RewardType
@@ -71,11 +72,17 @@ def run_model_on_animal_data(env, rat_data, model_arch, parameters, initial_moti
 	if initial_motivation is None:
 		initial_motivation = RewardType(rat_data.iloc[0].initial_motivation)
 	(brain, learner, model) = model_arch
-	model_instance = model(env.stimuli_encoding_size(), 2, env.num_actions())
+	model_instance = model(encoding_size=env.stimuli_encoding_size(), num_actions=env.num_actions(), num_channels=2)
 
 	if issubclass(learner, MALearner) or issubclass(learner, DQNAtt):
 		(beta, lr, attention_lr) = parameters
 		learner_instance = learner(model_instance, learning_rate=lr, alpha_phi=attention_lr)
+	elif model == FixedACFTable:
+		(beta, lr) = parameters[0:2]
+		[att_o, att_c] = parameters[2:]
+		model_instance = model(attn_importance=[att_o, att_c, 1 - att_c - att_o],
+							   encoding_size=env.stimuli_encoding_size(), num_actions=env.num_actions(), num_channels=2)
+		learner_instance = learner(model_instance, learning_rate=lr)
 	else:
 		(beta, lr) = parameters
 		learner_instance = learner(model_instance, learning_rate=lr)
@@ -134,7 +141,6 @@ def maze_experimental_data_preprocessing(experiment_data):
 	df = experiment_data_filtered.copy()
 	df = df[~((df.stage == 3) & (df['day in stage'] > 10))]
 
-
 	# criteria_days = []
 	# for st in [1,2,3]:
 	# 	stage_data = df_sum[df_sum.stage==st]
@@ -172,7 +178,6 @@ def rename_models(model_df):
 
 
 def cut_off_data_when_reaching_criterion(df, num_stages=3):
-
 	df_res = pd.DataFrame()
 	df_sum = df.groupby(['subject', 'stage', 'day in stage'], sort=False).agg(
 		{'reward': 'mean', 'trial': 'count'}).reset_index()
@@ -182,15 +187,16 @@ def cut_off_data_when_reaching_criterion(df, num_stages=3):
 		sub_df = df_sum[df_sum.subject == subject]
 		criteria_days = []
 		for stage in range(num_stages):
-			st=stage+1
-			stage_data = sub_df[sub_df.stage==st]
+			st = stage + 1
+			stage_data = sub_df[sub_df.stage == st]
 			first_criterion_day = np.where(np.array(stage_data.reward) >= .75)
 
-			criterion_day =len(stage_data.reward) if len(first_criterion_day[0]) == 0 else first_criterion_day[0][0]+1
-			relevant_trials = df[(df.subject==subject) & (df.stage==st) &(df['day in stage']<=criterion_day)]
-			df_res_subject=pd.concat([df_res_subject,relevant_trials], axis=0)
+			criterion_day = len(stage_data.reward) if len(first_criterion_day[0]) == 0 else first_criterion_day[0][
+																								0] + 1
+			relevant_trials = df[(df.subject == subject) & (df.stage == st) & (df['day in stage'] <= criterion_day)]
+			df_res_subject = pd.concat([df_res_subject, relevant_trials], axis=0)
 			criteria_days += [criterion_day]
-		df_res = pd.concat([df_res,df_res_subject], axis=0)
+		df_res = pd.concat([df_res, df_res_subject], axis=0)
 	return df_res
 
 
@@ -305,7 +311,7 @@ def two_way_anova(df, target, c1, c2):
 	print(result)
 
 
-def mixed_design_anova(data, dependent_var, fixed_factor, random_factor):
+def mixed_design_anova(data, dependent_var, fixed_factor1, fixed_factor2, random_factor):
 	"""
     Perform mixed-design ANOVA with fixed effects and mixed random_factor.
 
@@ -323,7 +329,7 @@ def mixed_design_anova(data, dependent_var, fixed_factor, random_factor):
     """
 
 	# Define the model
-	formula = f"{dependent_var} ~ {fixed_factor} * {random_factor}"
+	formula = f"{dependent_var} ~ {fixed_factor1} * {fixed_factor2}"
 	groups = data[random_factor]
 
 	# Fit the mixed-effects model
