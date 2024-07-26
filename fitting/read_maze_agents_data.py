@@ -1,15 +1,9 @@
 import os
-from operator import index
-
 import numpy as np
 import pandas as pd
 from glob import glob
 from datetime import datetime
-
 import scipy
-
-data_path = 'fitting/maze_behavioral_data_raw'
-stages = ['ODOR1', 'ODOR2', 'LEDs1']
 
 
 def get_all_data_from_mat_for_agent(rat_data_dir):
@@ -42,7 +36,7 @@ def get_files_for_agent_in_stage_sorted(rat_dir, stage):
 
 
 def get_date_from_file(file):
-    return file.split('/')[-1][5: 9]
+    return file.split('/')[-1].split('.')[0].split('_')[1]
 
 
 def sort_files_by_date(files):
@@ -106,13 +100,31 @@ def save_pd_to_csv(df, file_name):
     df.to_csv(file_name, index=False)
 
 
-def export_motivational_experiment_data():
+def export_maze_experiment_data():
     rats = [0,1,2,3,4,5,6,7,8]
+
+    global data_path
+    global stages
+    data_path = 'fitting/maze_behavioral_data_raw'
+    stages = ['ODOR1', 'ODOR2', 'LEDs1']
 
     for rat in rats:
         save_pd_to_csv(get_all_data_from_mat_for_agent(os.path.join(data_path, "rat{}".format(rat))),
                        './fitting/maze_behavioral_data/output_expr_rat{}.csv'.format(rat))
 
 
+def export_maze_led_first_experiment_data():
+    rats = [33,34,35,36,37,38,39,40,41,42]
+
+    global data_path
+    global stages
+    data_path = 'fitting/maze_behavioral_led_first_data_raw'
+    stages = ['LEDs1', 'ODOR1']
+
+    for rat in rats:
+        save_pd_to_csv(get_all_data_from_mat_for_agent(os.path.join(data_path, "rat{}".format(rat))),
+                       './fitting/maze_behavioral_led_first_data/output_expr_rat{}.csv'.format(rat))
+
+
 if __name__ == '__main__':
-    export_motivational_experiment_data()
+    export_maze_led_first_experiment_data()
