@@ -328,7 +328,8 @@ class PlusMazeOneHotCues2ActiveDoors(PlusMazeOneHotCues):
 		  {'name': 'Odor2', 'transition_logic': StagesTransition.set_odor_stage},
 		  {'name': 'LED', 'transition_logic': StagesTransition.set_color_stage}]
 
-	stage_names = [stage['name'] for stage in default_stages]
+
+	# stage_names = [stage['name'] for stage in default_stages]
 
 	def __init__(self, stages=default_stages, *args, **kwargs):
 		super().__init__(*args, **kwargs)
