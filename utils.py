@@ -105,12 +105,12 @@ def episode_rollout(env, agent):
     return state, action_dist, action, outcome, reward, correct_door
 
 
-def negentropy(dist, temperature=1):
-    return (max_entropy(len(dist)) - entropy(softmax(dist, temperature))) / max_entropy(len(dist))
+def negentropy(dist, beta=1):
+    return (max_entropy(len(dist)) - entropy(softmax(dist, beta))) / max_entropy(len(dist))
 
 
-def max_entropy(n, temperature=1):
-    return entropy(softmax([1 / n] * n, beta=temperature))
+def max_entropy(n, beta=1):
+    return entropy(softmax([1 / n] * n, beta=beta))
 
 
 def unsupervised_dimensionality(samples_embedding, explained_variance=0.95):
