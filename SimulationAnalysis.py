@@ -40,9 +40,9 @@ def show_days_to_criterion(simulation_df, stages=stages):
 	# stage_names = [stages[stage-1] for stage in df.stage]
 	# g1 = sns.barplot(x=stage_names, y='day in stage', palette=cols, data=df, errorbar='se', errwidth=1, capsize=.05)
 
-	g1.set(xlabel='', ylabel='Trials Until Criterion')
+	g1.set(xlabel='', ylabel='Days Until Criterion')
 	handles, labels = g1.get_legend_handles_labels()
-	g1.legend(handles, stages, loc='upper right', prop={'size': 12}, labelspacing=0.2)
+	g1.legend(handles, stages, loc='upper left', prop={'size': 12}, labelspacing=0.2)
 
 	despine(g1)
 
@@ -165,7 +165,7 @@ def num_days_till_criterion_odor_stages(file_path):
 
 if __name__ == '__main__':
 
-	#show_days_to_criterion('fitting/Results/Rats-Results/reported_results_dimensional_shifting/simulation_20_12_1.csv')
+	#show_days_to_criterion('/Users/georgekour/repositories/plus-maze-simulator/fitting/Results/Rats-Results/reported_results_dimensional_shifting/simulation_days_50_100TPD.csv')
 	show_days_to_criterion('/Users/georgekour/repositories/plus-maze-simulator/fitting/Results/Rats-Results/reported_results_dimensional_shifting/simulation_10_2023_09_OOC.csv')
 	#show_days_to_criterion('fitting/Results/simulations_results/simulation_ORL_0nmr.csv')
 	#goal_choice_index_model('/fitting/Results/simulations_results/simulation_FRL_0nmr.csv')
@@ -176,7 +176,7 @@ if __name__ == '__main__':
 	# #num_days_till_criterion_odor_stages("/Users/georgekour/repositories/plus-maze-simulator/fitting/Results/Rats-Results/reported_results_dimensional_shifting/increasing_ID_simulation_20.csv")
 
 	#show_days_to_criterion('/Users/georgekour/repositories/plus-maze-simulator/fitting/Results/Rats-Results/reported_results_dimensional_shifting/ED_shift_50_100TPD.csv', stages=['Odor', 'LED1', 'LED2', 'LED3' ])
-	ED_shift_analysis = '/Users/georgekour/repositories/plus-maze-simulator/fitting/Results/Rats-Results/reported_results_dimensional_shifting/ED_shift_50_100TPD.csv'
-	#model_parameters_development(ED_shift_analysis, reward_dependant_trials=1)
-	model_parameters_development_correct_vs_incorrect(ED_shift_analysis)
+	ED_shift_analysis = '/Users/georgekour/repositories/plus-maze-simulator/fitting/Results/Rats-Results/reported_results_dimensional_shifting/ED_shift_20_100TPD.csv'
+	model_parameters_development(ED_shift_analysis, reward_dependant_trials=1)
+	#model_parameters_development_correct_vs_incorrect(ED_shift_analysis)
 	x=1
