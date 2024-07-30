@@ -92,9 +92,9 @@ def PlusMazeExperimentFitting(env: PlusMaze, agent: MotivatedAgent, experiment_d
             fitting_info.at[trial, 'correct_door'] = correct_door
 
             curr_state = np.expand_dims(agent.get_memory().last(1)[0][0], axis=0)
-            action = np.argmax(agent.get_memory().last(1)[0][1])
-            fitting_info.at[trial, 'stimuli_value'] = agent.get_brain().get_model().get_observations_values(curr_state, agent.get_motivation())[0][action]
-            fitting_info.at[trial, 'action_bias'] = agent.get_brain().get_model().get_bias_values(agent.get_motivation())[action]
+            chosen_action = np.argmax(agent.get_memory().last(1)[0][1])
+            fitting_info.at[trial, 'stimuli_value'] = agent.get_brain().get_model().get_observations_values(curr_state, agent.get_motivation())[0][chosen_action]
+            fitting_info.at[trial, 'action_bias'] = agent.get_brain().get_model().get_bias_values(agent.get_motivation())[chosen_action]
 
             optimization_data = agent.smarten()
 
