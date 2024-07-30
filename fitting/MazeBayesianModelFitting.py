@@ -39,18 +39,8 @@ class MazeBayesianModelFitting:
 
 		experiment_stats, rat_data_with_likelihood = fitting_utils.run_model_on_animal_data(self.env, self.experiment_data, self.model,
 																							parameters, silent=True)
-		rat_data_with_likelihood['NLL'] = -np.log(rat_data_with_likelihood.likelihood)
-		likelihood_day = rat_data_with_likelihood.groupby(['stage', 'day in stage']).mean().reset_index()
-		likelihood_stage = likelihood_day.groupby('stage').mean()
+		aic, likelihood_stage, meanL, meanNLL = fitting_utils.analyze_fitting(rat_data_with_likelihood, 'likelihood', len(parameters))
 
-		NLL = rat_data_with_likelihood.NLL.to_numpy()
-		n = len(NLL)
-		L = rat_data_with_likelihood.likelihood.to_numpy()
-		meanNLL = np.nanmean(NLL)
-		meanL = np.nanmean(rat_data_with_likelihood.likelihood)
-		geomeanL = scipy.stats.mstats.gmean(rat_data_with_likelihood.likelihood, nan_policy='omit')
-		np.testing.assert_almost_equal(np.exp(-meanNLL), geomeanL)
-		aic = 2 * np.sum(NLL)/n + 2 * len(parameters) / n
 		y = meanNLL
 
 		# print("{}. x={}, AIC:{:2f} (meanNLL={:.2f}, medianNLL={:.2f}, sumNLL={:.2f}, stages={}), \t(meanL={:.2f}, "
@@ -108,7 +98,7 @@ class MazeBayesianModelFitting:
 		experiment_stats, rat_data_with_likelihood = fitting_utils.run_model_on_animal_data(self.env, self.experiment_data, self.model,
 																							search_result.x)
 		n = len(rat_data_with_likelihood)
-		aic = - 2 * np.sum(np.log(rat_data_with_likelihood.likelihood))/n + 2 * len(search_result.x)/n
+		aic = - 2 * np.sum(np.log(rat_data_with_likelihood.likelihood)) + 2 * len(search_result.x)
 		print("Best Parameters: {} - AIC:{:.3}\n".format(np.round(search_result.x, 4), aic))
 
 		return search_result, experiment_stats, rat_data_with_likelihood
@@ -153,6 +143,7 @@ class MazeBayesianModelFitting:
 
 				rat_data_with_likelihood["subject"] = subject_id
 				rat_data_with_likelihood["model"] = utils.brain_name(model)
+				# rat_data_with_likelihood["parameters"] = {name: round(value, 4) for name, value in zip([param.name for param in parameters_space], search_result.x)}
 				rat_data_with_likelihood["parameters"] = [np.round(search_result.x,4)] * len(rat_data_with_likelihood)
 				rat_data_with_likelihood["algorithm"] = \
 					"{}_{}".format(fitting_config.OPTIMIZATION_METHOD, n_calls)
