@@ -28,12 +28,10 @@ num_days_reported = [4, 2, 9]
 
 figures_folder = '/Users/georgekour/repositories/plus-maze-simulator/fitting/Results/figures'
 
-
 def filter_days(df):
-	for ind, stage in enumerate(stages):
-		df = df[~((df.stage == ind+1) & (df['day in stage'] > num_days_reported[ind]))]
-	return df
-
+    for ind, stage in enumerate(stages):
+        df = df[~((df.stage == ind + 1) & (df['day in stage'] > num_days_reported[ind]))]
+    return df
 
 
 def models_fitting_quality_over_times_average(data_file_path):
@@ -50,14 +48,13 @@ def models_fitting_quality_over_times_average(data_file_path):
     model_df = model_df[~((model_df.stage == 2) & (model_df['day in stage'] > num_days_reported[1]))]
     model_df = model_df[~((model_df.stage == 3) & (model_df['day in stage'] > num_days_reported[2]))]
 
-    model_df['ind'] = model_df.stage + 0.1 * model_df['day in stage']
-    model_df['ind'] = model_df['ind'].astype(str)
+    model_df, order, st = fitting_utils.index_days(model_df)
 
     fig = plt.figure(figsize=(7.5, 4), dpi=100, facecolor='w')
     axis = sns.lineplot(x="ind", y="likelihood", hue="model", hue_order=models_order_df(model_df),
                         data=model_df, errorbar="se", err_style='band')
-    for stage_day in [3, 5]:
-        axis.axvline(x=stage_day + 0.5, alpha=0.5, dashes=(5, 2, 1, 2), lw=2, color='gray')
+    for stage_day in st:
+        axis.axvline(x=stage_day - 0.5, alpha=0.5, dashes=(5, 2, 1, 2), lw=2, color='gray')
 
     axis.set_xlabel('Stage.Day')
     axis.set_ylabel('Average Likelihood')
@@ -251,9 +248,6 @@ def learning_curve_behavioral_boxplot(data_file_path):
 
     axis = sns.boxplot(data=days_info_df, x='ind', y='reward', order=order, palette="flare")
 
-    for stage_day in [8, 11]:
-        axis.axvline(x=stage_day + 0.5, alpha=0.5, dashes=(5, 2, 1, 2), lw=2, color='grey')
-
     animals_in_day = [len(np.unique(days_info_df[days_info_df.ind == day_stage].subject)) for day_stage in order]
     axis.axhline(y=0.5, alpha=0.7, lw=1, color='grey', linestyle='--')
 
@@ -265,6 +259,10 @@ def learning_curve_behavioral_boxplot(data_file_path):
 
     ticks = ["{}".format(int(x[1:])) if (int(x[1:]) - 1) % 3 == 0 else "" for ind, x in enumerate(order)]
     axis.set_xticklabels(ticks)
+
+    _, order, st = fitting_utils.index_days(df)
+    for stage_day in st:
+        axis.axvline(x=stage_day - 0.5, alpha=0.5, dashes=(5, 2, 1, 2), lw=2, color='gray')
 
     axis.set_xlabel('Training Day in Stage')
     axis.set_ylabel('Success rate')
@@ -662,8 +660,7 @@ def attention_development(data_file_path):
         df_model = df_model.groupby(['subject', 'model', 'parameters', 'stage', 'day in stage'],
                                     sort=False).mean().reset_index()
 
-        df_model['ind'] = df_model.stage + 0.1 * df_model['day in stage']
-        df_model['ind'] = df_model['ind'].astype(str)
+        df_model, order, st = fitting_utils.index_days(df_model)
 
         fig = plt.figure(figsize=(7.5, 4), dpi=120, facecolor='w')
 
@@ -674,8 +671,8 @@ def attention_development(data_file_path):
                          label=variable_name.split('_')[0], marker='o')
         axis.legend(loc='upper left')
 
-        for stage_day in [3, 5]:
-            plt.axvline(x=stage_day + 0.5, alpha=0.5, dashes=(5, 2, 1, 2), lw=1, color='gray')
+        for stage_day in st:
+            axis.axvline(x=stage_day - 0.5, alpha=0.5, dashes=(5, 2, 1, 2), lw=2, color='gray')
 
         plt.xlabel('Stage.Day')
         plt.ylabel('Attention')
@@ -697,11 +694,13 @@ def attention_development(data_file_path):
             df_sub = df_model[df_model["subject"] == subject]
             axis = fig.add_subplot(4, 2, i + 1)
 
+            df_sub, order, st = fitting_utils.index_days(df_sub)
+
             for variable_name in variables_names:
                 axis = sns.lineplot(x="ind", y=variable_name, data=df_sub, errorbar="se", err_style='band', ax=axis,
                                     label=variable_name.split('_')[0])
-            for stage_day in [3, 5]:
-                axis.axvline(x=stage_day + 0.5, alpha=0.5, dashes=(5, 2, 1, 2), lw=2, color='gray')
+            for stage_day in st:
+                axis.axvline(x=stage_day - 0.5, alpha=0.5, dashes=(5, 2, 1, 2), lw=2, color='gray')
             axis.legend([], [], frameon=False)
             axis.spines['top'].set_visible(False)
             axis.spines['right'].set_visible(False)
