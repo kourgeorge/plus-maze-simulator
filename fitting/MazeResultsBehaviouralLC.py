@@ -122,7 +122,7 @@ def show_days_to_criterion(data_file_path):
 	df = fitting_utils.cut_off_data_when_reaching_criterion(df, num_stages=5)
 	df = df.groupby(['subject', 'model', 'stage'], sort=False).agg({'day in stage': 'max'}).reset_index()
 
-	RM_anova(df, 'day in stage', 'subject', within='stage')
+	fitting_utils.RM_anova(df, 'day in stage', 'subject', within='stage')
 
 	fig = plt.figure(figsize=(10, 5))
 	g1 = sns.barplot(x='stage', y='day in stage', order=list(range(1, len(stages) + 1)),
