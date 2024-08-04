@@ -409,3 +409,10 @@ def sample_attention_distribution(dimensions=3):
     # Normalize the numbers so that their sum equals 1
     normalized = random_numbers / np.sum(random_numbers)
     return tuple(normalized)
+
+
+parameters_friendly_names = {
+    'beta': r'$\beta$',
+    'lr': r'$\alpha$',
+    'attention_lr': r'$\alpha_{\phi}$'
+}
