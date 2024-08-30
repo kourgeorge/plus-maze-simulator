@@ -16,6 +16,11 @@ def extract_model_average_fitting_parameters(fitting_data_df_file, model):
     return average_parameters, std_parameters
 
 
+def log_uniform(low=1e-9, high=1e9, size=None, base=10):
+    low_log = np.log10(low)
+    high_log = np.log10(high)
+    return np.power(base, np.random.uniform(low_log, high_log, size))
+
 
 def sample_brain_parameters(parameters_mean, parameters_std, ranges):
     """Given the parameter mean and std, samples a parameter value within the given range"""
