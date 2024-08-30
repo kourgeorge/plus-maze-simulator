@@ -32,6 +32,14 @@ class AbstractTabularModel:
 
 
 class QTable(AbstractTabularModel):
+    """
+    Implements a standard Q-learning table with support for different types of motivation (e.g., water, food, none).
+    The class utilizes a dictionary to store Q-values for different states and actions.
+	It uses defaultdict for easy initialization and storage of Q-values.
+	It Provides methods for bias management (get_bias_values() and set_bias_value()).
+	It Contains methods to manipulate state-action values (set_actual_state_value()) and represent states (state_representation()).
+    """
+
     def __init__(self, encoding_size, num_channels, num_actions, initial_value=config.INITIAL_FEATURE_VALUE, *args,
                  **kwargs):
         super().__init__()
@@ -84,6 +92,10 @@ class QTable(AbstractTabularModel):
 
 
 class OptionsTable(AbstractTabularModel):
+    """
+    Represents a model using options, where familiar options (like color and odor) are combined to make decisions.
+    This model also supports location cues.
+    """
 
     def __init__(self, encoding_size, num_channels, num_actions, use_location_cue=True,
                  initial_value=config.INITIAL_FEATURE_VALUE, *args, **kwargs):
@@ -153,6 +165,15 @@ class OptionsTable(AbstractTabularModel):
 
 
 class FTable(AbstractTabularModel):
+    """
+    Implements a more structured model where values are associated with specific stimuli dimensions (odors, colors, spatial). It uses a hierarchical dictionary to store values.
+	It separates storage for different types of stimuli (odors, colors, spatial) per motivation.
+	It has Methods for managing stimulus values (get_stimulus_value(), set_stimulus_value(), update_stimulus_value()).
+	It handles inactive doors by setting their value to negative infinity.
+	It provides attention through action biases.
+
+    """
+
     def __init__(self, encoding_size, num_actions, initial_value=config.INITIAL_FEATURE_VALUE, num_channels=2):
         super().__init__()
         self.encoding_size = encoding_size
@@ -239,8 +260,13 @@ class FTable(AbstractTabularModel):
 
 
 class ACFTable(FTable):
-    """This model implements attention in addition to stimuli reset on SC.
-    However, whether attention is updated is up to the learner."""
+    """
+    Extends FTable to include attention mechanisms. Attention weights are applied to different dimensions (odor, color, spatial)
+    to influence the decision-making process.
+    It Stores and updates attention importance for different stimuli.
+    It uses a softmax function (phi()) to compute attention weights.
+    It Overrides methods for observation values and model metrics to include attention-related computations.
+    """
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -298,16 +324,16 @@ class ACFTable(FTable):
 
 
 class FixedACFTable(ACFTable):
-    """This model implements attention in addition to stimuli reset on SC.
-    However, whether attention is updated is up to the learner."""
+    """Similar to ACFTable, but the attention weights can be initialized and fixed.
+    It suggests that attention may not change dynamically during learning."""
 
     def __init__(self, attn_importance=np.ones([3]) / 3, *args, **kwargs):
         if any(item < 0 for item in attn_importance) or np.abs(np.sum(attn_importance) - 1) > 1e-9:
-            raise Exception("Illigal attention arguments, should be positive and sum to 1!")
+            raise Exception("Illegal attention arguments, should be positive and sum to 1!")
         super().__init__(*args, **kwargs)
 
         self.attn_importance = np.abs(attn_importance) / np.sum(
-            np.abs(attn_importance))  # notmalize attention parameters
+            np.abs(attn_importance))  # normalize attention parameters
 
     def phi(self):
         return self.attn_importance
