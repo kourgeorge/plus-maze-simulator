@@ -2,7 +2,7 @@ __author__ = 'gkour'
 
 
 class AbstractLearner:
-	def __init__(self, model, optimizer):
+	def __init__(self, model, optimizer, *args, **kwargs):
 		super().__init__()
 		self.model = model
 		self.optimizer = optimizer
@@ -18,3 +18,7 @@ class AbstractLearner:
 
 	def __str__(self):
 		return self.__class__.__name__
+
+
+class SymmetricLearner:
+    is_symmetric = True

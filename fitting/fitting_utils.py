@@ -12,6 +12,7 @@ from scipy import stats
 import config
 from fitting.PlusMazeExperimentFitting import PlusMazeExperimentFitting
 from fitting.fitting_config_attention import friendly_models_name_map, get_parameter_names
+from learners.abstractlearner import SymmetricLearner
 from learners.networklearners import DQNAtt
 from learners.tabularlearners import MALearner
 from models.tabularmodels import FixedACFTable
@@ -52,8 +53,8 @@ def episode_rollout_on_real_data(env: PlusMazeOneHotCues, agent: MotivatedAgent,
         if (outcome == RewardType.NONE and current_trial.reward != 0) or \
                 (outcome != RewardType.NONE and current_trial.reward == 0):
             raise Exception(f"There is a discrepancy between data and simulation reward!!\n"
-                            f"trial={current_trial.trial}, stage={current_trial.stage}, data_action={action+1}, "
-                            f"env_correct_door={correct_door+1}, data_reward={current_trial.reward}, env_reward={reward}")
+                            f"trial={current_trial.trial}, stage={current_trial.stage}, data_action={action + 1}, "
+                            f"env_correct_door={correct_door + 1}, data_reward={current_trial.reward}, env_reward={reward}")
 
         total_reward += reward
         model_action_dist = agent.get_brain().think(np.expand_dims(state, 0), agent).squeeze().detach().numpy()
@@ -75,34 +76,59 @@ def run_model_on_animal_data(env, rat_data, model_arch, parameters, initial_moti
     if initial_motivation is None:
         initial_motivation = RewardType(rat_data.iloc[0].initial_motivation)
     (brain, learner, model) = model_arch
-    model_instance = model(encoding_size=env.stimuli_encoding_size(), num_actions=env.num_actions(), num_channels=2)
 
-    if issubclass(learner, MALearner) or issubclass(learner, DQNAtt):
-        (beta, lr, attention_lr) = parameters
-        learner_instance = learner(model_instance, learning_rate=lr, alpha_phi=attention_lr)
-    elif model == FixedACFTable:
-        (beta, lr) = parameters[0:2]
-        [att_o, att_c] = parameters[2:]
-        model_instance = model(attn_importance=[att_o, att_c, 1 - att_c - att_o],
-                               encoding_size=env.stimuli_encoding_size(), num_actions=env.num_actions(), num_channels=2)
-        learner_instance = learner(model_instance, learning_rate=lr)
-    else:
-        (beta, lr) = parameters
-        learner_instance = learner(model_instance, learning_rate=lr)
+    resolved_params_dict = resolve_parameters(parameters, *model_arch)
+
+    model_instance = model(encoding_size=env.stimuli_encoding_size(), num_actions=env.num_actions(), num_channels=2,
+                           **resolved_params_dict)
+    learner_instance = learner(model_instance, **resolved_params_dict)
+    brain_instance = brain(learner_instance, **resolved_params_dict)
+
+    nmr = 0
+    agent = MotivatedAgent(brain_instance, motivation=initial_motivation,
+                           motivated_reward_value=config.MOTIVATED_REWARD,
+                           non_motivated_reward_value=nmr, exploration_param=0)
 
     if silent: blockPrint()
 
-    nmr = 0
     env.init()
-    agent = MotivatedAgent(brain(learner_instance, beta=beta),
-                           motivation=initial_motivation, motivated_reward_value=config.MOTIVATED_REWARD,
-                           non_motivated_reward_value=nmr, exploration_param=0)
 
     experiment_stats, rat_data_with_likelihood = PlusMazeExperimentFitting(env, agent, dashboard=False,
                                                                            experiment_data=rat_data)
     if silent: enablePrint()
 
     return experiment_stats, rat_data_with_likelihood
+
+
+def resolve_parameters(parameters, brain, learner, model):
+    """
+    Resolve and assign parameters based on the learner type and model.
+    Returns:
+        dict: A dictionary containing resolved parameter names and their values.
+    """
+    # Create an iterator for the parameters
+    param_iterator = iter(parameters)
+
+    # Initialize resolved parameters with mandatory 'beta' and 'lr' values
+    resolved_params = {
+        'beta': next(param_iterator),
+        'lr': next(param_iterator)
+    }
+
+    # Check if the learner is not a subclass of SymmetricLearner and add 'lr_nr'
+    if not issubclass(learner, SymmetricLearner):
+        resolved_params['lr_nr'] = next(param_iterator)
+
+    # Check if the learner requires 'attention_lr' parameter
+    if issubclass(learner, (MALearner, DQNAtt)):
+        resolved_params['attention_lr'] = next(param_iterator)
+
+    # Check if the model is FixedACFTable and add attention parameters
+    if model == FixedACFTable:
+        resolved_params['att_o'] = next(param_iterator)
+        resolved_params['att_c'] = next(param_iterator)
+
+    return resolved_params
 
 
 def blockPrint():
@@ -175,10 +201,10 @@ def analyze_fitting(rat_data_with_likelihood, likelihood_column_name, num_parame
     L = likelihood_column.to_numpy()
     meanNLL = np.nanmean(NLL)
     meanL = np.nanmean(likelihood_column)
-    geomeanL = scipy.stats.mstats.gmean(likelihood_column, nan_policy='omit')
+    geomeanL = scipy.stats.mstats.gmean(likelihood_column)
     np.testing.assert_almost_equal(np.exp(-meanNLL), geomeanL)
     aic = 2 * np.sum(NLL) + 2 * num_parameters
-    return round(aic,4), round(likelihood_stage,4), round(meanL,4), round(meanNLL,4)
+    return round(aic, 4), round(likelihood_stage, 4), round(meanL, 4), round(meanNLL, 4)
 
 
 def models_order_df(df):
@@ -223,7 +249,7 @@ def cut_off_data_when_reaching_criterion(df, num_stages=3):
 
 
 def add_correct_door(df):
-    if all(np.isnan(value) for value in df['correct_door']):
+    if all(not np.isnan(value) for value in df['correct_door']):
         df['correct_door'] = df['correct_door'].astype(int)
         df['model_reward_dist'] = df.apply(lambda row: string2list(row['model_action_dist'])[row['correct_door']],
                                            axis='columns').astype(float)

@@ -101,8 +101,7 @@ class OptionsTable(AbstractTabularModel):
                  initial_value=config.INITIAL_FEATURE_VALUE, *args, **kwargs):
         super().__init__()
         self._num_actions = num_actions
-        self.C = defaultdict(lambda: float(
-            initial_value))  # familiar options are stored as tupples (color, odor and possibly, location).
+        self.C = defaultdict(lambda: float(initial_value))  # familiar options are stored as tuples (color, odor and possibly, location).
         self.action_bias = {'water': np.zeros(self._num_actions), 'food': np.zeros(self._num_actions),
                             'none': np.zeros(self._num_actions)}
         self.encoding_size = encoding_size
@@ -174,7 +173,7 @@ class FTable(AbstractTabularModel):
 
     """
 
-    def __init__(self, encoding_size, num_actions, initial_value=config.INITIAL_FEATURE_VALUE, num_channels=2):
+    def __init__(self, encoding_size, num_actions, initial_value=config.INITIAL_FEATURE_VALUE, num_channels=2,  *args, **kwargs):
         super().__init__()
         self.encoding_size = encoding_size
         self._num_actions = num_actions
@@ -285,20 +284,42 @@ class ACFTable(FTable):
         return utils.softmax(self.attn_importance)
 
     def get_observations_values(self, observations, motivation):
+        """
+            Calculate action values based on observations and motivation.
+
+            Parameters:
+                observations (np.ndarray): The observations in one-hot encoded form.
+                motivation (any): Motivation parameter that influences stimulus values.
+
+            Returns:
+                np.ndarray: Computed action values for each observation.
+            """
+        # Convert one-hot encoded observations to cues (odor and color for each door)
         cues = utils.stimuli_1hot_to_cues(observations, self.encoding_size)
-        batch = observations.shape[0]
+        batch_size = observations.shape[0]
 
-        odor = cues[:, 0]  # odor for each door
-        color = cues[:, 1]  # color for each door
+        # Extract odors and colors from cues
+        odor_cues = cues[:, 0]  # Odor for each door
+        color_cues = cues[:, 1]  # Color for each door
 
-        data = np.stack([self.get_stimulus_value('odors', odor, motivation),
-                         self.get_stimulus_value('colors', color, motivation),
-                         np.repeat(
-                             np.expand_dims(self.get_stimulus_value('spatial', np.array(range(4)), motivation), axis=0),
-                             repeats=batch, axis=0)])
-        attention = np.expand_dims(self.phi(), axis=0)
-        action_values = np.matmul(attention, np.transpose(data, axes=(1, 0, 2)))
+        # Calculate stimulus values for odors, colors, and spatial dimensions
+        odor_values = self.get_stimulus_value('odors', odor_cues, motivation)
+        color_values = self.get_stimulus_value('colors', color_cues, motivation)
+        spatial_values = self.get_stimulus_value('spatial', np.arange(4), motivation)
+
+        # Repeat spatial values for each observation in the batch
+        spatial_values_repeated = np.repeat(np.expand_dims(spatial_values, axis=0), repeats=batch_size, axis=0)
+
+        # Stack all stimulus values into a single data array
+        data = np.stack([odor_values, color_values, spatial_values_repeated])
+
+        # Calculate the attention weights (phi) and apply them to the data
+        attention_weights = np.expand_dims(self.phi(), axis=0)
+        action_values = np.matmul(attention_weights, np.transpose(data, axes=(1, 0, 2)))
+
+        # Squeeze the action values to remove the singleton dimension
         action_values = np.squeeze(action_values, axis=1)
+
         return action_values
 
     def get_model_metrics(self):

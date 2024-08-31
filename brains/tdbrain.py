@@ -11,8 +11,8 @@ from motivatedagent import MotivatedAgent
 
 class TDBrain(AbstractBrain):
 
-    def __init__(self, learner:AbstractLearner, beta=5, reward_discount=0, batch_size=config.BATCH_SIZE):
-        super().__init__(reward_discount)
+    def __init__(self, learner:AbstractLearner, beta=5, reward_discount=0, batch_size=config.BATCH_SIZE, *args, **kwargs):
+        super().__init__(reward_discount, *args, **kwargs)
         self.learner = learner
         self.batch_size = batch_size
         self.beta = beta
