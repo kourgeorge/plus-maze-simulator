@@ -50,10 +50,8 @@ def PlusMazeExperiment(env: PlusMaze, agent: MotivatedAgent, dashboard=False):
     trial = 0
     day_in_stage = 1
     print('============================ Brain:{}, Learner:{}, Model:{}, ======================='.format(str(agent.get_brain()), str(agent.get_brain().get_learner()), str(agent.get_brain().get_model())))
-    print("Stage {}: {} - Water Motivated, odor relevant. (Odors: {}, Correct: {})".format(env.get_stage(),
-                                                                                           env.stage_names[env.get_stage()],
-                                                                                           [np.argmax(encoding) for encoding in env.get_odor_cues()],
-                                                                                            np.argmax(env.get_correct_cue_value())))
+    print(f"Stage {env.get_stage()}: {env.stage_names[env.get_stage()]} - Water Motivated."
+          f"(Odors: {[np.argmax(encoding) for encoding in env.get_odor_cues()]}, Correct: {np.argmax(env.get_correct_cue_value())})")
 
     while env.get_stage() < len(env.stage_names):
 
@@ -67,6 +65,7 @@ def PlusMazeExperiment(env: PlusMaze, agent: MotivatedAgent, dashboard=False):
 
         trial_dict['trial'] = trial % config.TRIALS_IN_DAY
         trial_dict['stage'] = env.get_stage() + 1
+        trial_dict['stage_name'] = env.stage_names[env.get_stage()]
         trial_dict['action'] = action + 1
         trial_dict['reward'] = 0 if outcome == RewardType.NONE else 1
         trial_dict['day in stage'] = day_in_stage
