@@ -25,8 +25,7 @@ class PlusMaze:
 
 		self._state = None
 		self._stimuli_encoding_size = 2
-		self._initial_relevant_cue: CueType = relevant_cue
-		self._relevant_cue: CueType = self._initial_relevant_cue
+		self._relevant_cue: CueType = relevant_cue
 		self._used_odor_cues = []
 		self._used_light_cues = []
 		self._odor_cues = None
@@ -38,7 +37,6 @@ class PlusMaze:
 
 	def init(self):
 		self._stage = 0
-		self._relevant_cue = self._initial_relevant_cue
 		self._used_odor_cues = []
 		self._used_light_cues = []
 		self._odor_cues = []
