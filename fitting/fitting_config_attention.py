@@ -13,6 +13,8 @@ from fitting.skopt_priors import Exponential, Beta
 from learners.networklearners import *
 from learners.tabularlearners import *
 from models.networkmodels import *
+from models.non_directional_tabularmodels import NonDirectionalOptionsTable, \
+	NonDirectionalACFTable, NonDirectionalFixedACFTable
 from models.tabularmodels import *
 
 MAZE_ANIMAL_DATA_PATH = '/Users/georgekour/repositories/plus-maze-simulator/fitting/maze_behavioral_data'
@@ -37,14 +39,21 @@ maze_models = [
 	# ((TDBrain, QLearner, QTable), (beta, lr)),
 	# ((TDBrain, QLearner, OptionsTable), (beta, lr)),
 	# ((TDBrain, IALearner, ACFTable), (beta, lr)),
-	((TDBrain, MALearner, ACFTable), (beta, lr, attention_lr)),
+	# ((TDBrain, MALearner, ACFTable), (beta, lr, attention_lr)),
 	# ((TDBrain, IALearner, FixedACFTable), (beta, lr, attention_odor, attention_color)),
-
+	#
 	# ((TDBrain, AsymmetricQLearner, QTable), (beta, lr, lr_nr)),
 	# ((TDBrain, AsymmetricQLearner, OptionsTable), (beta, lr, lr_nr)),
 	# ((TDBrain, AsymmetricIALearner, ACFTable), (beta, lr, lr_nr)),
 	# ((TDBrain, AsymmetricIALearner, FixedACFTable), (beta, lr, lr_nr, attention_odor, attention_color)),
 	# ((TDBrain, AsymmetricMALearner, ACFTable), (beta, lr, lr_nr, attention_lr)),
+	#
+
+	((TDBrain, QLearner, NonDirectionalOptionsTable), (beta, lr)),
+	((TDBrain, IALearner, NonDirectionalACFTable), (beta, lr)),
+	((TDBrain, MALearner, NonDirectionalACFTable), (beta, lr, attention_lr)),
+	((TDBrain, IALearner, NonDirectionalFixedACFTable), (beta, lr, attention_odor)),
+
 
 			   # ((TDBrain, MALearnerSimple, ACFTable), (beta, lr, attention_lr)),
 			   # ((TDBrain, MALearner, PCFTable), (beta, lr, attention_lr)),
@@ -85,6 +94,10 @@ friendly_models_name_map = {
 							'AsymmetricIALearner.ACFTable': 'Asym. FRL',
 							'AsymmetricIALearner.FixedACFTable': 'Asym. FARL',
 
+							'QLearner.NonDirectionalOptionsTable': 'NonDir. ORL',
+							'IALearner.NonDirectionalACFTable': 'NonDir. FRL',
+							'MALearner.NonDirectionalACFTable': 'NonDir. AARL',
+							'IALearner.NonDirectionalFixedACFTable': 'NonDir. FARL',
 
 							'DQN.FCNet':'FCNet-D',
 							'DQN.UANet':'UANet-D',
