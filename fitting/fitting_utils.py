@@ -15,6 +15,7 @@ from fitting.fitting_config_attention import friendly_models_name_map, get_param
 from learners.abstractlearner import SymmetricLearner
 from learners.networklearners import DQNAtt
 from learners.tabularlearners import MALearner
+from models.non_directional_tabularmodels import NonDirectionalFixedACFTable
 from models.tabularmodels import FixedACFTable
 from motivatedagent import MotivatedAgent
 from environment import PlusMazeOneHotCues
@@ -125,8 +126,14 @@ def resolve_parameters(parameters, brain, learner, model):
 
     # Check if the model is FixedACFTable and add attention parameters
     if model == FixedACFTable:
-        resolved_params['att_o'] = next(param_iterator)
-        resolved_params['att_c'] = next(param_iterator)
+        attn_odor = next(param_iterator)
+        attn_color = next(param_iterator)
+        resolved_params['attn_importance'] = [attn_odor, attn_color, 1-attn_odor-attn_color]
+
+    # Check if the model is FixedACFTable and add attention parameters
+    if model == NonDirectionalFixedACFTable:
+        attn_odor = next(param_iterator)
+        resolved_params['attn_importance'] = [attn_odor, 1-attn_odor]
 
     return resolved_params
 

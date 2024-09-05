@@ -13,6 +13,7 @@ import config
 import utils
 from environment import PlusMazeOneHotCues2ActiveDoors, CueType, PlusMazeOneHotCues, StagesTransition
 from fitting import fitting_utils
+from fitting.fitting_utils import resolve_parameters
 from learners.networklearners import DQNAtt
 from learners.tabularlearners import MALearner
 from models.tabularmodels import FixedACFTable
@@ -31,10 +32,10 @@ class MazeBayesianModelFitting:
 		self.n_calls = n_calls
 
 	def _calc_experiment_likelihood(self, parameters):
-		(brain, learner, model) = self.model
-		if model == FixedACFTable:
-			att_o, att_c = parameters[2:]
-			if att_o + att_c > 1:
+
+		if self.model[2] == FixedACFTable:
+			resolved_params = resolve_parameters(parameters, *self.model)
+			if not utils.is_valid_attention_weights(resolved_params['attn_importance']):
 				return 50
 
 		experiment_stats, rat_data_with_likelihood = fitting_utils.run_model_on_animal_data(self.env, self.experiment_data, self.model,
@@ -132,7 +133,7 @@ class MazeBayesianModelFitting:
 		for subject_id, (file_name,curr_rat) in enumerate(animal_data):
 			initial_motivation = curr_rat.iloc[0].initial_motivation if 'initial_motivation' in curr_rat.columns else 'water'
 
-			print("\n#################### Subject: {} - {}. Env: {} #####################\n".format(subject_id, initial_motivation, str(env)))
+			print(f"\n#################### Subject: {subject_id} - {initial_motivation}. Env: {str(env)} #####################\n")
 			curr_rat = fitting_utils.maze_experimental_data_preprocessing(curr_rat)
 			fitting_results[subject_id] = {}
 			for curr_model in all_models:
@@ -149,26 +150,27 @@ class MazeBayesianModelFitting:
 					"{}_{}".format(fitting_config.OPTIMIZATION_METHOD, n_calls)
 
 				results_df = results_df.append(rat_data_with_likelihood, ignore_index=True)
-			results_df.to_csv('fitting/Results/Rats-Results/fitting_results_dimensional_led_first_{}_{}_tmp.csv'.format(timestamp, n_calls))
-		results_df.to_csv('fitting/Results/Rats-Results/fitting_results_dimensional_led_first_{}_{}.csv'.format(timestamp, n_calls))
+			results_df.to_csv(f'fitting/Results/Rats-Results/fitting_results_dimensional{timestamp}_{n_calls}_tmp.csv')
+		results_df.to_csv(f'fitting/Results/Rats-Results/fitting_results_dimensional{timestamp}_{n_calls}.csv')
 		return fitting_results
 
 
 if __name__ == '__main__':
 
 	# fit odor first animals
-	# MazeBayesianModelFitting.all_subjects_all_models_optimization(
-	#     PlusMazeOneHotCues2ActiveDoors(stages=led_first_stages, stimuli_encoding=10),
-	# 	fitting_config.MAZE_ANIMAL_DATA_PATH, fitting_config.maze_models, n_calls=fitting_config.FITTING_ITERATIONS)
-
-
-	#fit led first animals
-	led_first_stages = [{'name': 'LED', 'transition_logic': StagesTransition.set_color_stage},
-						{'name': 'Odor1', 'transition_logic': StagesTransition.set_odor_stage}]
-
 	MazeBayesianModelFitting.all_subjects_all_models_optimization(
-		PlusMazeOneHotCues2ActiveDoors(stages=led_first_stages, stimuli_encoding=10),
-		fitting_config.MAZE_ANIMAL_LED_FIRST_DATA_PATH, fitting_config.maze_models, n_calls=fitting_config.FITTING_ITERATIONS)
+	    PlusMazeOneHotCues2ActiveDoors(stimuli_encoding=10),
+		fitting_config.MAZE_ANIMAL_DATA_PATH, fitting_config.maze_models, n_calls=fitting_config.FITTING_ITERATIONS)
+
+
+	# #fit led first animals
+	# led_first_stages = [{'name': 'LED', 'transition_logic': StagesTransition.set_color_stage},
+	# 					{'name': 'Odor1', 'transition_logic': StagesTransition.set_odor_stage}]
+	#
+	# MazeBayesianModelFitting.all_subjects_all_models_optimization(
+	# 	PlusMazeOneHotCues2ActiveDoors(stages=led_first_stages, stimuli_encoding=10),
+	# 	fitting_config.MAZE_ANIMAL_LED_FIRST_DATA_PATH, fitting_config.maze_models, n_calls=fitting_config.FITTING_ITERATIONS)
+	#
 
 	# MazeBayesianModelFitting.all_subjects_all_models_optimization(
 	# 	PlusMazeOneHotCues(relevant_cue=CueType.ODOR, stimuli_encoding=10), fitting_config.MOTIVATED_ANIMAL_DATA_PATH,
