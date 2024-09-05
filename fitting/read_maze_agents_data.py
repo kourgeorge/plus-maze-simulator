@@ -56,6 +56,7 @@ def get_data_from_csv(file, stage_index, day_index):
 
 def add_stage_index_and_day_to_df(df, stage_index, day_index):
     df['stage'] = stage_index + 1
+    df['stage_name'] = stages[stage_index]
     df['day in stage'] = day_index + 1
     return df
 
@@ -64,7 +65,7 @@ def parse_table_stage_by_odor(df, stage):
     df = set_odor_and_color_column(df, stage)
     df['action'] = df['chosen_arm']
     df['reward'] = df.apply(lambda row: 1 if row.chosen_arm == row.door_relevant_cue1 else (None if np.isnan(row.chosen_arm) else 0), axis=1)
-    return df[['stage', 'day in stage', 'trial', 'A1o', 'A1c', 'A2o', 'A2c', 'A3o', 'A3c', 'A4o', 'A4c', 'action', 'reward']]
+    return df[['stage', 'stage_name', 'day in stage', 'trial', 'A1o', 'A1c', 'A2o', 'A2c', 'A3o', 'A3c', 'A4o', 'A4c', 'action', 'reward']]
 
 
 def set_odor_and_color_column(df, stage):
@@ -101,7 +102,7 @@ def save_pd_to_csv(df, file_name):
 
 
 def export_maze_experiment_data():
-    rats = [0,1,2,3,4,5,6,7,8]
+    rats = [0, 1, 2, 3, 4, 5, 6, 7, 8]
 
     global data_path
     global stages
@@ -127,4 +128,5 @@ def export_maze_led_first_experiment_data():
 
 
 if __name__ == '__main__':
+    export_maze_experiment_data()
     export_maze_led_first_experiment_data()
