@@ -9,7 +9,7 @@ from fitting.MazeBayesianModelFitting import MazeBayesianModelFitting
 import pandas as pd
 import fitting_config_attention
 import utils
-from scipy.stats import pearsonr
+from scipy.stats import pearsonr, spearmanr
 import ast
 from sklearn.metrics import confusion_matrix
 import seaborn as sns
@@ -122,7 +122,7 @@ def analyze_models_fitting(recovered_df):
             model_identifiability_results_df = model_identifiability_results_df.append(results_dict, ignore_index=True)
             print(f'{true_model_name}-{fitted_model_name} (True vs. Fitted): \nparam: {np.round(true_parameters,4)}-{fitted_parameters} \n AIC: {aic_t}-{aic_f}   meanLikelihood: {meanL_t}-{meanL_f}  meanNLL: {meanNLL_t}-{meanNLL_f}')
 
-    model_identifiability_results_df.to_csv(f"fitting/Results/Rats-Results/identifiability_results/_results_{utils.get_timestamp()}_.csv")
+    model_identifiability_results_df.to_csv(f"fitting/Results/Rats-Results/identifiability_results/recoverability_results_{utils.get_timestamp()}_.csv")
     return model_identifiability_results_df
 
 
@@ -173,7 +173,7 @@ def parameters_recoverability_correlation(recovered_df):
 
             ax.set_xlabel(f'Fit {fitting_utils.parameters_friendly_names[parameter_names[i]]}')
             ax.set_ylabel(f'Simulated {fitting_utils.parameters_friendly_names[parameter_names[i]]}')
-            overall_corr, _ = pearsonr(x, y)
+            overall_corr, _ = spearmanr(x, y)
             rho = np.round(overall_corr,2)
             ax.set_title(fr'$\rho$={rho}')
             fitting_utils.despine(ax)
@@ -247,11 +247,12 @@ def model_identifiability_confusion_matrix(df):
 
 
 if __name__ == '__main__':
-    # all_simulation_data = pd.read_csv('fitting/Results/Rats-Results/identifiability_results/simulation_25_100TPD_loguniform_large_range.csv')
+    # all_simulation_data = pd.read_csv('fitting/Results/Rats-Results/identifiability_results/simulation_25_100TPD_loguniform_original_range_beta.csv')
     # estimate_parameters(all_simulation_data)
 
+    # recovered_df = pd.read_csv('fitting/Results/Rats-Results/identifiability_results/recoverability_Hybrid_50_2024_08_07_12_02_.csv')
     # analyze_models_fitting(recovered_df)
 
-    results_df = pd.read_csv('fitting/Results/Rats-Results/identifiability_results/original_range_loguniform/results_2024_08_04_00_03_original_range_loguniform.csv')
+    results_df = pd.read_csv('fitting/Results/Rats-Results/identifiability_results/recoverability_results_2024_08_07_18_19_.csv')
     parameters_recoverability_correlation(results_df)
     model_identifiability_confusion_matrix(results_df)
