@@ -173,13 +173,14 @@ class FTable(AbstractTabularModel):
 
     """
 
-    def __init__(self, encoding_size, num_actions, initial_value=config.INITIAL_FEATURE_VALUE, num_channels=2,  *args, **kwargs):
+    def __init__(self, encoding_size, num_actions, initial_value=config.INITIAL_FEATURE_VALUE, env_dimensions=['odor', 'color', 'spatial'], *args, **kwargs):
         super().__init__()
         self.encoding_size = encoding_size
         self._num_actions = num_actions
         self.initial_value = initial_value
         self.Q = dict()
         self.action_bias = dict()
+        self.env_dimensions = env_dimensions
         self.initialize_state_values()
         for motivation in RewardType:
             self.action_bias[motivation.value] = np.zeros(self._num_actions)
@@ -187,7 +188,7 @@ class FTable(AbstractTabularModel):
     def initialize_state_values(self):
         for motivation in RewardType:
             self.Q[motivation.value] = dict()
-            for stimuli in ['odors', 'colors', 'spatial']:
+            for stimuli in self.env_dimensions:
                 self.Q[motivation.value][stimuli] = self.initial_value * np.ones([self.encoding_size + 1])
 
     def __call__(self, *args, **kwargs):
@@ -204,9 +205,8 @@ class FTable(AbstractTabularModel):
         odor = cues[:, 0]  # odor for each door
         color = cues[:, 1]  # color for each door
         door = np.array(range(4))
-        action_values = (self.get_stimulus_value('odors', odor, motivation) +
-                         self.get_stimulus_value('colors', color, motivation) +
-                         self.get_stimulus_value('spatial', door, motivation))
+        action_values = (np.sum(self.get_stimulus_value(dim, cues[:,i], motivation) for i, dim in enumerate(self.env_dimensions)))
+
         return action_values
 
     def get_bias_values(self, motivation: RewardType):
@@ -215,10 +215,26 @@ class FTable(AbstractTabularModel):
     def set_bias_value(self, motivation: RewardType, action, value):
         self.action_bias[motivation.value][action] = value
 
-    def get_selected_door_stimuli(self, states, doors):
+    def get_selected_action_stimuli(self, states, action):
+        """
+        Get the stimuli associated with the selected doors.
+        Args:
+            states (np.ndarray): A numpy array containing the state representations.
+            action (np.ndarray): A numpy array containing the indices of the selected doors.
+
+        Returns:
+            tuple: Two arrays representing the selected cues for each door.
+        """
+        # Convert states to one-hot encoded cues
         cues = utils.stimuli_1hot_to_cues(states, self.encoding_size)
-        selected_cues = cues[np.arange(len(states)), :, doors]
-        return selected_cues[:, 0], selected_cues[:, 1]
+
+        # Select cues based on the provided doors
+        selected_cues = cues[np.arange(len(states)), :, action]
+
+        doors_expanded = action[:, np.newaxis]
+        selected_cues_with_doors = np.concatenate([selected_cues, doors_expanded], axis=1)
+
+        return selected_cues_with_doors
 
     def get_stimulus_value(self, dimension, feature, motivation):
         return self.Q[RewardType.NONE.value][dimension][feature]
@@ -269,7 +285,7 @@ class ACFTable(FTable):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.attn_importance = np.ones([3]) / 3
+        self.attn_importance = np.ones([len(self.env_dimensions)]) / len(self.env_dimensions)
 
     def __call__(self, *args, **kwargs):
         states = args[0]
@@ -298,20 +314,14 @@ class ACFTable(FTable):
         cues = utils.stimuli_1hot_to_cues(observations, self.encoding_size)
         batch_size = observations.shape[0]
 
-        # Extract odors and colors from cues
-        odor_cues = cues[:, 0]  # Odor for each door
-        color_cues = cues[:, 1]  # Color for each door
+        vector = np.arange(self._num_actions)
+        actions = vector[np.newaxis, :]
 
-        # Calculate stimulus values for odors, colors, and spatial dimensions
-        odor_values = self.get_stimulus_value('odors', odor_cues, motivation)
-        color_values = self.get_stimulus_value('colors', color_cues, motivation)
-        spatial_values = self.get_stimulus_value('spatial', np.arange(4), motivation)
-
-        # Repeat spatial values for each observation in the batch
-        spatial_values_repeated = np.repeat(np.expand_dims(spatial_values, axis=0), repeats=batch_size, axis=0)
+        # add the door (action) cue
+        cues = np.concatenate([cues, actions[np.newaxis, :]], axis=1)
 
         # Stack all stimulus values into a single data array
-        data = np.stack([odor_values, color_values, spatial_values_repeated])
+        data = np.stack([self.get_stimulus_value(dim, cues[:, i], motivation) for i, dim in enumerate(self.env_dimensions)])
 
         # Calculate the attention weights (phi) and apply them to the data
         attention_weights = np.expand_dims(self.phi(), axis=0)
@@ -323,25 +333,17 @@ class ACFTable(FTable):
         return action_values
 
     def get_model_metrics(self):
-        # print("odor:{}\ncolor:{},\nspatial:{}".format(self.V['odors'], self.V['colors'], self.V['spatial']))
         phi = self.phi()
-        return {'odor_importance': self.attn_importance[0],
-                'color_importance': self.attn_importance[1],
-                'spatial_importance': self.attn_importance[2],
-                'odor_weight': phi[0],
-                'color_weight': phi[1],
-                'spatial_weight': phi[2],
-                }
+        importance = {f'{dim}_importance': self.attn_importance[i] for i, dim in enumerate(self.env_dimensions)}
+        weight = {f'{dim}_weights': phi[i] for i, dim in enumerate(self.env_dimensions)}
+        return  {**importance, **weight}
 
-    def get_model_diff(self, brain2):
-        return {'odor_attn_diff': self.attn_importance[0] - brain2.attn_importance[0],
-                'color_attn_diff': self.attn_importance[1] - brain2.attn_importance[1],
-                'spatial_attn_diff': self.attn_importance[2] - brain2.attn_importance[2]}
+        def get_model_diff(self, brain2):
+            return {f'{dim}_attn_diff': self.attn_importance[i] - brain2.attn_importance[i] for i, dim in enumerate(self.env_dimensions)}
 
     def new_stimuli_context(self, motivation):
-        self.Q[motivation]['odors'] = self.initial_value * np.ones([self.encoding_size + 1])
-        self.Q[motivation]['colors'] = self.initial_value * np.ones([self.encoding_size + 1])
-        self.Q[motivation]['spatial'] = self.initial_value * np.ones([self.encoding_size + 1])
+        for dim in self.env_dimensions:
+            self.Q[motivation][dim] = self.initial_value * np.ones([self.encoding_size + 1])
 
 
 class FixedACFTable(ACFTable):
@@ -349,7 +351,7 @@ class FixedACFTable(ACFTable):
     It suggests that attention may not change dynamically during learning."""
 
     def __init__(self, attn_importance=np.ones([3]) / 3, *args, **kwargs):
-        if any(item < 0 for item in attn_importance) or np.abs(np.sum(attn_importance) - 1) > 1e-9:
+        if not utils.is_valid_attention_weights(attn_importance):
             raise Exception("Illegal attention arguments, should be positive and sum to 1!")
         super().__init__(*args, **kwargs)
 

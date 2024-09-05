@@ -67,19 +67,14 @@ class AsymmetricIALearner(AbstractLearner):
             print('Warning! rat Selected inactive door!')
             return 0
         delta = (reward_batch - selected_action_value)
-        selected_odors, selected_colors = self.model.get_selected_door_stimuli(state_batch, actions)
+        selected_cues = self.model.get_selected_action_stimuli(state_batch, actions)
 
         phi = self.model.phi()
         learning_rate = np.where(reward_batch == 1, learning_rate_rewarded, learning_rate_nonrewarded)
-        for odor in set(np.unique(selected_odors)).difference([self.model.encoding_size]):
-            self.model.update_stimulus_value('odors', odor, motivation,
-                                             learning_rate * phi[0] * np.nanmean(delta[selected_odors == odor]))
-        for color in set(np.unique(selected_colors)).difference([self.model.encoding_size]):
-            self.model.update_stimulus_value('colors', color, motivation,
-                                             learning_rate * phi[1] * np.nanmean(delta[selected_colors == color]))
-        for door in np.unique(actions):
-            self.model.update_stimulus_value('spatial', door, motivation,
-                                             learning_rate * phi[2] * np.nanmean(delta[actions == door]))
+        for col, dim in enumerate(self.model.env_dimensions):
+            for cue_value in set(selected_cues[:,col]).difference([self.model.encoding_size]):
+                self.model.update_stimulus_value(dim, cue_value, motivation,
+                                                 learning_rate * phi[col] * np.nanmean(delta[selected_cues[:,col] == cue_value]))
 
         return {"delta": delta[0]}
 
@@ -113,26 +108,21 @@ class AsymmetricMALearner(AsymmetricIALearner):
         actions = np.argmax(action_batch, axis=1)
 
         all_action_values = self.model(state_batch, motivation)
-        selected_action_value = all_action_values[np.arange(len(all_action_values)), actions]
+        selected_action_values = all_action_values[np.arange(len(all_action_values)), actions]
 
-        deltas = (reward_batch - selected_action_value)
-        selected_odors, selected_colors = self.model.get_selected_door_stimuli(state_batch, actions)
-
-        phi = self.model.phi()
+        deltas = (reward_batch - selected_action_values)
+        selected_cues = self.model.get_selected_action_stimuli(state_batch, actions)
 
         optimization_data = {}
-        delta_phi = np.empty((0, 3))
-        V = np.empty((0, 3))
-        regrets = np.empty((0, 3))
+        delta_phi = np.empty((0, len(self.model.env_dimensions)))
+        V = np.empty((0, len(self.model.env_dimensions)))
+        regrets = np.empty((0, len(self.model.env_dimensions)))
 
         # Calculate the attention updates
-        for choice_value, selected_odor, selected_color, selected_door, delta, reward in \
-                zip(selected_action_value, selected_odors, selected_colors, actions, deltas, reward_batch):
-            V = np.vstack([V, [self.model.Q[motivation.value]['odors'][selected_odor],
-                               self.model.Q[motivation.value]['colors'][selected_color],
-                               self.model.Q[motivation.value]['spatial'][selected_door]]])
+        for choice_value, selected_cue, delta, reward in zip(selected_action_values, selected_cues, deltas, reward_batch):
+            V = np.vstack([V, [self.model.Q[motivation.value][dim][selected_cue[i]] for i, dim in enumerate(self.model.env_dimensions)]])
             attention_regret = self.calc_attention_regret(choice_value, reward, V)
-            delta_phi = np.vstack([delta_phi, delta * phi * attention_regret])
+            delta_phi = np.vstack([delta_phi, delta * self.model.phi() * attention_regret])
             regrets = np.vstack([regrets, attention_regret])
 
         # update values using old attentions
@@ -142,26 +132,15 @@ class AsymmetricMALearner(AsymmetricIALearner):
         self.model.attn_importance += self.alpha_phi * np.mean(delta_phi, axis=0)
 
         optimization_data['delta'] = np.mean(deltas)
-        optimization_data['odor_regret'] = np.mean(regrets[:, 0])
-        optimization_data['color_regret'] = np.mean(regrets[:, 1])
-        optimization_data['spatial_regret'] = np.mean(regrets[:, 2])
-        optimization_data['Q'] = np.mean(selected_action_value)
-        optimization_data['odor_V'] = np.mean(V[:, 0])
-        optimization_data['color_V'] = np.mean(V[:, 1])
-        optimization_data['spatial_V'] = np.mean(V[:, 2])
+        optimization_data.update({key: np.mean(regrets[:, idx]) for idx, key in enumerate([f'{dim}_regret' for dim in self.model.env_dimensions])})
 
-        optimization_data['odor_importance'] = self.model.attn_importance[0]
-        optimization_data['color_importance'] = self.model.attn_importance[1]
-        optimization_data['spatial_importance'] = self.model.attn_importance[2]
+        optimization_data['Q'] = np.mean(selected_action_values)
+        optimization_data.update({key: np.mean(V[:, idx]) for idx, key in enumerate([f'{dim}_V' for dim in self.model.env_dimensions])})
+        optimization_data.update({key: self.model.attn_importance[idx] for idx, key in enumerate([f'{dim}_importance' for dim in self.model.env_dimensions])})
 
         phi = self.model.phi()
-        optimization_data['odor_phi'] = phi[0]
-        optimization_data['color_phi'] = phi[1]
-        optimization_data['spatial_phi'] = phi[2]
-
-        optimization_data['odor_delta_phi'] = np.mean(delta_phi[:, 0])
-        optimization_data['color_delta_phi'] = np.mean(delta_phi[:, 1])
-        optimization_data['spatial_delta_phi'] = np.mean(delta_phi[:, 2])
+        optimization_data.update({key: phi[idx] for idx, key in enumerate([f'{dim}_phi' for dim in self.model.env_dimensions])})
+        optimization_data.update({key: np.mean(delta_phi[:, idx]) for idx, key in enumerate([f'{dim}_delta_phi' for dim in self.model.env_dimensions])})
 
         return optimization_data
 
@@ -269,7 +248,7 @@ class IAAluisiLearner(AbstractLearner):
             print('Warning! rat Selected inactive door!')
             return 0
         delta = (reward_batch - selected_action_value)
-        selected_odors, selected_colors = self.model.get_selected_door_stimuli(state_batch, actions)
+        selected_odors, selected_colors = self.model.get_selected_action_stimuli(state_batch, actions)
 
         for odor in set(np.unique(selected_odors)).difference([self.model.encoding_size]):
             self.model.Q['odors'][odor] += \
