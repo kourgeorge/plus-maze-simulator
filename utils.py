@@ -140,3 +140,7 @@ def stimuli_1hot_to_cues(states, encoding_size):
 
 def compress(a):
     return a[a != 0]
+
+
+def is_valid_attention_weights(attn):
+    return all(0 <= item <= 1 for item in attn) and np.abs(np.sum(attn) - 1) < 1e-9
