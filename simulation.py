@@ -8,6 +8,7 @@ from brains.consolidationbrain import ConsolidationBrain
 from brains.tdbrain import TDBrain
 from config import TRIALS_IN_DAY
 from environment import CueType, PlusMazeOneHotCues, PlusMazeOneHotCues2ActiveDoors, StagesTransition, PlusMaze
+from fitting import fitting_utils
 from fitting.fitting_utils import extract_names_from_architecture, string2list
 from fitting.simulation_utils import sample_brain_parameters, extract_model_average_fitting_parameters
 from learners.networklearners import *
@@ -16,34 +17,42 @@ from models.networkmodels import *
 from models.tabularmodels import *
 from motivatedagent import MotivatedAgent
 from rewardtype import RewardType
+from fitting.fitting_config_attention import friendly_models_name_map, get_parameter_names, map_maze_models
 
 
-def run_single_simulation(env, architecture, estimated_parameters, initial_motivation=RewardType.WATER):
+def run_single_simulation(env, architecture, model_parameters, initial_motivation=RewardType.WATER):
 	(brain, learner, model) = architecture
-	model_instance = model(env.stimuli_encoding_size(), 2, env.num_actions())
+	model_instance = model(encoding_size=env.stimuli_encoding_size(), num_channels=2, num_actions=env.num_actions())
+	if model == FixedACFTable:
+		model_instance = FixedACFTable(attn_importance=fitting_utils.sample_attention_distribution(),
+							   encoding_size=env.stimuli_encoding_size(), num_channels=2, num_actions=env.num_actions())
 
 	if issubclass(learner, MALearner) or issubclass(learner, DQNAtt):
-		(beta, lr, attention_lr) = estimated_parameters
+		(beta, lr, attention_lr) = model_parameters
 		learner_instance = learner(model_instance, learning_rate=lr, alpha_phi=attention_lr)
 	else:
-		(beta, lr) = estimated_parameters
+		(beta, lr) = model_parameters
 		learner_instance = learner(model_instance, learning_rate=lr)
 
 	agent = MotivatedAgent(brain(learner_instance, beta=beta),
 						   motivation=initial_motivation, motivated_reward_value=config.MOTIVATED_REWARD,
 						   non_motivated_reward_value=0)
 	experiment_stats, experiment_data = PlusMazeExperiment(env, agent, dashboard=False)
+	experiment_data['initial_motivation'] = initial_motivation.value
+	experiment_data['model'] = utils.brain_name(architecture)
+	experiment_data['parameters'] = [model_parameters] * len(experiment_data)
+
 	return experiment_stats, experiment_data
 
 
-def run_simulation_sampled_brain(env: PlusMaze, brains_parameters_ranges, repetitions=10,
-								 initial_motivation: RewardType = RewardType.WATER):
+def run_simulation_sampled_brain(env: PlusMaze, brain_specs, repetitions=10,
+								 initial_motivation: RewardType = RewardType.NONE, require_task_completion=False):
 	"""Given a PlusMaze environment and a set of agent architectures, runs a simulation of the agent on the environment."""
 
 	all_simulation_data = pd.DataFrame()
 	brains_reports = []
 	agent_id = 0
-	for agent_spec in brains_parameters_ranges:
+	for agent_spec in brain_specs:
 		completed_experiments = 0
 		aborted_experiments = 0
 		brain_repetition_reports = [None] * repetitions
@@ -57,21 +66,20 @@ def run_simulation_sampled_brain(env: PlusMaze, brains_parameters_ranges, repeti
 			print(estimated_parameters)
 			experiment_stats, experiment_data = run_single_simulation(env, architecture, estimated_parameters, initial_motivation)
 			experiment_data['initial_motivation'] = initial_motivation.value
-			experiment_data['model'] = utils.brain_name(architecture)
+			experiment_data['true_model'] = utils.brain_name(architecture)
 			experiment_data['subject'] = agent_id
 			experiment_data['parameters'] = [estimated_parameters]*len(experiment_data)
 
-			if experiment_stats.metadata['experiment_status'] == ExperimentStatus.COMPLETED:
+			if (not require_task_completion) or (require_task_completion and experiment_stats.metadata['experiment_status'] == ExperimentStatus.COMPLETED):
 				brain_repetition_reports[completed_experiments] = experiment_stats
 				completed_experiments += 1
 				agent_id -= 1
-				all_simulation_data = pd.concat([all_simulation_data,experiment_data])
+				all_simulation_data = pd.concat([all_simulation_data, experiment_data])
 			else:
 				aborted_experiments += 1
 		brains_reports.append(brain_repetition_reports)
 		print("{} out of {} experiments were aborted".format(aborted_experiments,
 															 aborted_experiments + completed_experiments))
-
 
 	return all_simulation_data
 
