@@ -447,5 +447,7 @@ def sample_attention_distribution(dimensions=3):
 parameters_friendly_names = {
     'beta': r'$\beta$',
     'lr': r'$\alpha$',
-    'attention_lr': r'$\alpha_{\phi}$'
+    'attention_lr': r'$\alpha_{\phi}$',
+    'attention_odor': r'$\phi^{odor}$',
+    'attention_color': r'$\phi^{color}$'
 }
