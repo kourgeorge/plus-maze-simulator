@@ -75,11 +75,10 @@ class MazeBayesianModelFitting:
 			bounds = [bound.bounds for bound in self.parameters_space]
 			x0 = np.array([5, 0.01, 0.01]) if fitting_config.OPTIMIZATION_METHOD == 'Newton' else x0
 			print("\t\t-----Finished Bayesian parameter estimation: {} -----".format(np.round(x0,4)))
-			if isinstance(self.model, FixedACFTable):
-
+			if self.model[2]==FixedACFTable:
 				def constraint(params):
-					x, y = params[2:]
-					return 1 - (x + y)  # This should be >= 0 when x + y <= 1
+					resolved_params = fitting_utils.resolve_parameters(params, *self.model)
+					return int(utils.is_valid_attention_weights(resolved_params['attn_importance']))
 
 				constraints = {'type': 'ineq', 'fun': constraint}  # Inequality constraint: x + y <= 1
 
