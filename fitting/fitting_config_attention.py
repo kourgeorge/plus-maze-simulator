@@ -36,26 +36,25 @@ initial_value = Real(name='initial', low=0, high=0.1, prior='uniform')
 batch_size = Integer(name='batch_size', low=1, high=20)
 
 maze_models = [
-	# ((TDBrain, QLearner, QTable), (beta, lr)),
-	# ((TDBrain, QLearner, OptionsTable), (beta, lr)),
-	# ((TDBrain, IALearner, ACFTable), (beta, lr)),
-	# ((TDBrain, MALearner, ACFTable), (beta, lr, attention_lr)),
-	# ((TDBrain, IALearner, FixedACFTable), (beta, lr, attention_odor, attention_color)),
-	#
+	((TDBrain, QLearner, QTable), (beta, lr)),
+	((TDBrain, QLearner, OptionsTable), (beta, lr)),
+	((TDBrain, IALearner, ACFTable), (beta, lr)),
+	((TDBrain, MALearner, ACFTable), (beta, lr, attention_lr)),
+	((TDBrain, IALearner, FixedACFTable), (beta, lr, attention_odor, attention_color)),
+	# #
 	# ((TDBrain, AsymmetricQLearner, QTable), (beta, lr, lr_nr)),
 	# ((TDBrain, AsymmetricQLearner, OptionsTable), (beta, lr, lr_nr)),
 	# ((TDBrain, AsymmetricIALearner, ACFTable), (beta, lr, lr_nr)),
 	# ((TDBrain, AsymmetricIALearner, FixedACFTable), (beta, lr, lr_nr, attention_odor, attention_color)),
 	# ((TDBrain, AsymmetricMALearner, ACFTable), (beta, lr, lr_nr, attention_lr)),
-	#
-
-	((TDBrain, QLearner, NonDirectionalOptionsTable), (beta, lr)),
-	((TDBrain, IALearner, NonDirectionalACFTable), (beta, lr)),
-	((TDBrain, MALearner, NonDirectionalACFTable), (beta, lr, attention_lr)),
-	((TDBrain, IALearner, NonDirectionalFixedACFTable), (beta, lr, attention_odor)),
 
 
-			   # ((TDBrain, MALearnerSimple, ACFTable), (beta, lr, attention_lr)),
+	# ((TDBrain, QLearner, NonDirectionalOptionsTable), (beta, lr)),
+	# ((TDBrain, IALearner, NonDirectionalACFTable), (beta, lr)),
+	# ((TDBrain, IALearner, NonDirectionalFixedACFTable), (beta, lr, attention_odor)),
+	# ((TDBrain, MALearner, NonDirectionalACFTable), (beta, lr, attention_lr)),
+
+	# ((TDBrain, MALearnerSimple, ACFTable), (beta, lr, attention_lr)),
 			   # ((TDBrain, MALearner, PCFTable), (beta, lr, attention_lr)),
 
 				# Neural Network
@@ -93,11 +92,12 @@ friendly_models_name_map = {
 							'AsymmetricQLearner.OptionsTable': 'Asym. ORL',
 							'AsymmetricIALearner.ACFTable': 'Asym. FRL',
 							'AsymmetricIALearner.FixedACFTable': 'Asym. FARL',
+							'AsymmetricMALearner.ACFTable': ' Asym. AARL',
 
 							'QLearner.NonDirectionalOptionsTable': 'NonDir. ORL',
 							'IALearner.NonDirectionalACFTable': 'NonDir. FRL',
-							'MALearner.NonDirectionalACFTable': 'NonDir. AARL',
 							'IALearner.NonDirectionalFixedACFTable': 'NonDir. FARL',
+							'MALearner.NonDirectionalACFTable': 'NonDir. AARL',
 
 							'DQN.FCNet':'FCNet-D',
 							'DQN.UANet':'UANet-D',
