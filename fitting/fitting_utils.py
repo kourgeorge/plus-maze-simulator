@@ -1,5 +1,6 @@
 __author__ = 'gkour'
 
+import ast
 import functools
 import json
 import os
@@ -10,10 +11,12 @@ import scipy
 from scipy import stats
 
 import config
+import fitting.fitting_utils as fitting_utils
 from fitting.PlusMazeExperimentFitting import PlusMazeExperimentFitting
 from fitting.fitting_config_attention import friendly_models_name_map, get_parameter_names
 from learners.abstractlearner import SymmetricLearner
 from learners.networklearners import DQNAtt
+from learners.tabularbayesianlearners import BayesianAttentionLearner, BayesianFeatureLearner
 from learners.tabularlearners import MALearner
 from models.non_directional_tabularmodels import NonDirectionalFixedACFTable
 from models.tabularmodels import FixedACFTable
@@ -110,32 +113,94 @@ def resolve_parameters(parameters, brain, learner, model):
     # Create an iterator for the parameters
     param_iterator = iter(parameters)
 
-    # Initialize resolved parameters with mandatory 'beta' and 'lr' values
-    resolved_params = {
-        'beta': next(param_iterator),
-        'lr': next(param_iterator)
-    }
+    resolved_params = {}
 
-    # Check if the learner is not a subclass of SymmetricLearner and add 'lr_nr'
-    if not issubclass(learner, SymmetricLearner):
-        resolved_params['lr_nr'] = next(param_iterator)
+    resolved_params['initial_value'] = next(param_iterator)
+    resolved_params['beta'] = next(param_iterator)
 
-    # Check if the learner requires 'attention_lr' parameter
-    if issubclass(learner, (MALearner, DQNAtt)):
-        resolved_params['attention_lr'] = next(param_iterator)
+    # Check if the learner is a Bayesian learner
+    if issubclass(learner, (BayesianFeatureLearner, BayesianAttentionLearner)):
+        # Extract parameters for Bayesian models
+        # resolved_params['initial_value'] = next(param_iterator)
+        resolved_params['initial_variance'] = next(param_iterator)
+        # resolved_params['observation_variance'] = next(param_iterator)
 
-    # Check if the model is FixedACFTable and add attention parameters
-    if model == FixedACFTable:
-        attn_odor = next(param_iterator)
-        attn_color = next(param_iterator)
-        resolved_params['attn_importance'] = [attn_odor, attn_color, 1-attn_odor-attn_color]
+        if issubclass(learner, BayesianAttentionLearner):
+            # For BayesianAttentionLearner, also extract initial_alpha and attention_beta
+            resolved_params['initial_alpha'] = next(param_iterator)
+            resolved_params['attention_beta'] = next(param_iterator)
+    else:
+        # Non-Bayesian models
+        # Initialize resolved parameters with mandatory 'beta' and 'lr' values
 
-    # Check if the model is FixedACFTable and add attention parameters
-    if model == NonDirectionalFixedACFTable:
-        attn_odor = next(param_iterator)
-        resolved_params['attn_importance'] = [attn_odor, 1-attn_odor]
+        resolved_params['lr'] = next(param_iterator)
+
+        # Check if the learner is not a subclass of SymmetricLearner and add 'lr_nr'
+        if not issubclass(learner, SymmetricLearner):
+            resolved_params['lr_nr'] = next(param_iterator)
+
+        # Check if the learner requires 'attention_lr' parameter
+        if issubclass(learner, (MALearner, DQNAtt)):
+            resolved_params['attention_lr'] = next(param_iterator)
+
+        # Check if the model is FixedACFTable and add attention parameters
+        if model == FixedACFTable:
+            if not is_flat(parameters):
+                attn_dist = next(param_iterator)
+            else:
+                attn_dist = [next(param_iterator), next(param_iterator), next(param_iterator)]
+            resolved_params['attn_importance'] = attn_dist
+
+        # Check if the model is NonDirectionalFixedACFTable and add attention parameters
+        elif model == NonDirectionalFixedACFTable:
+            attn_odor = next(param_iterator)
+            resolved_params['attn_importance'] = [attn_odor, 1 - attn_odor]
 
     return resolved_params
+
+
+def is_flat(obj):
+    # If the input is a numpy array, check if it has more than 1 dimension
+    if isinstance(obj, np.ndarray):
+        return obj.ndim == 1
+    # If the input is a list, check if any element is a list or array
+    elif isinstance(obj, list):
+        return not any(isinstance(item, (list, np.ndarray)) for item in obj)
+    else:
+        raise TypeError("Input must be a list or numpy ndarray.")
+
+
+def flatten_list(nested_list):
+    # Initialize an empty list to store flattened items
+    flat_list = []
+
+    for item in nested_list:
+        # Check if the item is a numpy array and flatten it
+        if isinstance(item, np.ndarray):
+            flat_list.extend(item.flatten())
+        elif isinstance(item, list):
+            flat_list.extend(item)
+        else:
+            flat_list.append(item)
+
+    return flat_list
+
+
+def recursive_round(value, n=4):
+    # Check if the value is a number (int or float)
+    if isinstance(value, (int, float)):
+        return round(value, n)
+    # If it's a numpy array, format each element
+    else:
+        return [recursive_round(v) for v in value]
+
+
+def parse_parameters(parameters_column):
+    # Apply string2list function to each row and flatten the list in one step
+    parsed = parameters_column.apply(lambda row: fitting_utils.flatten_list(fitting_utils.string2list(row)))
+    # Convert the resulting series to a list
+    return parsed
+
 
 
 def blockPrint():
@@ -151,11 +216,31 @@ def get_stage_transition_days(experimental_data):
     return np.where(experimental_data['day in stage'] == 1)[0][1:]
 
 
+import ast
+import re
+
+
 def string2list(string):
+    # Normalize space-separated values inside brackets to comma-separated values
     try:
-        params = [float(x.strip()) for x in re.split(" +", string.strip(' ][()'))]
-    except Exception:
-        params = [float(x.strip()) for x in re.split(",", string.strip('][()'))]
+        # Replace 'array(' with nothing and the corresponding closing ')' with nothing
+        normalized_string = re.sub(r'array\(', '[', string)
+        normalized_string = re.sub(r'\)', ']', normalized_string)
+
+        # Remove any extra spaces and handle the case of space-separated numbers without commas
+        normalized_string = re.sub(r'\s+', ' ',
+                                   normalized_string.strip())  # Normalize multiple spaces to a single space
+
+        if '[' in normalized_string and ',' not in normalized_string:
+            # Add commas between numbers that are space-separated inside the brackets
+            normalized_string = re.sub(r'(\d(?:\.\d*)?)\s+(?=\d)', r'\1, ', normalized_string)
+
+        # Use ast.literal_eval to safely parse the string into Python data structures
+        params = ast.literal_eval(normalized_string)
+    except Exception as e:
+        print(f"Error parsing string: {e}")
+        params = []
+
     return params
 
 
@@ -211,7 +296,7 @@ def analyze_fitting(rat_data_with_likelihood, likelihood_column_name, num_parame
     geomeanL = scipy.stats.mstats.gmean(likelihood_column)
     np.testing.assert_almost_equal(np.exp(-meanNLL), geomeanL)
     aic = 2 * np.sum(NLL) + 2 * num_parameters
-    return round(aic, 4), round(likelihood_stage, 4), round(meanL, 4), round(meanNLL, 4)
+    return aic, likelihood_stage, meanL, meanNLL
 
 
 def models_order_df(df):
@@ -406,8 +491,7 @@ def calculate_fitted_parameters_stats(data):
     for model in data['model'].unique():
         # Extract parameters for the current model
         model_data = data[data['model'] == model]
-        parameters = np.array(model_data['parameters'].tolist())
-
+        parameters = model_data['parameters'].tolist()#.apply(lambda x: fitting_utils.flatten_list(x)).to_list()
         # Calculate mean and std for each parameter
         mean = np.mean(parameters, axis=0)
         std = stats.sem(parameters, axis=0)
