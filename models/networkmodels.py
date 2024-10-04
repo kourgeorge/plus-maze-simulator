@@ -31,6 +31,7 @@ class AbstractNetworkModel(nn.Module):
 class UANet(AbstractNetworkModel):
 	def __init__(self, encoding_size, num_channels, num_actions):
 		super().__init__()
+		self.num_actions = num_actions
 		self.odors = nn.Linear(encoding_size, 1, bias=False)
 		self.colors = nn.Linear(encoding_size, 1, bias=False)
 		self.spatial = nn.Parameter(nn.init.xavier_uniform_(torch.empty(size=(1, num_actions))), requires_grad=True)
@@ -52,15 +53,15 @@ class UANet(AbstractNetworkModel):
 
 		return torch.squeeze(weighted_vals, dim=2)
 
-	def reset_feature_values(self):
+	def new_stimuli_context(self, *args, **kwargs):
 		torch.nn.init.xavier_uniform(self.odors.weight)
 		torch.nn.init.xavier_uniform(self.colors.weight)
 		torch.nn.init.xavier_uniform(self.spatial)
 
 	def get_model_metrics(self):
-		return {'odors':  np.linalg.norm(self.odors.weight.detach()),
-				'colors': np.linalg.norm(self.colors.weight.detach()),
-				'spatial':  np.linalg.norm(self.spatial.detach())}
+		return {'odors':  np.linalg.norm(self.odors.weight.detach()).astype(float),
+				'colors': np.linalg.norm(self.colors.weight.detach()).astype(float),
+				'spatial':  np.linalg.norm(self.spatial.detach()).astype(float)}
 
 	def get_model_diff(self, network2):
 		return {'d(odors)': np.linalg.norm(self.odors.weight.detach() - network2.odors.weight.detach()),
@@ -72,22 +73,27 @@ class ACLNet(UANet):
 	def __init__(self, encoding_size, num_channels, num_actions):
 		super().__init__(encoding_size, num_channels, num_actions)
 		#self.phi = nn.Parameter(nn.init.xavier_uniform_(torch.empty(size=(3,1))), requires_grad=True)
+		self.num_actions = num_actions
 		self.phi = nn.Parameter(torch.ones(size=(3,1)), requires_grad=True)
 
 	def get_model_metrics(self):
-		return {'odor_attn': self.phi[0].detach().numpy()[0],
-				'color_attn': self.phi[1].detach().numpy()[0],
-				'spatial_attn': self.phi[2].detach().numpy()[0]}
+		return {'odors':  np.linalg.norm(self.odors.weight.detach()).astype(float),
+				'colors': np.linalg.norm(self.colors.weight.detach()).astype(float),
+				'spatial':  np.linalg.norm(self.spatial.detach()).astype(float),
+				'odor_attn': self.phi[0].detach().numpy()[0].astype(float),
+				'color_attn': self.phi[1].detach().numpy()[0].astype(float),
+				'spatial_attn': self.phi[2].detach().numpy()[0].astype(float)}
 
 	def get_model_diff(self, model2):
-		return {'color_attn': self.phi[0].detach().numpy() - model2.phi[0].detach().numpy(),
-				'odor_attn': self.phi[1].detach().numpy() - model2.phi[1].detach().numpy(),
-				'spatial_attn': self.phi[2].detach().numpy() - model2.phi[2].detach().numpy()}
+		return {'color_attn': self.phi[0].detach().numpy() - model2.attn_importance[0].detach().numpy(),
+				'odor_attn': self.phi[1].detach().numpy() - model2.attn_importance[1].detach().numpy(),
+				'spatial_attn': self.phi[2].detach().numpy() - model2.attn_importance[2].detach().numpy()}
 
 
 class FCNet(AbstractNetworkModel):
 	def __init__(self, encoding_size, num_channels, num_actions):
 		super().__init__()
+		self.num_actions = num_actions
 		self.affine = nn.Linear(num_channels * num_actions * encoding_size, num_actions, bias=True)
 		self.model = torch.nn.Sequential(
 			self.affine,
