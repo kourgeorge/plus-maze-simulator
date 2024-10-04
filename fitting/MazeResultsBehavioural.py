@@ -3,6 +3,7 @@ from copy import copy
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
+import tabulate
 from scipy.stats import stats
 from statannotations.Annotator import Annotator
 import functools
@@ -16,7 +17,7 @@ import json
 import matplotlib as mpl
 
 mpl.rcParams['pdf.fonttype'] = 42
-plt.rcParams.update({'font.size': 16})
+plt.rcParams.update({'font.size': 10})
 
 stages = ['Odor1', 'Odor2', 'Color']
 num_days_reported = [4,2,9]
@@ -499,12 +500,26 @@ def plot_models_fitting_result_per_stage(data_file_path):
     fitting_utils.mixed_design_anova(df, 'likelihood', 'stage', 'model', 'subject')
 
     args = dict(x="stage", y=y, hue="model", hue_order=models_order_df(df))
-    pairs = [((1, 'AARL'), (1, 'FRL')), ((1, 'SARL'), (1, 'AARL')), ((1, 'AARL'), (1, 'ORL')),
-             ((2, 'AARL'), (2, 'FRL')), ((2, 'SARL'), (2, 'AARL')), ((2, 'AARL'), (2, 'ORL')),
-             ((3, 'AARL'), (3, 'FRL')), ((3, 'SARL'), (3, 'AARL')), ((3, 'AARL'), (3, 'ORL')),
-             ]
+    # pairs = [((1, 'AARL'), (1, 'FRL')), ((1, 'SARL'), (1, 'AARL')), ((1, 'AARL'), (1, 'ORL')),
+    #          ((2, 'AARL'), (2, 'FRL')), ((2, 'SARL'), (2, 'AARL')), ((2, 'AARL'), (2, 'ORL')),
+    #          ((3, 'AARL'), (3, 'FRL')), ((3, 'SARL'), (3, 'AARL')), ((3, 'AARL'), (3, 'ORL')),
+    #          ]
 
-    annot = Annotator(g1, pairs, **args, data=df)
+    models = models_order_df(df)
+    comparison_pairs = []
+
+    for i in range(1, 4):  # Assuming 3 repetitions (1, 2, 3) as per your example
+        for model in models:
+            if 'AARL' in model:
+                # Create pairs involving 'AARL' and each of the other models
+                for other_model in models:
+                    if other_model != model:
+                        pair = ((i, model), (i, other_model))
+                        comparison_pairs.append(pair)
+
+
+
+    annot = Annotator(g1, comparison_pairs, **args, data=df)
     annot.configure(test='t-test_paired', text_format='star', loc='inside', verbose=2, comparisons_correction="Bonferroni")
     annot.apply_test().annotate()
 
@@ -530,7 +545,7 @@ def plot_models_fitting_result_per_stage(data_file_path):
     #
     # annot.apply_test().annotate()
 
-    g2.set_ylim([0.55, 0.625])
+    g2.set_ylim([0.56, 0.62])
 
     fitting_utils.RM_anova(df,'likelihood','subject', 'model')
 
@@ -610,16 +625,20 @@ def compare_fitting_criteria(data_file_path):
     df['LL'] = np.log(df.likelihood)
 
     # # optimization average over trials
-    likelihood_trial = df.groupby(['model']).agg({'reward': 'count', 'LL': 'sum', 'likelihood': 'mean', 'parameters':'first'}).reset_index()
+    likelihood_trial = df.groupby(['model']).agg({'reward': 'count', 'LL': 'sum', 'likelihood': 'mean',
+                                                  'parameters':'first'}).reset_index()
     data = likelihood_trial.rename(columns={'reward': 'n'})
 
-    data['k'] = data.apply(lambda row: len(fitting_utils.string2list(row['parameters'])), axis=1)
+    data['parameters'] = fitting_utils.parse_parameters(data.parameters)
+    data['k'] = data.apply(lambda row: len(row['parameters']), axis=1)
 
     data['AIC'] = - 2 * data.LL + 2 * data.k
     data['BIC'] = - 2 * data.LL + np.log(data.n) * data.k
     data['LPT'] = data.likelihood
 
     data.LL = -data.LL
+    print(data.round(2).to_string(index=False))
+
     for criterion in ['AIC', 'BIC', 'LPT']:
         # fig = plt.figure(figsize=(35, 7), dpi=120, facecolor='w')
         # for subject in stable_unique(data.subject):
@@ -641,6 +660,12 @@ def compare_fitting_criteria(data_file_path):
         # plot the average fitting quality for the entire population.
         # sum_df = likelihood_trial.groupby(['model']).mean().reset_index()
 
+        # Creating a pivot table with 'model' in columns, 'subject' in rows, and 'LL' as values
+        # pivot_table = data.pivot_table(index='subject', columns='model', values=criterion)
+        #
+        # # Display the pivot table
+        # print(tabulate.tabulate(pivot_table, headers='keys', tablefmt='grid'))
+
         plt.figure(figsize=(4.5, 4), dpi=120, facecolor='w')
         axis = sns.barplot(x='model', y=criterion, data=data, order=models_order_df(data))  # orient='v'
         minn = np.min(data[criterion])
@@ -648,13 +673,11 @@ def compare_fitting_criteria(data_file_path):
         delta = 0.1 * (maxx - minn)
         plt.ylim([minn - delta, maxx + delta])
 
-        plt.subplots_adjust(left=0.21, bottom=0.1, right=0.97, top=0.95, wspace=0.2, hspace=0.4)
+        #plt.subplots_adjust(left=0.21, bottom=0.1, right=0.97, top=0.95, wspace=0.2, hspace=0.4)
         axis.spines['top'].set_visible(False)
         axis.spines['right'].set_visible(False)
 
         axis.set_xlabel('')
-
-        print(data.round(2).to_string(index=False))
 
         plt.savefig(os.path.join(figures_folder,'{}_{}.pdf'.format(criterion, utils.get_timestamp())))
 
@@ -676,7 +699,7 @@ def plot_fitting_parameters(data_file_path):
     df = rename_models(df)
     df = df.groupby(['subject', 'model', 'parameters'], sort=False).mean().reset_index()
 
-    df.parameters = df.parameters.apply(lambda row: fitting_utils.string2list(row))
+    df.parameters = fitting_utils.parse_parameters(df.parameters)
     fitted_parameters_stats = fitting_utils.calculate_fitted_parameters_stats(df)
     fitting_utils.print_model_parameters(fitted_parameters_stats)
 
@@ -980,7 +1003,7 @@ def average_likelihood_per_subject(data_file_path):
     data = df[['subject', 'model', 'likelihood', 'day in stage', 'trial', 'stage', 'reward', 'parameters']].copy()
     # data['parameters'] = data['parameters'].apply(lambda x: len(fitting_utils.string2list(x)))
     # data['likelihood']=-2*np.log(data['likelihood'])#+ 2 * data['parameters']
-    data = data.groupby(['subject', 'model'], sort=['likelihood']).mean().reset_index()
+    data = data.groupby(['subject', 'model'], sort=['likelihood']).mean(numeric_only=True).reset_index()
     data = rename_models(data)
 
     # renumber the subject to reflect the best likelihood
@@ -992,9 +1015,9 @@ def average_likelihood_per_subject(data_file_path):
 
     criterion = 'likelihood'
     plt.figure(figsize=(7.5, 4), dpi=120, facecolor='w')
-
+    colors = sns.color_palette(n_colors=data.model.nunique())
     axis = sns.scatterplot(x='subject', y=criterion, hue='model', alpha=0.7, data=data,
-                           hue_order=models_order_df(data), s=50)
+                           hue_order=models_order_df(data), s=50, color=colors)
     #plt.ylim([0.5, 0.6])
 
     plt.subplots_adjust(left=0.15, bottom=0.15, right=0.97, top=0.95, wspace=0.2, hspace=0.4)
@@ -1006,13 +1029,12 @@ def average_likelihood_per_subject(data_file_path):
     handles, labels = axis.get_legend_handles_labels()
     axis.legend(handles, labels, loc="upper left", prop={'size': 11}, labelspacing=0.3)
 
-    colors = sns.color_palette()
     averages = data.groupby(['model'], sort=False).mean().reset_index()
     averages = averages[['model', 'likelihood']]
-    # for ind, (model, likelihood) in enumerate(list(averages.itertuples(index=False, name=None))):
     for ind, model in enumerate(models_order_df(data)):
         likelihood = averages[averages.model == model].likelihood.values[0]
         axis.axhline(y=likelihood, alpha=1, lw=1, color=colors[ind])
+        print(f'{model}: {likelihood}')
 
     plt.savefig(os.path.join(figures_folder,'average_animal_likelihood_{}.pdf'.format(utils.get_timestamp())))
 
@@ -1020,9 +1042,8 @@ def average_likelihood_per_subject(data_file_path):
 if __name__ == '__main__':
     file_path = '/Users/georgekour/repositories/plus-maze-simulator/fitting/Results/Rats-Results/reported_results_dimensional_shifting/main_results_reported_10_1_recalculated.csv'
     # file_path = 'fitting/Results/Rats-Results/reported_results_dimensional_shifting/rebuttal/nondirectional/fitting_results_dimensional2024_09_04_nondirectional_0init.csv'
-    # file_path = '/Users/georgekour/repositories/plus-maze-simulator/fitting/Results/Rats-Results/fitting_results_dimensional2024_08_07_19_38_75_led_first_beta_loguniform.csv'
-    # stages = ['Odor', 'Color']
-    # num_days_reported = [8, 10, 9]
+    # file_path = 'fitting/Results/Rats-Results/reported_results_dimensional_shifting/rebuttal/main_results_odor_first_refitted_07_26_2024.csv'
+    file_path = 'fitting/Results/Rats-Results/lef_first_fitting_results_dimensional2024_09_24_01_15_200.csv'
 
     # file_path = '/Users/georgekour/repositories/plus-maze-simulator/fitting/Results/Rats-Results/main_results_odor_first_refitted_07_26_2024.csv'
 
@@ -1033,10 +1054,10 @@ if __name__ == '__main__':
     # learning_curve_behavioral_boxplot('fitting/Results/Rats-Results/reported_results_dimensional_shifting/all_data.csv')
     # learning_curve_behavioral_boxplot(file_path)
     # show_days_to_criterion('fitting/Results/Rats-Results/reported_results_dimensional_shifting/all_data.csv')
-    #models_fitting_quality_over_times_average(file_path)
+    # models_fitting_quality_over_times_average(file_path)
     # models_fitting_quality_over_times(file_path)
     # compare_model_subject_learning_curve_average(file_path)
-    compare_model_subject_learning_curve_transition(file_path)
+    # compare_model_subject_learning_curve_transition(file_path)
     # compare_model_subject_learning_curve(file_path)
     # plot_models_fitting_result_per_stage(file_path)
     # show_likelihood_trials_scatter(file_path)
