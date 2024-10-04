@@ -2,11 +2,10 @@ __author__ = 'gkour'
 
 import os
 import warnings
-
 import numpy as np
 import pandas as pd
 from skopt import gp_minimize
-import scipy
+from scipy.optimize import minimize
 import fitting.fitting_config_attention as fitting_config
 
 import config
@@ -44,23 +43,10 @@ class MazeBayesianModelFitting:
 
 		y = meanNLL
 
-		# print("{}. x={}, AIC:{:2f} (meanNLL={:.2f}, medianNLL={:.2f}, sumNLL={:.2f}, stages={}), \t(meanL={:.2f}, "
-		# 	  "medianL={:.3f}, gmeanL={:.3f}, stages={})".format(utils.brain_name(self.model),
-		# 														 list(np.round(parameters, 4)),
-		# 														 aic,
-		# 														 meanNLL, np.nanmedian(NLL), np.nansum(NLL),
-		# 														 np.round(likelihood_stage.NLL.to_numpy(), 2),
-		# 														 meanL, np.nanmedian(L),
-		# 														 geomeanL,
-		# 														 np.round(likelihood_stage.likelihood.to_numpy(), 2)))
-		
-		print("x={}, AIC:{:2f} (meanNLL={:.2f}, stages={}), \t(meanL={:.2f}, stages={})".format(
-																 list(np.round(parameters, 4)),
-																 aic,
-																 meanNLL,
-																 np.round(likelihood_stage.NLL.to_numpy(), 2),
-																 meanL, 
-																 np.round(likelihood_stage.likelihood.to_numpy(), 2)))
+		print(
+			f"x={fitting_utils.recursive_round(parameters)}, AIC:{aic:.2f} (meanNLL={meanNLL:.2f}, "
+			f"stages={np.round(likelihood_stage.NLL.to_numpy(), 2)}), \t(meanL={meanL:.2f}, "
+			f"stages={np.round(likelihood_stage.likelihood.to_numpy(), 2)})")
 
 		MazeBayesianModelFitting.LvsNLL+=[[meanL, meanNLL]]
 
@@ -73,35 +59,40 @@ class MazeBayesianModelFitting:
 
 		if fitting_config.OPTIMIZATION_METHOD in ['Newton', 'Hybrid']:
 			bounds = [bound.bounds for bound in self.parameters_space]
-			x0 = np.array([5, 0.01, 0.01]) if fitting_config.OPTIMIZATION_METHOD == 'Newton' else x0
-			print("\t\t-----Finished Bayesian parameter estimation: {} -----".format(np.round(x0,4)))
-			if self.model[2]==FixedACFTable:
+			x0 = np.array([param.rvs()[0] for param in self.parameters_space]) if fitting_config.OPTIMIZATION_METHOD == 'Newton' else x0
+			print(f"\t\t-----Finished Bayesian parameter estimation: {x0} -----")
+			if self.model[2] == FixedACFTable:
 				def constraint(params):
 					resolved_params = fitting_utils.resolve_parameters(params, *self.model)
 					return int(utils.is_valid_attention_weights(resolved_params['attn_importance']))
 
 				constraints = {'type': 'ineq', 'fun': constraint}  # Inequality constraint: x + y <= 1
 
-				search_result = scipy.optimize.minimize(
-					self._calc_experiment_likelihood, x0=x0,
-					bounds=bounds,
+				search_result = minimize(
+					self._calc_experiment_likelihood, x0=fitting_utils.flatten_list(x0),
+					bounds=fitting_utils.flatten_list(bounds),
 					#		tol=0.002,
 					options={'maxiter': self.n_calls},
 					constraints=constraints)
+
+				parameters = list(search_result.x)
+				parameters = parameters[:-3] + [parameters[-3:]]
+
 			else:
-				search_result = scipy.optimize.minimize(
+				search_result = minimize(
 						self._calc_experiment_likelihood, x0=x0,
 						bounds=bounds,
 				#		tol=0.002,
 						options={'maxiter':self.n_calls})
 		
+				parameters = search_result.x
 		experiment_stats, rat_data_with_likelihood = fitting_utils.run_model_on_animal_data(self.env, self.experiment_data, self.model,
-																							search_result.x)
+																									parameters)
 		n = len(rat_data_with_likelihood)
-		aic = - 2 * np.sum(np.log(rat_data_with_likelihood.likelihood)) + 2 * len(search_result.x)
-		print("Best Parameters: {} - AIC:{:.3}\n".format(np.round(search_result.x, 4), aic))
+		aic = - 2 * np.sum(np.log(rat_data_with_likelihood.likelihood)) + 2 * len(parameters)
+		print(f"Best Parameters: {fitting_utils.recursive_round(parameters)} - AIC:{fitting_utils.recursive_round(aic)}\n")
 
-		return search_result, experiment_stats, rat_data_with_likelihood
+		return parameters, experiment_stats, rat_data_with_likelihood
 
 	def _fake_optimize(self):
 		"""Use this to validate that the data of all rats are sensible and that
@@ -131,45 +122,42 @@ class MazeBayesianModelFitting:
 		results_df = pd.DataFrame()
 		for subject_id, (file_name,curr_rat) in enumerate(animal_data):
 			initial_motivation = curr_rat.iloc[0].initial_motivation if 'initial_motivation' in curr_rat.columns else 'water'
-
 			print(f"\n#################### Subject: {subject_id} - {initial_motivation}. Env: {str(env)} #####################\n")
 			curr_rat = fitting_utils.maze_experimental_data_preprocessing(curr_rat)
 			fitting_results[subject_id] = {}
 			for curr_model in all_models:
 				model, parameters_space = curr_model
-				print("-----{}-----".format(utils.brain_name(model)))
+				print(f"-----{utils.brain_name(model)}-----")
 				search_result, experiment_stats, rat_data_with_likelihood = \
 					MazeBayesianModelFitting(env, curr_rat, model, parameters_space, n_calls).optimize()
 
 				rat_data_with_likelihood["subject"] = subject_id
 				rat_data_with_likelihood["model"] = utils.brain_name(model)
-				# rat_data_with_likelihood["parameters"] = {name: round(value, 4) for name, value in zip([param.name for param in parameters_space], search_result.x)}
-				rat_data_with_likelihood["parameters"] = [np.round(search_result.x,4)] * len(rat_data_with_likelihood)
+				rat_data_with_likelihood["parameters"] = [search_result] * len(rat_data_with_likelihood)
 				rat_data_with_likelihood["algorithm"] = \
 					"{}_{}".format(fitting_config.OPTIMIZATION_METHOD, n_calls)
 
 				results_df = results_df.append(rat_data_with_likelihood, ignore_index=True)
 			results_df.to_csv(f'fitting/Results/Rats-Results/fitting_results_dimensional{timestamp}_{n_calls}_tmp.csv')
-		results_df.to_csv(f'fitting/Results/Rats-Results/fitting_results_dimensional{timestamp}_{n_calls}.csv')
+		results_df.to_csv(f'fitting/Results/Rats-Results/lef_first_assymetric_fitting_results_dimensional{timestamp}_{n_calls}.csv')
 		return fitting_results
 
 
 if __name__ == '__main__':
 
 	# fit odor first animals
-	MazeBayesianModelFitting.all_subjects_all_models_optimization(
-	    PlusMazeOneHotCues2ActiveDoors(stimuli_encoding=10),
-		fitting_config.MAZE_ANIMAL_DATA_PATH, fitting_config.maze_models, n_calls=fitting_config.FITTING_ITERATIONS)
-
-
-	# #fit led first animals
-	# led_first_stages = [{'name': 'LED', 'transition_logic': StagesTransition.set_color_stage},
-	# 					{'name': 'Odor1', 'transition_logic': StagesTransition.set_odor_stage}]
-	#
 	# MazeBayesianModelFitting.all_subjects_all_models_optimization(
-	# 	PlusMazeOneHotCues2ActiveDoors(stages=led_first_stages, stimuli_encoding=10),
-	# 	fitting_config.MAZE_ANIMAL_LED_FIRST_DATA_PATH, fitting_config.maze_models, n_calls=fitting_config.FITTING_ITERATIONS)
-	#
+	#     PlusMazeOneHotCues2ActiveDoors(stimuli_encoding=10),
+	# 	fitting_config.MAZE_ANIMAL_DATA_PATH, fitting_config.maze_models, n_calls=fitting_config.FITTING_ITERATIONS)
+
+	# fit led first animals
+	led_first_stages = [{'name': 'LED', 'transition_logic': StagesTransition.set_color_stage},
+						{'name': 'Odor1', 'transition_logic': StagesTransition.set_odor_stage}]
+
+	MazeBayesianModelFitting.all_subjects_all_models_optimization(
+		PlusMazeOneHotCues2ActiveDoors(stages=led_first_stages, stimuli_encoding=10),
+		fitting_config.MAZE_ANIMAL_LED_FIRST_DATA_PATH, fitting_config.maze_models, n_calls=fitting_config.FITTING_ITERATIONS)
+
 
 	# MazeBayesianModelFitting.all_subjects_all_models_optimization(
 	# 	PlusMazeOneHotCues(relevant_cue=CueType.ODOR, stimuli_encoding=10), fitting_config.MOTIVATED_ANIMAL_DATA_PATH,
