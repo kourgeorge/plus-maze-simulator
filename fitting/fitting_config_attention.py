@@ -14,30 +14,33 @@ from learners.networklearners import *
 from learners.tabularbayesianlearners import BayesianAttentionLearner, BayesianFeatureLearner
 from learners.tabularlearners import *
 from models.networkmodels import *
-from models.non_directional_tabularmodels import NonDirectionalOptionsTable, \
-	NonDirectionalACFTable, NonDirectionalFixedACFTable
+from models.non_directional_tabularmodels import NonDirectionalOptionsTable, NonDirectionalACFTable
 from models.tabularbayesianmodels import BayesianACFTable, BayesianFTable
 from models.tabularmodels import *
+from enum import Enum
 
 MAZE_ANIMAL_DATA_PATH = '/Users/georgekour/repositories/plus-maze-simulator/fitting/maze_behavioral_data'
 MAZE_ANIMAL_LED_FIRST_DATA_PATH = '/Users/georgekour/repositories/plus-maze-simulator/fitting/maze_behavioral_led_first_data'
 MAZE_ANIMALS = [0, 1, 2, 3, 4, 5, 6, 7, 8]
 MAZE_LED_FIRST_ANIMALS = [33, 34, 35, 36, 37, 38, 39, 40, 41, 42]
 
-OPTIMIZATION_METHOD = 'Hybrid' #  'Hybrid','Newton', 'Bayesian'
+
+class OptimizationMethod(Enum):
+    HYBRID = 'Hybrid'
+    NEWTON = 'Newton'
+    BAYESIAN = 'Bayesian'
+
+
+OPTIMIZATION_METHOD = OptimizationMethod.HYBRID #  'Hybrid','Newton', 'Bayesian'
 FITTING_ITERATIONS = 200
 
-lr = Real(name='lr', low=0.0001, high=0.4, prior='log-uniform')
-lr_nr = Real(name='lr_nr', low=0.0001, high=0.4, prior='log-uniform')
-attention_lr = Real(name='attention_lr', low=0.0001, high=0.4, prior='log-uniform')
-beta = Real(name='beta', low=0.1, high=10, prior='log-uniform')
-# beta = Beta(scale=10, alpha=2, beta_param=5, name='beta')
-attention_color = Real(name='attention_color', low=0, high=1, prior='uniform')
-attention_odor = Real(name='attention_odor', low=0, high=1, prior='uniform')
+lr = Real(name='lr', low=0.0001, high=1.0, prior='log-uniform')
+lr_nr = Real(name='lr_nr', low=0.0001, high=1.0, prior='log-uniform')
+attention_lr = Real(name='attention_lr', low=0.0001, high=1.0, prior='log-uniform')
+beta = Real(name='beta', low=0.1, high=20, prior='log-uniform')
+attention_distribution = Dirichlet(alpha=[4, 3, 3], name='initial_attn_importance')
 initial_feature_value = Real(name='initial_feature_value', low=0, high=1, prior='uniform')
 batch_size = Integer(name='batch_size', low=1, high=20)
-
-attention_distribution = Dirichlet(alpha=[1, 1, 1], name='dirichlet_param')
 
 # New hyperparameters for Bayesian models
 initial_variance = Real(name='initial_variance', low=0.1, high=100, prior='log-uniform')
@@ -47,18 +50,16 @@ attention_beta = Real(name='attention_beta', low=0.001, high=1.0, prior='log-uni
 
 
 maze_models = [
-	((TDBrain, QLearner, QTable), (initial_feature_value, beta, lr)),
-	((TDBrain, QLearner, OptionsTable), (initial_feature_value, beta, lr)),
-	((TDBrain, IALearner, ACFTable), (initial_feature_value, beta, lr)),
-	((TDBrain, IALearner, FixedACFTable), (initial_feature_value, beta, lr, attention_distribution)),
-	((TDBrain, MALearner, ACFTable), (initial_feature_value, beta, lr, attention_lr)),
+	((TDBrain, QLearner, QTable), (beta, lr)),
+	((TDBrain, QLearner, OptionsTable), (beta, lr)),
+	((TDBrain, IALearner, ACFTable), (beta, lr)),
+	((TDBrain, MALearner, ACFTable), (beta, lr, attention_lr)),
 
 	# # #
-	# ((TDBrain, AsymmetricQLearner, QTable), (initial_feature_value, beta, lr, lr_nr)),
-	# ((TDBrain, AsymmetricQLearner, OptionsTable), (initial_feature_value, beta, lr, lr_nr)),
-	# ((TDBrain, AsymmetricIALearner, ACFTable), (initial_feature_value, beta, lr, lr_nr)),
-	# ((TDBrain, AsymmetricIALearner, FixedACFTable), (initial_feature_value, beta, lr, lr_nr, attention_distribution)),
-	# ((TDBrain, AsymmetricMALearner, ACFTable), (initial_feature_value, beta, lr, lr_nr, attention_lr)),
+	# ((TDBrain, AsymmetricQLearner, QTable), (beta, lr, lr_nr)),
+	# ((TDBrain, AsymmetricQLearner, OptionsTable), (beta, lr, lr_nr)),
+	# ((TDBrain, AsymmetricIALearner, ACFTable), (beta, lr, lr_nr, attention_distribution)),
+	# ((TDBrain, AsymmetricMALearner, ACFTable), (beta, lr, lr_nr, attention_lr, attention_distribution)),
 	#
 	# ((TDBrain, QLearner, NonDirectionalOptionsTable), (initial_feature_value, beta, lr)),
 	# ((TDBrain, IALearner, NonDirectionalACFTable), (initial_feature_value, beta, lr)),
@@ -128,29 +129,32 @@ friendly_models_name_map = {
 							}
 
 
+parameter_names = {friendly_models_name_map[model_name]: [(param.name, param.transformed_size) for param in model_desc[1]] for model_name, model_desc in map_maze_models.items()}
+
 def get_parameter_names(model):
-	parameter_names = {
-		'SARL': ['initial_feature_value','beta', 'alpha'],
-		'ORL': ['initial_feature_value', 'beta', 'alpha'],
-		'FRL': ['initial_feature_value', 'beta', 'alpha'],
-		'AARL': ['initial_feature_value', 'beta', 'alpha', 'alpha_phi'],
-		'FARL': ['initial_feature_value', 'beta', 'alpha', 'att_odor', 'att_color'],
-
-		'N.D. ORL': ['initial_feature_value', 'beta', 'alpha'],
-		'N.D. FRL': ['initial_feature_value', 'beta', 'alpha'],
-		'N.D. AARL': ['initial_feature_value', 'beta', 'alpha', 'alpha_phi'],
-		'N.D. FARL': ['initial_feature_value', 'beta', 'alpha', 'att_odor'],
-
-		'As. SARL': ['initial_feature_value', 'beta', 'alpha_rew', 'alpha_no_rew'],
-		'As. ORL': ['initial_feature_value', 'beta', 'alpha_rew', 'alpha_no_rew'],
-		'As. FRL': ['initial_feature_value', 'beta', 'alpha_rew', 'alpha_no_rew'],
-		'As. AARL': ['initial_feature_value', 'beta', 'alpha_rew', 'alpha_no_rew', 'alpha_phi'],
-		'As. FARL': ['initial_feature_value', 'beta', 'alpha_rew', 'alpha_no_rew', 'att_odor', 'att_color'],
-
-
-		# Add parameter names for Bayesian models
-		'Bayesian FRL': ['initial_feature_value', 'beta', 'observation_variance'],
-		'Bayesian AARL': ['initial_feature_value', 'beta',  'observation_variance', 'initial_alpha', 'attention_beta'],
-
-	}
 	return parameter_names.get(model, [])
+
+	# parameter_names = {
+	# 	'SARL': ['initial_feature_value','beta', 'alpha'],
+	# 	'ORL': ['initial_feature_value', 'beta', 'alpha'],
+	# 	'FRL': ['initial_feature_value', 'beta', 'alpha'],
+	# 	'AARL': ['initial_feature_value', 'beta', 'alpha', 'alpha_phi'],
+	# 	'FARL': ['initial_feature_value', 'beta', 'alpha', 'att_odor', 'att_color'],
+	#
+	# 	'N.D. ORL': ['initial_feature_value', 'beta', 'alpha'],
+	# 	'N.D. FRL': ['initial_feature_value', 'beta', 'alpha'],
+	# 	'N.D. AARL': ['initial_feature_value', 'beta', 'alpha', 'alpha_phi'],
+	# 	'N.D. FARL': ['initial_feature_value', 'beta', 'alpha', 'att_odor'],
+	#
+	# 	'As. SARL': ['initial_feature_value', 'beta', 'alpha_rew', 'alpha_no_rew'],
+	# 	'As. ORL': ['initial_feature_value', 'beta', 'alpha_rew', 'alpha_no_rew'],
+	# 	'As. FRL': ['initial_feature_value', 'beta', 'alpha_rew', 'alpha_no_rew'],
+	# 	'As. AARL': ['initial_feature_value', 'beta', 'alpha_rew', 'alpha_no_rew', 'alpha_phi'],
+	# 	'As. FARL': ['initial_feature_value', 'beta', 'alpha_rew', 'alpha_no_rew', 'att_odor', 'att_color'],
+	#
+	#
+	# 	# Add parameter names for Bayesian models
+	# 	'Bayesian FRL': ['initial_feature_value', 'beta', 'observation_variance'],
+	# 	'Bayesian AARL': ['initial_feature_value', 'beta',  'observation_variance', 'initial_alpha', 'attention_beta'],
+	#
+	# }

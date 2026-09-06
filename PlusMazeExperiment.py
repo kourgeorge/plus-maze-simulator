@@ -95,7 +95,7 @@ def PlusMazeExperiment(env: PlusMaze, agent: MotivatedAgent, dashboard=False):
                                                stats.epoch_stats_df['FoodCorrect'].to_numpy()[-1]))
 
             current_criterion = stats.reports[-1].reward
-            reward = stats.reports[-1].reward
+            reward = stats.reports[-1].correct
 
             if reward != experiment_data.tail(config.TRIALS_IN_DAY)['reward'].mean():
                 raise Exception()

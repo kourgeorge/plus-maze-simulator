@@ -12,14 +12,14 @@ from scipy import stats
 
 import config
 import fitting.fitting_utils as fitting_utils
+import utils
 from fitting.PlusMazeExperimentFitting import PlusMazeExperimentFitting
 from fitting.fitting_config_attention import friendly_models_name_map, get_parameter_names
 from learners.abstractlearner import SymmetricLearner
 from learners.networklearners import DQNAtt
 from learners.tabularbayesianlearners import BayesianAttentionLearner, BayesianFeatureLearner
-from learners.tabularlearners import MALearner
-from models.non_directional_tabularmodels import NonDirectionalFixedACFTable
-from models.tabularmodels import FixedACFTable
+from learners.tabularlearners import MALearner, AsymmetricMALearner
+from models.tabularmodels import ACFTable
 from motivatedagent import MotivatedAgent
 from environment import PlusMazeOneHotCues
 from rewardtype import RewardType
@@ -83,7 +83,8 @@ def run_model_on_animal_data(env, rat_data, model_arch, parameters, initial_moti
 
     resolved_params_dict = resolve_parameters(parameters, *model_arch)
 
-    model_instance = model(encoding_size=env.stimuli_encoding_size(), num_actions=env.num_actions(), num_channels=2,
+    model_instance = model(encoding_size=env.stimuli_encoding_size(),
+                           num_actions=env.num_actions(), num_channels=2,
                            **resolved_params_dict)
     learner_instance = learner(model_instance, **resolved_params_dict)
     brain_instance = brain(learner_instance, **resolved_params_dict)
@@ -110,54 +111,22 @@ def resolve_parameters(parameters, brain, learner, model):
     Returns:
         dict: A dictionary containing resolved parameter names and their values.
     """
-    # Create an iterator for the parameters
-    param_iterator = iter(parameters)
 
     resolved_params = {}
+    flatten_params = flatten_list(parameters)
+    architecture = friendly_models_name_map["{}.{}".format(learner.__name__, model.__name__)]
+    param_structure = fitting_utils.get_parameter_names(architecture)
+    index = 0
+    for name, length in param_structure:
+        # Extract the appropriate number of values from the params list
+        if length == 1:
+            resolved_params[name] = flatten_params[index]
+        else:
+            resolved_params[name] = flatten_params[index:index + length]
 
-    resolved_params['initial_value'] = next(param_iterator)
-    resolved_params['beta'] = next(param_iterator)
-
-    # Check if the learner is a Bayesian learner
-    if issubclass(learner, (BayesianFeatureLearner, BayesianAttentionLearner)):
-        # Extract parameters for Bayesian models
-        # resolved_params['initial_value'] = next(param_iterator)
-        resolved_params['initial_variance'] = next(param_iterator)
-        # resolved_params['observation_variance'] = next(param_iterator)
-
-        if issubclass(learner, BayesianAttentionLearner):
-            # For BayesianAttentionLearner, also extract initial_alpha and attention_beta
-            resolved_params['initial_alpha'] = next(param_iterator)
-            resolved_params['attention_beta'] = next(param_iterator)
-    else:
-        # Non-Bayesian models
-        # Initialize resolved parameters with mandatory 'beta' and 'lr' values
-
-        resolved_params['lr'] = next(param_iterator)
-
-        # Check if the learner is not a subclass of SymmetricLearner and add 'lr_nr'
-        if not issubclass(learner, SymmetricLearner):
-            resolved_params['lr_nr'] = next(param_iterator)
-
-        # Check if the learner requires 'attention_lr' parameter
-        if issubclass(learner, (MALearner, DQNAtt)):
-            resolved_params['attention_lr'] = next(param_iterator)
-
-        # Check if the model is FixedACFTable and add attention parameters
-        if model == FixedACFTable:
-            if not is_flat(parameters):
-                attn_dist = next(param_iterator)
-            else:
-                attn_dist = [next(param_iterator), next(param_iterator), next(param_iterator)]
-            resolved_params['attn_importance'] = attn_dist
-
-        # Check if the model is NonDirectionalFixedACFTable and add attention parameters
-        elif model == NonDirectionalFixedACFTable:
-            attn_odor = next(param_iterator)
-            resolved_params['attn_importance'] = [attn_odor, 1 - attn_odor]
-
+        # Move the index forward by the length of the current parameter
+        index += length
     return resolved_params
-
 
 def is_flat(obj):
     # If the input is a numpy array, check if it has more than 1 dimension
@@ -170,20 +139,23 @@ def is_flat(obj):
         raise TypeError("Input must be a list or numpy ndarray.")
 
 
-def flatten_list(nested_list):
+def flatten_list(nested):
     # Initialize an empty list to store flattened items
     flat_list = []
 
-    for item in nested_list:
-        # Check if the item is a numpy array and flatten it
-        if isinstance(item, np.ndarray):
-            flat_list.extend(item.flatten())
-        elif isinstance(item, list):
-            flat_list.extend(item)
+    # Recursive function to handle nested lists and numpy arrays
+    def recursive_flatten(item):
+        if isinstance(item, (list, np.ndarray)):
+            # Iterate through each element if it is a list or numpy array
+            for sub_item in item:
+                recursive_flatten(sub_item)
         else:
             flat_list.append(item)
 
+    # Start flattening from the root structure
+    recursive_flatten(nested)
     return flat_list
+
 
 
 def recursive_round(value, n=4):
@@ -196,11 +168,9 @@ def recursive_round(value, n=4):
 
 
 def parse_parameters(parameters_column):
-    # Apply string2list function to each row and flatten the list in one step
-    parsed = parameters_column.apply(lambda row: fitting_utils.flatten_list(fitting_utils.string2list(row)))
-    # Convert the resulting series to a list
+    # parsed = parameters_column.apply(lambda row: fitting_utils.flatten_list(fitting_utils.string2list(row)))
+    parsed = parameters_column.apply(lambda row: fitting_utils.string2list(row))
     return parsed
-
 
 
 def blockPrint():
@@ -260,7 +230,7 @@ def maze_experimental_data_preprocessing(experiment_data):
     df_sum = experiment_data.groupby(['stage', 'day in stage'], sort=False).agg(
         {'reward': 'mean', 'action': 'count'}).reset_index()
 
-    # Take at most 7 days from the last stage.
+    # Take at most 10 days from the last stage.
     df = experiment_data_filtered.copy()
     df = df[~((df.stage == 3) & (df['day in stage'] > 10))]
 
@@ -286,8 +256,8 @@ def maze_experimental_data_preprocessing(experiment_data):
 def analyze_fitting(rat_data_with_likelihood, likelihood_column_name, num_parameters):
     likelihood_column = rat_data_with_likelihood[likelihood_column_name]
     rat_data_with_likelihood['NLL'] = -np.log(likelihood_column)
-    likelihood_day = rat_data_with_likelihood.groupby(['stage', 'day in stage']).mean().reset_index()
-    likelihood_stage = likelihood_day.groupby('stage').mean()
+    likelihood_day = rat_data_with_likelihood.groupby(['stage', 'day in stage']).mean(numeric_only=True).reset_index()
+    likelihood_stage = likelihood_day.groupby('stage').mean(numeric_only=True)
     NLL = rat_data_with_likelihood.NLL.to_numpy()
     n = len(NLL)
     L = likelihood_column.to_numpy()
@@ -296,12 +266,13 @@ def analyze_fitting(rat_data_with_likelihood, likelihood_column_name, num_parame
     geomeanL = scipy.stats.mstats.gmean(likelihood_column)
     np.testing.assert_almost_equal(np.exp(-meanNLL), geomeanL)
     aic = 2 * np.sum(NLL) + 2 * num_parameters
-    return aic, likelihood_stage, meanL, meanNLL
+    bic = 2 * np.sum(NLL) + np.log(n) * num_parameters
+    return aic, bic, likelihood_stage, meanL, meanNLL
 
 
 def models_order_df(df):
     models_in_df = np.unique(df.model)
-    return stable_unique([model for model in friendly_models_name_map.values() if model in models_in_df])
+    return list(stable_unique([model for model in friendly_models_name_map.values() if model in models_in_df]))
 
 
 def models_struct_order_df(df):
@@ -493,12 +464,23 @@ def calculate_fitted_parameters_stats(data):
         model_data = data[data['model'] == model]
         parameters = model_data['parameters'].tolist()#.apply(lambda x: fitting_utils.flatten_list(x)).to_list()
         # Calculate mean and std for each parameter
-        mean = np.mean(parameters, axis=0)
-        std = stats.sem(parameters, axis=0)
+        mean = calculate_nested_func(parameters, np.mean)
+        sem = calculate_nested_func(parameters, stats.sem)
         parameter_names = get_parameter_names(model)
-        stats_dict[model] = {name: {'mean': m, 'sem': s} for name, m, s in zip(parameter_names, mean, std)}
+        stats_dict[model] = {name: {'mean': m, 'sem': s} for name, m, s in zip(parameter_names, mean, sem)}
 
     return stats_dict
+
+
+def calculate_nested_func(data, func):
+    # Helper function to calculate mean across nested lists
+    def nested_mean(list_of_lists):
+        if not isinstance(list_of_lists[0], list):
+            return func(list_of_lists)
+        return [nested_mean(sublist) for sublist in zip(*list_of_lists)]
+
+    # Recursively apply mean to each position in the nested structure
+    return nested_mean(data)
 
 
 def print_model_parameters(fitted_parameters_stats):
@@ -510,14 +492,27 @@ def print_model_parameters(fitted_parameters_stats):
     for model, parameters in fitted_parameters_stats.items():
         first_param = True
         for param, stats in parameters.items():
-            mean = stats['mean']
-            std = stats['sem']
-            estimated_value = f"{mean:.4g} ± {std:.4g}"
-            if first_param:
-                print(f"{model:<10} {param:<15} {estimated_value:<20}")
-                first_param = False
+            means = stats['mean']
+            sems = stats['sem']
+
+            # Check if the means and SEMs are lists
+            if isinstance(means, list) and isinstance(sems, list):
+                # Iterate over each value in the list
+                for mean, sem in zip(means, sems):
+                    estimated_value = f"{mean:.4g} ± {sem:.4g}"
+                    if first_param:
+                        print(f"{model:<10} {param[0]:<15} {estimated_value:<20}")
+                        first_param = False
+                    else:
+                        print(f"{'':<10} {param[0]:<15} {estimated_value:<20}")
             else:
-                print(f"{'':<10} {param:<15} {estimated_value:<20}")
+                # If they are not lists, treat as single values
+                estimated_value = f"{means:.4g} ± {sems:.4g}"
+                if first_param:
+                    print(f"{model:<10} {param[0]:<15} {estimated_value:<20}")
+                    first_param = False
+                else:
+                    print(f"{'':<10} {param[0]:<15} {estimated_value:<20}")
 
 
 def sample_attention_distribution(dimensions=3):
@@ -530,7 +525,9 @@ def sample_attention_distribution(dimensions=3):
 
 parameters_friendly_names = {
     'beta': r'$\beta$',
-    'lr': r'$\alpha$',
+    'lr': r'$\alpha_{1}$',
+    'lr_nr': r'$\alpha_{0}$',
+    'initial_attn_importance': r'$\phi$',
     'attention_lr': r'$\alpha_{\phi}$',
     'attention_odor': r'$\phi^{odor}$',
     'attention_color': r'$\phi^{color}$'

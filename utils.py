@@ -138,9 +138,26 @@ def stimuli_1hot_to_cues(states, encoding_size):
     return np.argmax(states, axis=-1) + encoding_size * np.all(states == 0, axis=-1)
 
 
+def inverse_softmax(probs):
+    """
+    Given a target probability distribution `probs` with 3 elements,
+    returns the logits that would produce this distribution after applying softmax.
+
+    Parameters:
+    - probs: list or np.array with three probability values that sum to 1.
+
+    Returns:
+    - logits: np.array with three logits such that softmax(logits) = probs
+    """
+    # Apply the log transformation and subtract from the mean to center the logits
+    logits = np.log(probs) - np.mean(np.log(probs))
+    return logits
+
+
+
 def compress(a):
     return a[a != 0]
 
 
 def is_valid_attention_weights(attn):
-    return all(0 <= item <= 1 for item in attn) and np.abs(np.sum(attn) - 1) < 1e-9
+    return all(0 <= item <= 1 for item in attn) and np.abs(np.sum(attn) - 1) < 1e-4

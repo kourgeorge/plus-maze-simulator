@@ -42,7 +42,7 @@ def test_FixedDoorAttentionBrain():
     assert experiment_stats is not None
 
 
-def test_brain(brain):
+def run_brain_experiment(brain):
     env = PlusMazeOneHotCues(relevant_cue=CueType.ODOR)
     agent = MotivatedAgent(brain, motivation=RewardType.WATER,
                                        motivated_reward_value=1, non_motivated_reward_value=0.3)
@@ -60,7 +60,7 @@ def test_PlusMazeOneHotCues2ActiveDoors():
               ]
     env = PlusMazeOneHotCues2ActiveDoors(stages=stages, relevant_cue=CueType.ODOR, stimuli_encoding=14)
 
-    model = ACFTable(env.stimuli_encoding_size(), num_channels=2, num_actions=env.num_actions())
+    model = ACFTable(encoding_size=env.stimuli_encoding_size(), num_channels=2, num_actions=env.num_actions())
     learner = MALearner(model, alpha_phi=0.11, learning_rate=0.057)
     brain = TDBrain(learner=learner, beta=5.2)
 

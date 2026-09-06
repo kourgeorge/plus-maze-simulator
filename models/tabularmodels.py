@@ -7,7 +7,6 @@ from scipy.spatial.distance import jensenshannon
 import config
 import utils
 from collections import defaultdict
-
 from rewardtype import RewardType
 
 norm = 'fro'
@@ -237,7 +236,7 @@ class FTable(AbstractTabularModel):
         return selected_cues_with_doors
 
     def get_stimulus_value(self, dimension, feature, motivation):
-        return self.Q[RewardType.NONE.value][dimension][feature]
+        return self.Q[motivation.value][dimension][feature]
 
     def set_stimulus_value(self, dimension, feature, motivation, new_value):
         self.Q[motivation][dimension][feature] = new_value
@@ -245,7 +244,7 @@ class FTable(AbstractTabularModel):
     def update_stimulus_value(self, dimension, feature, motivation, delta):
         # if dimension=='odors':
         # print('{}:{:.2},{:.2}'.format(feature, self.Q[RewardType.NONE.value][dimension][feature], self.Q[RewardType.NONE.value][dimension][feature] + delta))
-        self.Q[motivation.value][dimension][feature] += delta
+        self.Q[motivation.value][dimension][feature] += np.asarray(delta).item()
 
     def get_model_metrics(self):
         flattened_biases_values = utils.flatten_dict(self.action_bias)
@@ -283,9 +282,13 @@ class ACFTable(FTable):
     It Overrides methods for observation values and model metrics to include attention-related computations.
     """
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, initial_attn_importance = None, *args, **kwargs):
+        # if initial_attn_importance is not None and not utils.is_valid_attention_weights(initial_attn_importance):
+        #     raise Exception("Illegal attention arguments, should be positive and sum to 1!")
+        # np.testing.assert_almost_equal(sum(initial_attn_importance), 1)
         super().__init__(*args, **kwargs)
-        self.attn_importance = np.ones([len(self.env_dimensions)]) / len(self.env_dimensions)
+        self.attn_importance = np.ones([len(self.env_dimensions)]) / len(
+            self.env_dimensions) if initial_attn_importance is None else utils.inverse_softmax(np.copy(initial_attn_importance))
 
     def __call__(self, *args, **kwargs):
         states = args[0]
@@ -297,6 +300,7 @@ class ACFTable(FTable):
         return doors_value
 
     def phi(self):
+        # return self.attn_importance
         return utils.softmax(self.attn_importance)
 
     def get_observations_values(self, observations, motivation):
@@ -334,8 +338,8 @@ class ACFTable(FTable):
 
     def get_model_metrics(self):
         phi = self.phi()
-        importance = {f'{dim}_importance': self.attn_importance[i] for i, dim in enumerate(self.env_dimensions)}
-        weight = {f'{dim}_weights': phi[i] for i, dim in enumerate(self.env_dimensions)}
+        importance = {f'{dim}_importance': float(self.attn_importance[i]) for i, dim in enumerate(self.env_dimensions)}
+        weight = {f'{dim}_weights': float(phi[i]) for i, dim in enumerate(self.env_dimensions)}
         return  {**importance, **weight}
 
         def get_model_diff(self, brain2):
@@ -344,19 +348,3 @@ class ACFTable(FTable):
     def new_stimuli_context(self, motivation):
         for dim in self.env_dimensions:
             self.Q[motivation][dim] = self.initial_value * np.ones([self.encoding_size + 1])
-
-
-class FixedACFTable(ACFTable):
-    """Similar to ACFTable, but the attention weights can be initialized and fixed.
-    It suggests that attention may not change dynamically during learning."""
-
-    def __init__(self, attn_importance=np.ones([3]) / 3, *args, **kwargs):
-        if not utils.is_valid_attention_weights(attn_importance):
-            raise Exception("Illegal attention arguments, should be positive and sum to 1!")
-        super().__init__(*args, **kwargs)
-
-        self.attn_importance = np.abs(attn_importance) / np.sum(
-            np.abs(attn_importance))  # normalize attention parameters
-
-    def phi(self):
-        return self.attn_importance

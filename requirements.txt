@@ -7,3 +7,6 @@ torchvision
 torchaudio
 pandas
 seaborn
+tabulate
+statannotations
+pingouin

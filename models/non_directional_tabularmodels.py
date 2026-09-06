@@ -38,18 +38,18 @@ class NonDirectionalACFTable(ACFTable):
 
         return action_values
 
-
-class NonDirectionalFixedACFTable(NonDirectionalACFTable):
-    """Similar to ACFTable, but the attention weights can be initialized and fixed.
-    It suggests that attention may not change dynamically during learning."""
-
-    def __init__(self, attn_importance=np.ones([2]) / 2, *args, **kwargs):
-        if not utils.is_valid_attention_weights(attn_importance):
-            raise Exception("Illegal attention arguments, should be positive and sum to 1!")
-        super().__init__(*args, **kwargs)
-
-        self.attn_importance = np.abs(attn_importance) / np.sum(
-            np.abs(attn_importance))  # normalize attention parameters
-
-    def phi(self):
-        return self.attn_importance
+#
+# class NonDirectionalFixedACFTable(NonDirectionalACFTable):
+#     """Similar to ACFTable, but the attention weights can be initialized and fixed.
+#     It suggests that attention may not change dynamically during learning."""
+#
+#     def __init__(self, initial_attn_importance=np.ones([2]) / 2, *args, **kwargs):
+#         if not utils.is_valid_attention_weights(initial_attn_importance):
+#             raise Exception("Illegal attention arguments, should be positive and sum to 1!")
+#         super().__init__(*args, **kwargs)
+#
+#         self.attn_importance = np.abs(initial_attn_importance) / np.sum(
+#             np.abs(initial_attn_importance))  # normalize attention parameters
+#
+#     def phi(self):
+#         return self.attn_importance

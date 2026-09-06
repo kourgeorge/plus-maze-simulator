@@ -195,7 +195,7 @@ def ED_shift_analysis(fitting_file_name, repetitions=50):
 
 
 if __name__ == '__main__':
-    reps = 25
+    reps = 20
     # fitting_file_name = 'fitting/Results/Rats-Results/Concatenated_Asymmetric_Fitting_Results.csv'
     # # all_simulation_data = run_increasing_IDShift(fitting_file_name, repetitions=reps)
     # all_simulation_data.to_csv(path_or_buf=f"/Users/georgekour/repositories/plus-maze-simulator/fitting/Results/simulations_results/increasing_ID_{reps}_{TRIALS_IN_DAY}TPD.csv", index=False)
@@ -210,7 +210,7 @@ if __name__ == '__main__':
                                                                require_task_completion=True)
 
     all_simulation_data.to_csv(
-        path_or_buf=f"/Users/georgekour/repositories/plus-maze-simulator/fitting/Results/Rats-Results/identifiability_results/simulation_{reps}_{TRIALS_IN_DAY}_updated_ranges.csv",
+        path_or_buf=f"/Users/georgekour/repositories/plus-maze-simulator/fitting/Results/Rats-Results/identifiability_results/simulation_{reps}_{TRIALS_IN_DAY}_nobias_symmetric.csv",
         index=False)
 
 	# EDS_simulation_data = ED_shift_analysis(fitting_file_name, reps)

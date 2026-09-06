@@ -47,7 +47,7 @@ class ConsolidationBrain(AbstractBrain):
 
 			losses += [self.learner.learn(state_batch, action_batch, reward_batch, action_values, nextstate_batch, agent.get_motivation())]
 
-		return np.mean(losses)
+		return {'delta': np.mean(losses)}
 
 	def save_model(self, path):
 		torch.save(self.get_model().state_dict(), path)

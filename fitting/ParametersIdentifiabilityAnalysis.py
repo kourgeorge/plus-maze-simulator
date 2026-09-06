@@ -2,13 +2,13 @@ __author__ = 'gkour'
 
 import numpy as np
 from matplotlib import pyplot as plt
-
 from environment import PlusMazeOneHotCues2ActiveDoors, StagesTransition, CueType
 from fitting import fitting_utils
 from fitting.MazeBayesianModelFitting import MazeBayesianModelFitting
 import pandas as pd
 import fitting_config_attention
 import utils
+import os
 from scipy.stats import pearsonr, spearmanr
 import ast
 from sklearn.metrics import confusion_matrix
@@ -18,16 +18,23 @@ mpl.rcParams['pdf.fonttype'] = 42
 plt.rcParams.update({'font.size': 14})
 
 
-def estimate_parameters(experiments_df, fitting_stages=None):
-    fitting_iterations = 75
-    optimization_method = 'Hybrid'
-
+def estimate_parameters(experiments_df, outputfile, fitting_iterations=50, optimization_method=fitting_config_attention.OptimizationMethod.BAYESIAN, fitting_stages=None):
     df = experiments_df.copy()
     df['agent'] = df['subject']
     env = PlusMazeOneHotCues2ActiveDoors(relevant_cue=CueType.ODOR, stimuli_encoding=8)
 
-    results_df = pd.DataFrame()
-    for agent in df.agent.unique(): #[-73,-74,-75]: 
+    # Check if the output file exists and load it if it does
+    if os.path.isfile(outputfile):
+        results_df = pd.read_csv(outputfile)
+        completed_agents = set(results_df['subject'].unique())
+    else:
+        results_df = pd.DataFrame()
+        completed_agents = set()
+
+    for agent in df.agent.unique():
+        # Skip agents that have already been processed
+        if agent in completed_agents:
+            continue
 
         df_sub = df[df.agent == agent]
         model_string = df_sub["model"].iloc[0]
@@ -37,7 +44,8 @@ def estimate_parameters(experiments_df, fitting_stages=None):
         true_parameters = fitting_utils.string2list(df_sub['parameters'].iloc[0])
         _, true_parameters_df = fitting_utils.run_model_on_animal_data(env, df_sub, true_model, true_parameters)
 
-        aic_t, likelihood_stage_t, meanL_t, meanNLL_t = fitting_utils.analyze_fitting(true_parameters_df, 'likelihood',
+        aic_t, bic_t, likelihood_stage_t, meanL_t, meanNLL_t = fitting_utils.analyze_fitting(true_parameters_df,
+                                                                                      'likelihood',
                                                                                       len(true_parameters))
 
         candidate_models = fitting_config_attention.maze_models
@@ -49,7 +57,8 @@ def estimate_parameters(experiments_df, fitting_stages=None):
                   f"Original: {true_parameters} - AIC:{round(aic_t,4)}\n")
 
             search_result, experiment_stats, rat_data_with_likelihood = \
-                MazeBayesianModelFitting(env, df_sub, candidate_model, candidate_parameters_space, fitting_iterations).optimize()
+                MazeBayesianModelFitting(env, df_sub, candidate_model, candidate_parameters_space,
+                                         optimization_method, fitting_iterations).optimize()
 
             rat_data_with_likelihood["subject"] = agent
             rat_data_with_likelihood["fitted_model"] = utils.brain_name(candidate_model)
@@ -60,7 +69,8 @@ def estimate_parameters(experiments_df, fitting_stages=None):
 
             print(f"{df_sub['parameters'].iloc[0]} -> {rat_data_with_likelihood['fitted_parameters'].iloc[0]}")
 
-    results_df.to_csv(f'fitting/Results/Rats-Results/identifiability_results/recoverability_initial_value_{optimization_method}_{fitting_iterations}_{utils.get_timestamp()}_.csv', index_label=False)
+        # Write results to disk after each agent completion.
+        results_df.to_csv(outputfile, index=False)
 
     return results_df
 
@@ -75,11 +85,13 @@ def analyze_models_fitting(recovered_df):
         agent_df = recovered_df[recovered_df.subject == agent]
 
         # in the fitted agent_df we have the true parameters ('parameters') the fitted parameters ('fitted_parameters') and the 'fitted likelihood'
-        true_parameters = fitting_utils.string2list(agent_df.parameters.iloc[0])
+        true_parameters = fitting_utils.flatten_list(fitting_utils.string2list(agent_df.parameters.iloc[0]))
 
         agent_df.rename(columns={'likelihood': 'fitted_parameters_likelihood', 'parameters': 'true_parameters'}, inplace=True)
         true_model_name = agent_df.model.iloc[0]
         true_model, _ = fitting_config_attention.map_maze_models[true_model_name]
+
+        print(f'\n\n---------Simulated agent {agent} - true Model: {fitting_utils.friendly_models_name_map[true_model_name]}----\n\n')
 
         # here we add the likelihood of the true parameters
         df_true = agent_df[agent_df.fitted_model == agent_df.fitted_model.iloc[0]]
@@ -88,15 +100,15 @@ def analyze_models_fitting(recovered_df):
 
         results_with_true_parameters_likelihood_df = results_with_true_parameters_likelihood_df.append(rat_data_with_likelihood, ignore_index=True)
 
-        aic_t, likelihood_stage_t, meanL_t, meanNLL_t = fitting_utils.analyze_fitting(rat_data_with_likelihood, 'true_parameters_likelihood',
+        aic_t, bic_t, likelihood_stage_t, meanL_t, meanNLL_t = fitting_utils.analyze_fitting(rat_data_with_likelihood, 'true_parameters_likelihood',
                                                                                       len(true_parameters))
 
         for fitted_model_name in agent_df.fitted_model.unique():
 
             df_fitted = agent_df[agent_df.fitted_model == fitted_model_name]
             fitted_parameters = fitting_utils.string2list(df_fitted.fitted_parameters.iloc[0])
-            aic_f, likelihood_stage_f, meanL_f, meanNLL_f = fitting_utils.analyze_fitting(df_fitted, 'fitted_parameters_likelihood',
-                                                                                      len(fitted_parameters))
+            aic_f, bic_f, likelihood_stage_f, meanL_f, meanNLL_f = fitting_utils.analyze_fitting(df_fitted, 'fitted_parameters_likelihood',
+                                                                                      len(fitting_utils.flatten_list(fitted_parameters)))
 
             results_dict = {
                 'agent': agent,
@@ -114,7 +126,9 @@ def analyze_models_fitting(recovered_df):
                 },
             }
             model_identifiability_results_df = model_identifiability_results_df.append(results_dict, ignore_index=True)
-            print(f'{true_model_name}-{fitted_model_name} (True vs. Fitted): \nparam: {np.round(true_parameters,4)}-{fitted_parameters} \n AIC: {aic_t}-{aic_f}   meanLikelihood: {meanL_t}-{meanL_f}  meanNLL: {meanNLL_t}-{meanNLL_f}')
+            print(f'{fitting_utils.friendly_models_name_map[true_model_name]}-{fitting_utils.friendly_models_name_map[fitted_model_name]} (True vs. Fitted): '
+                  # f'\nparam: {np.round(true_parameters,4)}-{fitted_parameters} '
+                  f'\nAIC: -{np.round(aic_f,2)}   meanLikelihood: {np.round(meanL_t,2)}-{np.round(meanL_f,2)}  meanNLL: {meanNLL_t}-{meanNLL_f}')
 
     model_identifiability_results_df.to_csv(f"fitting/Results/Rats-Results/identifiability_results/recoverability_results_{utils.get_timestamp()}_.csv")
     return model_identifiability_results_df
@@ -126,7 +140,7 @@ def parameters_recoverability_correlation(recovered_df):
 
     df = df.drop_duplicates()
     df.true_model_parameters = df.true_model_parameters.apply(lambda x: fitting_utils.string2list(x))
-    df.fitted_model_parameters = df.fitted_model_parameters.apply(lambda x: fitting_utils.string2list(x))
+    df.fitted_model_parameters = df.fitted_model_parameters.apply(lambda x: fitting_utils.flatten_list(fitting_utils.string2list(x)))
 
     for model in df.true_model.unique():
         df_model = df[(df.true_model == model) & (df.fitted_model == model)]
@@ -138,7 +152,7 @@ def parameters_recoverability_correlation(recovered_df):
         model_short_name = fitting_config_attention.friendly_models_name_map[model]
         num_params = true_params.shape[1]
 
-        parameter_names = [parameter.name for parameter in model_parameters]
+        parameter_names = fitting_utils.flatten_list([[parameter.name]*parameter.transformed_size for parameter in model_parameters])
         parameter_bounds = [parameter.bounds for parameter in model_parameters]
         # Plotting
         fig, axes = plt.subplots(1, num_params, figsize=(4*num_params, 4))
@@ -150,7 +164,7 @@ def parameters_recoverability_correlation(recovered_df):
             y = estimated_params[:, i]
 
             # Fit line
-            coef = np.polyfit(x, y, 1)  # Linear fit
+            coef = np.polyfit(x, y.astype('float64'), 1)  # Linear fit
             fit_line = np.poly1d(coef)
             ax.plot(x, fit_line(x), 'r--', lw=2, label='Correlation Line')
 
@@ -192,16 +206,16 @@ def model_identifiability_confusion_matrix(df):
     df['fitted_model'] = df['fitted_model'].apply(lambda x: fitting_utils.friendly_models_name_map[x])
 
     # Extract AIC and determine the identified model with the smallest AIC for each true model instance
-    df['identified_model'] = df.apply(
-        lambda row: row['fitted_model'] if row['fitted_aic'] < row['true_aic'] else row['true_model'], axis=1)
+    # df['identified_model'] = df.apply(
+    #     lambda row: row['fitted_model'] if row['fitted_aic'] < row['true_aic'] else row['true_model'], axis=1)
 
-    # Group by agent and select the row with the minimum true_aic for each agent
-    unique_agents_df = df.loc[df.groupby('agent')['true_aic'].idxmin()]
+    # Group by agent and select the row with the minimum fitted_aic for each agent
+    unique_agents_df = df.loc[df.groupby('agent')['fitted_aic'].idxmin()]
 
 
     # Extract the true and identified models
     true_models = unique_agents_df['true_model']
-    identified_models = unique_agents_df['identified_model']
+    identified_models = unique_agents_df['fitted_model']
 
     # Get the unique model names again to include identified models
     unique_models = np.unique(np.concatenate((true_models, identified_models)))
@@ -241,12 +255,16 @@ def model_identifiability_confusion_matrix(df):
 
 
 if __name__ == '__main__':
-    all_simulation_data = pd.read_csv('fitting/Results/Rats-Results/identifiability_results/simulation_25_100_symmetric_initial.csv')
-    estimate_parameters(all_simulation_data)
+    all_simulation_data = pd.read_csv('fitting/Results/Rats-Results/identifiability_results/simulation_20_100_nobias_symmetric.csv')
+    recoverability_file = f'fitting/Results/Rats-Results/identifiability_results/recoverability_2024_12_27_15_00_150_temp.csv'
+    #
+    estimate_parameters(all_simulation_data, fitting_iterations=150, outputfile=recoverability_file)
 
-    # recovered_df = pd.read_csv('fitting/Results/Rats-Results/identifiability_results/recoverability_Hybrid_75_2024_09_16_16_57_.csv')
+    # recovered_df = pd.read_csv(recoverability_file)
     # analyze_models_fitting(recovered_df)
-    # results_df = pd.read_csv('fitting/Results/Rats-Results/identifiability_results/recoverability_results_2024_09_16_17_11_.csv')
-    #parameters_recoverability_correlation(results_df)
-    # model_identifiability_confusion_matrix(results_df)
+    # results_df = pd.read_csv('fitting/Results/Rats-Results/identifiability_results/recoverability_results_2024_11_25_09_33_.csv')
+    results_df = pd.read_csv(
+        '/Users/georgekour/repositories/plus-maze-simulator/fitting/Results/Rats-Results/identifiability_results/recoverability_results_2024_12_29_14_14_.csv')
+    # parameters_recoverability_correlation(results_df)
+    model_identifiability_confusion_matrix(results_df)
     x=1

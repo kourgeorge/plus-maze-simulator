@@ -26,6 +26,9 @@ def sample_brain_parameters(parameters_mean, parameters_std, ranges):
     """Given the parameter mean and std, samples a parameter value within the given range"""
     sampled_simulation_params = [np.random.normal(loc=mean, scale=std) for mean, std in
                                  zip(parameters_mean, parameters_std)]
+    # sampled_simulation_params = [10*beta(2, 5).rvs(1)[0], log_uniform(low=ranges[1][0], high=ranges[1][1])]
+    sampled_simulation_params += [log_uniform(low=ranges[2][0], high=ranges[2][1])] if len(
+        parameters_mean) == 3 else []
 
     estimated_parameters = tuple(np.clip(sampled_simulation_params[i], *ranges[i]) for i, parameter_value in
                                  enumerate(sampled_simulation_params))

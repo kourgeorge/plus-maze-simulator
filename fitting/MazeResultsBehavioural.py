@@ -185,13 +185,7 @@ def compare_model_subject_learning_curve_average(data_file_path):
     # adding the 0.1 percent to make the choices of the model similar to the rat which show higher likelihood in the first day of each stage.
     model_df["reward_fixed"] = model_df["reward"] - 0.1
 
-    # axis = sns.pointplot(x="ind", y="model_reward_dist", hue="model", hue_order=models_order_df(model_df),
-    # 					data=model_df, errorbar="se", join=False)
-    #
-    # axis = sns.pointplot(x="ind", y="model_reward_dist", hue="model", hue_order=models_order_df(model_df),
-    # 					 data=model_df, errorbar="se", join=False)
-
-    # fig = plt.figure(figsize=(7.5, 4), dpi=100, facecolor='w')
+    fig = plt.figure(figsize=(7.5, 4), dpi=100, facecolor='w')
     # axis = sns.lineplot(x="ind", y="likelihood", hue="model", hue_order=models_order_df(model_df),
     #                     data=model_df, errorbar="se", err_style='band')
 
@@ -517,8 +511,6 @@ def plot_models_fitting_result_per_stage(data_file_path):
                         pair = ((i, model), (i, other_model))
                         comparison_pairs.append(pair)
 
-
-
     annot = Annotator(g1, comparison_pairs, **args, data=df)
     annot.configure(test='t-test_paired', text_format='star', loc='inside', verbose=2, comparisons_correction="Bonferroni")
     annot.apply_test().annotate()
@@ -530,22 +522,23 @@ def plot_models_fitting_result_per_stage(data_file_path):
     ax1 = fig.add_subplot(111)
 
     # g2 = sns.boxplot(x='dummy', y='ML', hue='model', data=df, ax=ax1)
-    g2 = sns.barplot(x='model', y=y, hue_order=models_order_df(df),
-                     data=df, ax=ax1, errorbar='se', errwidth=1, capsize=.05)
+    g2_order = models_order_df(df)
+    g2 = sns.barplot(x='model', y=y, hue='model', hue_order=g2_order, order=g2_order,
+                     data=df, ax=ax1, errorbar='se', errwidth=1, capsize=.05, legend=False)
 
     #g2.set_xticklabels([''])
     g2.set(xlabel='', ylabel='Average Likelihood')
     plt.subplots_adjust(left=0.1, bottom=0.1, right=0.99, top=0.9, wspace=0.3, hspace=0.3)
 
-    # pairs = [('AARL',  'FRL'), ('SARL','FRL'), ('AARL', 'ORL'),
-    #          ('SARL', 'AARL'), ('ORL','FRL'), ('ORL', 'SARL')]
-    #
-    # annot = Annotator(g2, pairs, **args, data=df)
-    # annot.configure(test='t-test_paired', text_format='star', loc='inside', comparisons_correction="Bonferroni", verbose=2)
-    #
-    # annot.apply_test().annotate()
-
     g2.set_ylim([0.56, 0.62])
+
+    pairs = [('AARL',  'FRL'), ('SARL','FRL'), ('AARL', 'ORL'),
+             ('SARL', 'AARL'), ('ORL','FRL'), ('ORL', 'SARL')]
+    pairs = [pair for pair in pairs if pair[0] in g2_order and pair[1] in g2_order]
+
+    annot = Annotator(g2, pairs, x='model', y=y, order=g2_order, data=df)
+    annot.configure(test='t-test_paired', text_format='star', loc='inside', comparisons_correction="Bonferroni", verbose=2)
+    annot.apply_test().annotate()
 
     fitting_utils.RM_anova(df,'likelihood','subject', 'model')
 
@@ -632,9 +625,10 @@ def compare_fitting_criteria(data_file_path):
     data['parameters'] = fitting_utils.parse_parameters(data.parameters)
     data['k'] = data.apply(lambda row: len(row['parameters']), axis=1)
 
-    data['AIC'] = - 2 * data.LL + 2 * data.k
+    data['AIC'] = (- 2 * data.LL + 2 * data.k) / data.n  # normalized AIC, per Equation eq:aic
     data['BIC'] = - 2 * data.LL + np.log(data.n) * data.k
     data['LPT'] = data.likelihood
+    data['Geo'] = np.exp(data.LL/data.n)
 
     data.LL = -data.LL
     print(data.round(2).to_string(index=False))
@@ -667,13 +661,15 @@ def compare_fitting_criteria(data_file_path):
         # print(tabulate.tabulate(pivot_table, headers='keys', tablefmt='grid'))
 
         plt.figure(figsize=(4.5, 4), dpi=120, facecolor='w')
-        axis = sns.barplot(x='model', y=criterion, data=data, order=models_order_df(data))  # orient='v'
+        order = models_order_df(data)
+        axis = sns.barplot(x='model', y=criterion, hue='model', hue_order=order,
+                           data=data, order=order, legend=False)  # orient='v'
         minn = np.min(data[criterion])
         maxx = np.max(data[criterion])
         delta = 0.1 * (maxx - minn)
         plt.ylim([minn - delta, maxx + delta])
 
-        #plt.subplots_adjust(left=0.21, bottom=0.1, right=0.97, top=0.95, wspace=0.2, hspace=0.4)
+        plt.subplots_adjust(left=0.21, bottom=0.1, right=0.97, top=0.95, wspace=0.2, hspace=0.4)
         axis.spines['top'].set_visible(False)
         axis.spines['right'].set_visible(False)
 
@@ -702,23 +698,23 @@ def plot_fitting_parameters(data_file_path):
     df.parameters = fitting_utils.parse_parameters(df.parameters)
     fitted_parameters_stats = fitting_utils.calculate_fitted_parameters_stats(df)
     fitting_utils.print_model_parameters(fitted_parameters_stats)
-
-    # Plot the distribution of parameters for each model
-    for model in df.model.unique():
-        parameter_names = get_parameter_names(model)
-        model_df = df[df['model'] == model]
-        parameters_df = pd.DataFrame(model_df.parameters.tolist(), columns=parameter_names)
-
-        plt.figure(figsize=(15, 5))
-        for i, param in enumerate(parameter_names):
-            plt.subplot(1, len(parameter_names), i + 1)
-            sns.histplot(parameters_df[param], kde=True)
-            plt.title(f'{model} - {param}')
-            plt.xlabel(param)
-            plt.ylabel('Density')
-
-        plt.tight_layout()
-        plt.show()
+    #
+    # # Plot the distribution of parameters for each model
+    # for model in df.model.unique():
+    #     parameter_names = get_parameter_names(model)
+    #     model_df = df[df['model'] == model]
+    #     parameters_df = pd.DataFrame(model_df.parameters.tolist(), columns=parameter_names)
+    #
+    #     plt.figure(figsize=(15, 5))
+    #     for i, param in enumerate(parameter_names):
+    #         plt.subplot(1, len(parameter_names), i + 1)
+    #         sns.histplot(parameters_df[param], kde=True)
+    #         plt.title(f'{model} - {param}')
+    #         plt.xlabel(param)
+    #         plt.ylabel('Density')
+    #
+    #     plt.tight_layout()
+    #     plt.show()
 
 
 def attention_development(data_file_path):
@@ -876,8 +872,7 @@ def investigate_regret_delta_relationship(data_file_path):
 def model_parameters_development(data_file_path, reward_dependant_trials=None):
     plt.rcParams.update({'font.size': 14})
     df_all = pd.read_csv(data_file_path)
-    df = df_all[
-        ['subject', 'model', 'stage', 'day in stage', 'trial', 'optimization_data', 'model_variables', 'reward']].copy()
+    df = df_all[['subject', 'model', 'stage', 'day in stage', 'trial', 'optimization_data', 'model_variables', 'reward']].copy()
 
     df = df[df['model_variables'].notna()].reset_index()
     df, order, st = fitting_utils.index_days(df)
@@ -887,7 +882,7 @@ def model_parameters_development(data_file_path, reward_dependant_trials=None):
     # this is needed because there is no good way to order the x-axis in lineplot.
     df.sort_values('ind', axis=0, ascending=True, inplace=True)
 
-    for model in ['AARL']:  # ['AARL','ACLNet2']:
+    for model in list(set(df.model).intersection(['AARL','As. AARL'])):  # ['AARL','ACLNet2']:
         df_model = df[df.model == model]
         df, order, st = fitting_utils.index_days(df)
 
@@ -900,11 +895,11 @@ def model_parameters_development(data_file_path, reward_dependant_trials=None):
 
         sns.set_palette("colorblind", n_colors=5)
 
-        for var_names in [#['odor_importance','color_importance','spatial_importance'],
-                        #['odor_delta_phi','color_delta_phi','spatial_delta_phi'],
-                        #['odor_weight','color_weight','spatial_weight'],
-                        #['odor_regret', 'color_regret', 'spatial_regret'],
-                        ['odor_V', 'color_V', 'spatial_V', 'Q'],
+        for var_names in [#['odor_importance','color_importance','spatial_importance']
+                        # ['odor_delta_phi','color_delta_phi','spatial_delta_phi'],
+                        #  ['odor_weights','color_weights','spatial_weights'],
+                        ['odor_regret', 'color_regret', 'spatial_regret'],
+                        # ['odor_V', 'color_V', 'spatial_V', 'Q'],
                         # ['delta']
         ]:
             fig = plt.figure(figsize=(7, 3), dpi=120, facecolor='w')
@@ -928,8 +923,8 @@ def model_parameters_development(data_file_path, reward_dependant_trials=None):
 
             plt.xlabel('Day in Stage')
             plt.title(model)
-            # plt.ylim([-1, 0.03])
-            plt.ylim([-0.25, 1.03])
+            plt.ylim([-1, 0.6])
+            # plt.ylim([-0.05, 0.6])
             plt.savefig(os.path.join(figures_folder,'{}_{}.pdf'.format(var_names[0], utils.get_timestamp())))
 
 
@@ -1007,7 +1002,7 @@ def average_likelihood_per_subject(data_file_path):
     data = rename_models(data)
 
     # renumber the subject to reflect the best likelihood
-    order = data.groupby('subject').max('likelihood').sort_values('likelihood', ascending=True).reset_index()
+    order = data.groupby('subject')['likelihood'].max().sort_values(ascending=True).reset_index()
     subject_map = order.subject.to_dict()
     # invert the dictionary and add numbering from 1
     subject_map = {v: k + 1 for k, v in subject_map.items()}
@@ -1043,11 +1038,7 @@ if __name__ == '__main__':
     file_path = '/Users/georgekour/repositories/plus-maze-simulator/fitting/Results/Rats-Results/reported_results_dimensional_shifting/main_results_reported_10_1_recalculated.csv'
     # file_path = 'fitting/Results/Rats-Results/reported_results_dimensional_shifting/rebuttal/nondirectional/fitting_results_dimensional2024_09_04_nondirectional_0init.csv'
     # file_path = 'fitting/Results/Rats-Results/reported_results_dimensional_shifting/rebuttal/main_results_odor_first_refitted_07_26_2024.csv'
-    file_path = 'fitting/Results/Rats-Results/lef_first_fitting_results_dimensional2024_09_24_01_15_200.csv'
-
-    # file_path = '/Users/georgekour/repositories/plus-maze-simulator/fitting/Results/Rats-Results/main_results_odor_first_refitted_07_26_2024.csv'
-
-    # file_path = 'fitting/Results/Rats-Results/identifiability_results/fitting_results_dimensional2024_08_31_21_50_75.csv'
+    file_path = 'fitting/Results/Rats-Results/asymmetric_fitting_results_dimensional2026_09_05_21_45_200.csv'
 
 
     #file_path = '/Users/georgekour/repositories/plus-maze-simulator/fitting/Results/Rats-Results/fitting_results_neural_models_merged.csv'
@@ -1062,11 +1053,11 @@ if __name__ == '__main__':
     # plot_models_fitting_result_per_stage(file_path)
     # show_likelihood_trials_scatter(file_path)
     # stage_transition_model_quality(file_path)
-    # plot_fitting_parameters(file_path)
+    plot_fitting_parameters(file_path)
     compare_fitting_criteria(file_path)
     # average_likelihood_per_subject(file_path)
     #compare_neural_tabular_models(file_path)
     # attention_development(file_path)
-    # model_parameters_development(file_path, reward_dependant_trials=1)
+    model_parameters_development(file_path, reward_dependant_trials=1)
     #investigate_regret_delta_relationship(file_path)
     x = 2

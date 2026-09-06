@@ -243,13 +243,19 @@ class PlusMazeOneHotCues(PlusMaze):
 							  [selected_cues[
 							   self.stimuli_encoding_size():2 * self.stimuli_encoding_size()]]
 
+		if self._relevant_cue == CueType.SPATIAL:
+			correct_door = self._correct_spatial_cues[0]
+		else:
+			comparison = np.all(self._state[self._relevant_cue.value, :, :] == self.get_correct_cue_value(), axis=1)
+			correct_door = np.where(comparison)[0][0]
+
 		self._state = np.ones(self.state_shape())
 		if (self._relevant_cue == CueType.SPATIAL and action in self._correct_spatial_cues) or \
 				(self._relevant_cue != CueType.SPATIAL and np.array_equal(selected_cues[self._relevant_cue.value, :],
 																		  self.get_correct_cue_value())):
 			outcome = RewardType.FOOD if action in [0, 1] else RewardType.WATER
-			return self._state, outcome, 1, self._get_step_info(outcome)
-		return self._state, RewardType.NONE, 1, self._get_step_info(RewardType.NONE)
+			return self._state, outcome, 1, correct_door, self._get_step_info(outcome)
+		return self._state, RewardType.NONE, 1, correct_door, self._get_step_info(RewardType.NONE)
 
 	def state_shape(self):
 		return (self.num_actions(), self.stimuli_encoding_size(), 2)
